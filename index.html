@@ -1,500 +1,86 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html>
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sala Geral</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg-page: #0E1524;
-    --bg-panel: #161F35;
-    --bg-header: #121A2E;
-    --bubble-received: #212C48;
-    --bubble-sent: #F2A65A;
-    --text-main: #ECECF1;
-    --text-sent: #1A1408;
-    --text-muted: #8993AC;
-    --accent: #F2A65A;
-    --accent-dim: #C98543;
-    --online-dot: #6FCF97;
-    --divider: #26304B;
-  }
 
-  * { box-sizing: border-box; }
+    <meta charset="UTF-8">
 
-  html, body {
-    height: 100%;
-    margin: 0;
-    background: var(--bg-page);
-    font-family: 'Inter', sans-serif;
-    color: var(--text-main);
-  }
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="icon" href="https://static.whatsapp.net/rsrc.php/yd/r/PfkSLByWV8O.webp">
+	<title>WhatisApp</title>
 
-  body {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-  }
+    <link rel="stylesheet" href="style.css">
+	<script src="script.js"></script>
+	<link rel="manifest" href="manifest.json">
 
-  .panel {
-    width: 100%;
-    max-width: 460px;
-    height: min(720px, 92vh);
-    background: var(--bg-panel);
-    border-radius: 22px;
-    box-shadow: 0 30px 60px -20px rgba(0,0,0,0.6);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    position: relative;
-  }
-
-  .header {
-    background: var(--bg-header);
-    padding: 18px 22px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    border-bottom: 1px solid var(--divider);
-    flex-shrink: 0;
-  }
-
-  .header-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent), var(--accent-dim));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 700;
-    color: var(--text-sent);
-    font-size: 16px;
-    flex-shrink: 0;
-  }
-
-  .header-info { flex: 1; min-width: 0; }
-
-  .header-title {
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 600;
-    font-size: 17px;
-    margin: 0 0 2px 0;
-  }
-
-  .header-sub {
-    font-size: 12.5px;
-    color: var(--text-muted);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin: 0;
-  }
-
-  .dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--online-dot);
-    box-shadow: 0 0 0 0 rgba(111,207,151,0.6);
-    animation: pulse 2s infinite;
-    flex-shrink: 0;
-  }
-
-  @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(111,207,151,0.5); }
-    70% { box-shadow: 0 0 0 6px rgba(111,207,151,0); }
-    100% { box-shadow: 0 0 0 0 rgba(111,207,151,0); }
-  }
-
-  .messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .messages::-webkit-scrollbar { width: 6px; }
-  .messages::-webkit-scrollbar-thumb { background: var(--divider); border-radius: 4px; }
-
-  .empty-state {
-    margin: auto;
-    text-align: center;
-    color: var(--text-muted);
-    font-size: 13.5px;
-    line-height: 1.6;
-    max-width: 240px;
-  }
-
-  .row {
-    display: flex;
-    margin: 4px 0;
-  }
-
-  .row.mine { justify-content: flex-end; }
-  .row.theirs { justify-content: flex-start; }
-
-  .bubble-group { max-width: 78%; display: flex; flex-direction: column; }
-
-  .sender-name {
-    font-size: 11.5px;
-    color: var(--accent);
-    margin: 6px 2px 3px 2px;
-    font-weight: 600;
-  }
-
-  .bubble {
-    padding: 9px 13px;
-    font-size: 14.5px;
-    line-height: 1.45;
-    word-wrap: break-word;
-    white-space: pre-wrap;
-  }
-
-  .row.theirs .bubble {
-    background: var(--bubble-received);
-    color: var(--text-main);
-    border-radius: 4px 16px 16px 16px;
-  }
-
-  .row.mine .bubble {
-    background: var(--bubble-sent);
-    color: var(--text-sent);
-    border-radius: 16px 4px 16px 16px;
-  }
-
-  .timestamp {
-    font-size: 10.5px;
-    color: var(--text-muted);
-    margin: 3px 4px 0 4px;
-  }
-
-  .row.mine .timestamp { text-align: right; }
-
-  .input-bar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 14px 16px;
-    background: var(--bg-header);
-    border-top: 1px solid var(--divider);
-    flex-shrink: 0;
-  }
-
-  .input-bar input {
-    flex: 1;
-    background: var(--bg-panel);
-    border: 1px solid var(--divider);
-    border-radius: 22px;
-    padding: 11px 16px;
-    color: var(--text-main);
-    font-family: 'Inter', sans-serif;
-    font-size: 14.5px;
-    outline: none;
-  }
-
-  .input-bar input:focus { border-color: var(--accent-dim); }
-  .input-bar input::placeholder { color: var(--text-muted); }
-
-  .send-btn {
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    background: var(--accent);
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: transform 0.15s ease, background 0.15s ease;
-  }
-
-  .send-btn:hover { background: var(--accent-dim); }
-  .send-btn:active { transform: scale(0.92); }
-  .send-btn svg { width: 18px; height: 18px; }
-
-  /* Join overlay */
-  .join-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(14,21,36,0.94);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    padding: 32px;
-    text-align: center;
-    z-index: 10;
-  }
-
-  .join-overlay h2 {
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 600;
-    font-size: 22px;
-    margin: 0 0 8px 0;
-  }
-
-  .join-overlay p {
-    color: var(--text-muted);
-    font-size: 13.5px;
-    margin: 0 0 22px 0;
-    max-width: 260px;
-    line-height: 1.5;
-  }
-
-  .join-overlay input {
-    width: 100%;
-    max-width: 260px;
-    background: var(--bg-panel);
-    border: 1px solid var(--divider);
-    border-radius: 12px;
-    padding: 12px 14px;
-    color: var(--text-main);
-    font-family: 'Inter', sans-serif;
-    font-size: 15px;
-    outline: none;
-    margin-bottom: 14px;
-    text-align: center;
-  }
-
-  .join-overlay input:focus { border-color: var(--accent-dim); }
-
-  .join-btn {
-    background: var(--accent);
-    border: none;
-    color: var(--text-sent);
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 600;
-    font-size: 14.5px;
-    padding: 12px 28px;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: background 0.15s ease;
-  }
-
-  .join-btn:hover { background: var(--accent-dim); }
-
-  .status-line {
-    font-size: 11px;
-    color: var(--text-muted);
-    text-align: center;
-    padding: 6px 0 0 0;
-  }
-</style>
 </head>
+
 <body>
+	
+    <header>
+        <div class="topo">
+            <button class="cinza">•••</button>
+            <button class="verde">
+				<img src="svg/plus.svg" class="plusi">
+			</button>
+        </div>
+		<div class="conversa">
+			<h1>Conversas</h1>
+		</div>
+    </header>
 
-<div class="panel">
-  <div class="join-overlay" id="joinOverlay">
-    <h2>Entrar na Sala Geral</h2>
-    <p>Escolha um nome para participar da conversa. Qualquer pessoa com este link pode entrar.</p>
-    <input type="text" id="nameInput" placeholder="Seu nome" maxlength="24" autocomplete="off">
-    <button class="join-btn" id="joinBtn">Entrar na conversa</button>
-  </div>
+    <main>
+        <div class="pesquisa">
+            <img src="svg/glasses.svg" class="glass">
+            <input type="text" placeholder=" Pesquisar">
+        </div>
+		<div class="contatos">
+        		<ul>
+        		<li>bi</li>
+        		</ul>
+		</div>
+    </main>
 
-  <div class="header">
-    <div class="header-avatar">SG</div>
-    <div class="header-info">
-      <p class="header-title">Sala Geral</p>
-      <p class="header-sub"><span class="dot"></span><span id="headerSub">conversa em tempo real</span></p>
-    </div>
-  </div>
+    <nav>
+		<div class="ultrabaixo">
+			<div class="baixo">
+        			<button class="chat-bt">
+						<img src="svg/chat.svg" class="chat">
+						Conversas
+					</button>
+        			<button class="tu">
+						<img src="svg/icon.svg" class="vose">
+						Você
+					</button>
+			</div>
+		</div>
+    </nav>
 
-  <div class="messages" id="messages">
-    <div class="empty-state" id="emptyState">Nenhuma mensagem ainda.<br>Seja a primeira pessoa a escrever algo.</div>
-  </div>
-
-  <div class="input-bar">
-    <input type="text" id="msgInput" placeholder="Escreva uma mensagem" maxlength="500" autocomplete="off">
-    <button class="send-btn" id="sendBtn" aria-label="Enviar">
-      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M4 12L20 4L14 20L11 13L4 12Z" stroke="#1A1408" stroke-width="1.8" stroke-linejoin="round" fill="#1A1408"/>
-      </svg>
-    </button>
-  </div>
-</div>
-
-<script>
-(function() {
-  const MESSAGES_KEY = 'messages';
-  const USERNAME_KEY = 'chat:username';
-  const POLL_MS = 2000;
-
-  let username = null;
-  let knownIds = new Set();
-  let pollTimer = null;
-
-  const joinOverlay = document.getElementById('joinOverlay');
-  const nameInput = document.getElementById('nameInput');
-  const joinBtn = document.getElementById('joinBtn');
-  const messagesEl = document.getElementById('messages');
-  const emptyState = document.getElementById('emptyState');
-  const msgInput = document.getElementById('msgInput');
-  const sendBtn = document.getElementById('sendBtn');
-  const headerSub = document.getElementById('headerSub');
-
-  function fmtTime(ts) {
-    const d = new Date(ts);
-    return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  }
-
-  function renderMessages(list) {
-    if (list.length === 0) {
-      messagesEl.innerHTML = '';
-      messagesEl.appendChild(emptyState);
-      return;
-    }
-    emptyState.remove && emptyState.remove();
-
-    const wasNearBottom = messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 80;
-
-    messagesEl.innerHTML = '';
-    let lastSender = null;
-    list.forEach(m => {
-      const mine = m.user === username;
-      const row = document.createElement('div');
-      row.className = 'row ' + (mine ? 'mine' : 'theirs');
-
-      const group = document.createElement('div');
-      group.className = 'bubble-group';
-
-      if (!mine && lastSender !== m.user) {
-        const nameEl = document.createElement('div');
-        nameEl.className = 'sender-name';
-        nameEl.textContent = m.user;
-        group.appendChild(nameEl);
-      }
-
-      const bubble = document.createElement('div');
-      bubble.className = 'bubble';
-      bubble.textContent = m.text;
-      group.appendChild(bubble);
-
-      const time = document.createElement('div');
-      time.className = 'timestamp';
-      time.textContent = fmtTime(m.ts);
-      group.appendChild(time);
-
-      row.appendChild(group);
-      messagesEl.appendChild(row);
-      lastSender = m.user;
-    });
-
-    if (wasNearBottom) {
-      messagesEl.scrollTop = messagesEl.scrollHeight;
-    }
-  }
-
-  async function loadMessages(scrollToBottom) {
-    try {
-      const result = await window.storage.get(MESSAGES_KEY, true);
-      const list = result ? JSON.parse(result.value) : [];
-      renderMessages(list);
-      if (scrollToBottom) {
-        messagesEl.scrollTop = messagesEl.scrollHeight;
-      }
-      headerSub.textContent = 'conversa em tempo real';
-    } catch (err) {
-      // key doesn't exist yet — treat as empty
-      renderMessages([]);
-      headerSub.textContent = 'conversa em tempo real';
-    }
-  }
-
-  async function sendMessage(text) {
-    text = text.trim();
-    if (!text || !username) return;
-
-    let list = [];
-    try {
-      const result = await window.storage.get(MESSAGES_KEY, true);
-      list = result ? JSON.parse(result.value) : [];
-    } catch (err) {
-      list = [];
-    }
-
-    list.push({
-      id: Date.now() + '-' + Math.random().toString(36).slice(2, 8),
-      user: username,
-      text: text,
-      ts: Date.now()
-    });
-
-    if (list.length > 300) {
-      list = list.slice(list.length - 300);
-    }
-
-    try {
-      await window.storage.set(MESSAGES_KEY, JSON.stringify(list), true);
-    } catch (err) {
-      console.error('Falha ao enviar mensagem', err);
-      return;
-    }
-
-    msgInput.value = '';
-    renderMessages(list);
-    messagesEl.scrollTop = messagesEl.scrollHeight;
-  }
-
-  function startPolling() {
-    if (pollTimer) clearInterval(pollTimer);
-    pollTimer = setInterval(() => loadMessages(false), POLL_MS);
-  }
-
-  async function enterChat(name) {
-    username = name;
-    joinOverlay.style.display = 'none';
-
-    try {
-      await window.storage.set(USERNAME_KEY, name, false);
-    } catch (err) {
-      // non-critical if this fails
-    }
-
-    await loadMessages(true);
-    startPolling();
-    msgInput.focus();
-  }
-
-  joinBtn.addEventListener('click', () => {
-    const name = nameInput.value.trim();
-    if (!name) {
-      nameInput.style.borderColor = '#E0616B';
-      nameInput.focus();
-      return;
-    }
-    enterChat(name);
-  });
-
-  nameInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') joinBtn.click();
-  });
-
-  sendBtn.addEventListener('click', () => sendMessage(msgInput.value));
-  msgInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') sendMessage(msgInput.value);
-  });
-
-  // Try to prefill remembered username
-  (async function init() {
-    try {
-      const result = await window.storage.get(USERNAME_KEY, false);
-      if (result && result.value) {
-        nameInput.value = result.value;
-      }
-    } catch (err) {
-      // no saved username yet
-    }
-  })();
-})();
-</script>
+	<section id="criar-conta" class="criar-conta">
+		<h1>Criar Conta</h1>
+		<input type="email" id="email" placeholder="Email">
+		<input type="text" id="usuario" placeholder="Usuário">
+		<div class="campo-senha">
+			<input type="password" id="senha" placeholder="Senha">
+			<button type="button" onclick="mostrarSenha()">
+				<img id="olho" src="svg/eye.svg" class="olho">
+			</button>
+		</div>
+		<button onclick="criarConta()" class="grande">Criar a Conta</button>
+	</section>
+	<section id="carregando" class="carregando">
+		<div id="app">
+			<div class="logo">
+				<svg width="250px" height="52px" viewBox="0 0 250 52" version="1.1" xmlns="http://www.w3.org/2000/svg">
+					<path class="xw7t59x" d="M37.7314595,31.1612046 C37.0876293,30.8391042 33.9223475,29.2816062 33.332139,29.0666255 C32.7419305,28.8517683 32.3127104,28.7444016 31.8834903,29.3887258 C31.4542703,30.0332973 30.2204788,31.4835521 29.8447567,31.91339 C29.4692818,32.3428571 29.0936834,32.3968494 28.4499768,32.0745019 C27.8060232,31.7521544 25.7314595,31.0723707 23.272278,28.8787027 C21.3582085,27.171583 20.0661004,25.0632896 19.6905019,24.4185946 C19.315027,23.7741467 19.6505946,23.4257297 19.9729421,23.1046178 C20.2625483,22.8161235 20.6167722,22.352556 20.9386255,21.9767104 C21.2606023,21.6007413 21.3678456,21.3320154 21.5824556,20.9026718 C21.7970657,20.472834 21.6898224,20.0968649 21.528834,19.7746409 C21.3678456,19.452417 20.0801853,16.2831815 19.543722,14.993915 C19.0210965,13.7387491 18.4903166,13.9087567 18.0950733,13.8887413 C17.7199691,13.870085 17.2902548,13.8661313 16.8611583,13.8661313 C16.4319382,13.8661313 15.7343629,14.0272433 15.144278,14.6716911 C14.5540695,15.3163861 12.8908108,16.8740077 12.8908108,20.0429961 C12.8908108,23.2121081 15.1978996,26.2734826 15.5198765,26.7031969 C15.8417297,27.1330348 20.0597992,33.6360772 26.5184865,36.4250193 C28.05461,37.0883707 29.2539305,37.4846023 30.1888494,37.7811274 C31.7312742,38.2713822 33.1348263,38.2021931 34.2440772,38.0363861 C35.4810811,37.8515521 38.0533127,36.478888 38.5898996,34.9750116 C39.1263629,33.470888 39.1263629,32.1818687 38.9653745,31.91339 C38.8045097,31.6447876 38.3752896,31.4835521 37.7314595,31.1612046 M25.9838765,47.2013591 L25.9752278,47.2013591 C22.1322625,47.1998763 18.3629343,46.1674749 15.0745946,44.2160926 L14.2926332,43.7519074 L6.18674906,45.8782394 L8.35027028,37.9751042 L7.84111198,37.1648494 C5.69723552,33.7549343 4.56500386,29.8139923 4.56660833,25.767166 C4.57130502,13.9587954 14.1789652,4.35187645 25.9924016,4.35187645 C31.7128649,4.35385328 37.0902239,6.58458689 41.1338378,10.6327722 C45.1773282,14.680834 47.4028724,20.0618996 47.4007737,25.7843398 C47.3959539,37.5936988 37.7882934,47.2013591 25.9838765,47.2013591 M44.2112742,7.556695 C39.3464092,2.68614672 32.8767258,0.00271814672 25.9836293,0 C11.7809421,0 0.221652509,11.5584247 0.215969112,25.7654363 C0.21411583,30.3069652 1.40058687,34.7397683 3.65553668,38.6475984 L-4.61852778e-14,52 L13.6596757,48.4167413 C17.4233205,50.4695597 21.6607876,51.5516293 25.9733745,51.5531121 L25.9838765,51.5531121 L25.984,51.5531121 C40.1852046,51.5531121 51.7456062,39.9934517 51.7512912,25.7860695 C51.7538842,18.9011274 49.0761392,12.4271197 44.2112742,7.556695" fill="currentColor">
+					</path>
+				</svg>
+			</div>
+			<div class="nome">
+				WhatisApp
+			</div>
+			
 
 </body>
+
 </html>
