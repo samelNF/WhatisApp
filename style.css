@@ -222,4 +222,5 @@
 		position: fixed;
 		inset: 0;
 		background-color: #0A0A0A;
+		display: none;
 	}
