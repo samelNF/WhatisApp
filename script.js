@@ -783,3 +783,37 @@ function alternarTema() {
 function abrirPrivacidade() {
     alert("Configurações de privacidade salvas por padrão.");
 }
+
+function solicitarPermissao() {
+  if ("Notification" in window) {
+    Notification.requestPermission().then((permissao) => {
+      if (permissao === "granted") {
+        console.log("Permissão concedida!");
+      } else {
+        console.log("Permissão negada.");
+      }
+    });
+  } else {
+    console.log("Este navegador não suporta notificações de área de trabalho.");
+  }
+}
+
+function enviarNotificacao(remetente, textoMensagem) {
+  // Verifica se o navegador suporta e se a permissão foi concedida
+  if ("Notification" in window && Notification.permission === "granted") {
+    
+    // Opcional: só envia a notificação se a aba do site não estiver visível no momento
+    if (document.hidden) {
+      const notificacao = new Notification(`Nova mensagem de ${remetente}`, {
+        body: textoMensagem,
+        icon: "/caminho/para/icone.png" // Opcional: caminho para o ícone
+      });
+
+      // Abre a aba do site ao clicar na notificação
+      notificacao.onclick = () => {
+        window.focus();
+      };
+    }
+  }
+}
+
