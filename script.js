@@ -1,4 +1,3 @@
-
 // ==========================================
 // CONFIGURAÇÃO DO SUPABASE
 // ==========================================
@@ -14,10 +13,12 @@ let intervaloHeartbeat = null;
 let intervaloChecarStatusContato = null;
 let arquivoFotoSelecionado = null;
 
-// NOVO: controle da reconexão do Realtime
+// Controle da reconexão do Realtime
 let timeoutReconexaoRealtime = null;
 let realtimeConectando = false;
 
+// Estado para Solicitações de Chat
+let solicitacaoAtual = null;
 
 // ==========================================
 // INICIALIZAÇÃO E SERVICE WORKER
@@ -25,8 +26,8 @@ let realtimeConectando = false;
 document.addEventListener("DOMContentLoaded", () => {
     verificarSessao();
     registrarServiceWorker();
+    inicializarEventosSolicitacoes();
 });
-
 
 async function alternarNotificacoes(checkbox) {
     if (checkbox.checked) {
@@ -50,7 +51,6 @@ async function alternarNotificacoes(checkbox) {
     }
 }
 
-
 function registrarServiceWorker() {
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js')
@@ -63,7 +63,6 @@ function registrarServiceWorker() {
     }
 }
 
-
 // ==========================================
 // UTILITÁRIOS E FORMATAÇÃO
 // ==========================================
@@ -72,12 +71,10 @@ function mostrarSenha() {
     if (senha) senha.type = senha.type === "password" ? "text" : "password";
 }
 
-
 function mostrarSenhaLogin() {
     const senha = document.getElementById("login-senha");
     if (senha) senha.type = senha.type === "password" ? "text" : "password";
 }
-
 
 function formatarHora(dataISO) {
     if (!dataISO) return "";
@@ -89,7 +86,6 @@ function formatarHora(dataISO) {
         minute: '2-digit'
     });
 }
-
 
 function formatarVistoPorUltimo(dataISO) {
     if (!dataISO) return "offline";
@@ -105,7 +101,6 @@ function formatarVistoPorUltimo(dataISO) {
     return `visto por último às ${formatarHora(dataISO)}`;
 }
 
-
 async function gerarHash(texto) {
     const dados = new TextEncoder().encode(texto);
     const hash = await crypto.subtle.digest("SHA-256", dados);
@@ -114,7 +109,6 @@ async function gerarHash(texto) {
         .map(byte => byte.toString(16).padStart(2, "0"))
         .join("");
 }
-
 
 // ==========================================
 // CONTROLE DE TELAS E NAVEGAÇÃO
@@ -128,7 +122,6 @@ function esconderTelasAutenticacao() {
     });
 }
 
-
 function mostrarTela(idTela) {
     esconderTelasAutenticacao();
 
@@ -138,7 +131,6 @@ function mostrarTela(idTela) {
         telaAlvo.style.display = "flex";
     }
 }
-
 
 function proximo() {
     localStorage.setItem("introducaoVista", "true");
@@ -154,7 +146,6 @@ function proximo() {
     }
 }
 
-
 async function mostrarAppPrincipal() {
     esconderTelasAutenticacao();
 
@@ -164,17 +155,11 @@ async function mostrarAppPrincipal() {
     if (telaConversas) telaConversas.style.display = "block";
     if (barraNavegacao) barraNavegacao.style.display = "flex";
 
-    solicitarPermissao();
-
-    // Primeiro carrega a lista para reconhecer remetentes nas notificações
     await carregarListaContatos();
-
-    // Inicia a escuta em tempo real
+    carregarSolicitacoes();
     inscreverRealtime();
-
     iniciarMonitoramentoPresenca();
 }
-
 
 function alternarAba(aba, botaoClicado) {
     const abas = document.querySelectorAll('.aba-conteudo');
@@ -206,7 +191,6 @@ function alternarAba(aba, botaoClicado) {
         botaoClicado.classList.add('ativo');
     }
 }
-
 
 // ==========================================
 // PERSISTÊNCIA DE SESSÃO
@@ -264,7 +248,6 @@ async function verificarSessao() {
     mostrarAppPrincipal();
 }
 
-
 function deslogar() {
     pararMonitoramentoPresenca();
 
@@ -286,7 +269,6 @@ function deslogar() {
 
     window.location.reload();
 }
-
 
 // ==========================================
 // AUTENTICAÇÃO E CADASTRO
@@ -341,7 +323,6 @@ async function criarConta() {
     mostrarTela('etapa-usuario');
 }
 
-
 function previewFoto(event) {
     const file = event.target.files[0];
 
@@ -362,7 +343,6 @@ function previewFoto(event) {
     }
 }
 
-
 async function salvarUsuarioSegundaEtapa() {
     const usuarioInput = document.getElementById("usuario").value.trim();
     const emailCadastrado = sessionStorage.getItem("emailCadastro");
@@ -374,9 +354,7 @@ async function salvarUsuarioSegundaEtapa() {
 
     if (!emailCadastrado) {
         alert("Sessão expirada. Por favor, recomece o cadastro.");
-
         mostrarTela('criar-conta');
-
         return;
     }
 
@@ -395,16 +373,8 @@ async function salvarUsuarioSegundaEtapa() {
             });
 
         if (uploadError) {
-            console.error(
-                "Erro no Upload do Storage:",
-                uploadError.message
-            );
-
-            alert(
-                "Erro ao salvar foto no servidor: " +
-                uploadError.message
-            );
-
+            console.error("Erro no Upload do Storage:", uploadError.message);
+            alert("Erro ao salvar foto no servidor: " + uploadError.message);
         } else {
             const { data: publicUrlData } = _supabase
                 .storage
@@ -425,42 +395,22 @@ async function salvarUsuarioSegundaEtapa() {
         .select();
 
     if (error || !data || data.length === 0) {
-        console.error(
-            "Erro no update da tabela usuarios:",
-            error?.message
-        );
-
-        alert(
-            "Erro ao vincular o perfil na tabela de usuários."
-        );
-
+        console.error("Erro no update da tabela usuarios:", error?.message);
+        alert("Erro ao vincular o perfil na tabela de usuários.");
         return;
     }
 
-    localStorage.setItem(
-        "usuarioLogado",
-        emailCadastrado
-    );
-
-    localStorage.setItem(
-        "nomeUsuario",
-        usuarioInput
-    );
+    localStorage.setItem("usuarioLogado", emailCadastrado);
+    localStorage.setItem("nomeUsuario", usuarioInput);
 
     if (urlFotoPublica) {
-        localStorage.setItem(
-            "fotoUsuario",
-            urlFotoPublica
-        );
+        localStorage.setItem("fotoUsuario", urlFotoPublica);
     }
 
     sessionStorage.removeItem("emailCadastro");
-
     atualizarFotoAbaVoce();
-
     mostrarAppPrincipal();
 }
-
 
 async function conectarConta() {
     const email = document.getElementById("login-email").value.trim();
@@ -485,34 +435,23 @@ async function conectarConta() {
     const senhaHash = await gerarHash(email + senha);
 
     if (senhaHash === conta.senha) {
-        localStorage.setItem(
-            "usuarioLogado",
-            conta.email
-        );
+        localStorage.setItem("usuarioLogado", conta.email);
 
         if (conta.usuario) {
-            localStorage.setItem(
-                "nomeUsuario",
-                conta.usuario
-            );
+            localStorage.setItem("nomeUsuario", conta.usuario);
         }
 
         if (conta.foto_url) {
-            localStorage.setItem(
-                "fotoUsuario",
-                conta.foto_url
-            );
+            localStorage.setItem("fotoUsuario", conta.foto_url);
         }
 
         atualizarFotoAbaVoce();
-
         mostrarAppPrincipal();
 
     } else {
         alert("E-mail ou senha incorretos.");
     }
 }
-
 
 // ==========================================
 // GERENCIAMENTO DE CONTATOS
@@ -528,21 +467,13 @@ async function carregarListaContatos() {
         .select("contato_usuario")
         .eq("usuario_origem", meuUsuario);
 
-    if (
-        erroRelacao ||
-        !relacaoContatos ||
-        relacaoContatos.length === 0
-    ) {
+    if (erroRelacao || !relacaoContatos || relacaoContatos.length === 0) {
         todosContatos = [];
-
         renderizarContatos([]);
-
         return;
     }
 
-    const nomesSalvos = relacaoContatos.map(
-        c => c.contato_usuario
-    );
+    const nomesSalvos = relacaoContatos.map(c => c.contato_usuario);
 
     const { data: usuarios, error: erroUsuarios } = await _supabase
         .from("usuarios")
@@ -553,41 +484,29 @@ async function carregarListaContatos() {
 
     const contatosComMensagens = await Promise.all(
         usuarios.map(async (contato) => {
-
             const { data: ultimasMsgs } = await _supabase
                 .from("mensagens")
                 .select("texto, created_at")
-                .or(
-                    `and(remetente_email.eq.${meuEmail},destinatario_email.eq.${contato.email}),and(remetente_email.eq.${contato.email},destinatario_email.eq.${meuEmail})`
-                )
+                .or(`and(remetente_email.eq.${meuEmail},destinatario_email.eq.${contato.email}),and(remetente_email.eq.${contato.email},destinatario_email.eq.${meuEmail})`)
                 .order("created_at", { ascending: false })
                 .limit(1);
 
-            const temMsg =
-                ultimasMsgs &&
-                ultimasMsgs.length > 0;
+            const temMsg = ultimasMsgs && ultimasMsgs.length > 0;
 
             return {
                 ...contato,
-                ultimaMsg: temMsg
-                    ? ultimasMsgs[0].texto
-                    : "Nenhuma mensagem ainda",
-                horaUltimaMsg: temMsg
-                    ? formatarHora(ultimasMsgs[0].created_at)
-                    : ""
+                ultimaMsg: temMsg ? ultimasMsgs[0].texto : "Nenhuma mensagem ainda",
+                horaUltimaMsg: temMsg ? formatarHora(ultimasMsgs[0].created_at) : ""
             };
         })
     );
 
     todosContatos = contatosComMensagens;
-
     renderizarContatos(todosContatos);
 }
 
-
 function renderizarContatos(lista) {
     const container = document.getElementById("lista-contatos");
-
     if (!container) return;
 
     container.innerHTML = "";
@@ -598,13 +517,11 @@ function renderizarContatos(lista) {
                 Nenhum contato encontrado.
             </li>
         `;
-
         return;
     }
 
     lista.forEach(contato => {
         const li = document.createElement("li");
-
         li.classList.add("item-contato");
 
         const foto = contato.foto_url || "svg/icon.svg";
@@ -622,29 +539,18 @@ function renderizarContatos(lista) {
         `;
 
         li.onclick = () => {
-            abrirChatCom(
-                contato.email,
-                nome,
-                foto
-            );
+            abrirChatCom(contato.email, nome, foto);
         };
 
         container.appendChild(li);
     });
 }
 
-
 async function adicionarNovoContato(nomeUsuarioAdicionar) {
     const meuUsuario = localStorage.getItem("nomeUsuario");
 
-    if (
-        !nomeUsuarioAdicionar ||
-        nomeUsuarioAdicionar === meuUsuario
-    ) {
-        alert(
-            "Digite um nome de usuário válido diferente do seu."
-        );
-
+    if (!nomeUsuarioAdicionar || nomeUsuarioAdicionar === meuUsuario) {
+        alert("Digite um nome de usuário válido diferente do seu.");
         return;
     }
 
@@ -667,73 +573,45 @@ async function adicionarNovoContato(nomeUsuarioAdicionar) {
         }]);
 
     if (error) {
-        alert(
-            "Este usuário já está na sua lista ou ocorreu um erro."
-        );
-
+        alert("Este usuário já está na sua lista ou ocorreu um erro.");
         return;
     }
 
     alert("Contato adicionado com sucesso!");
-
     carregarListaContatos();
 }
 
-
 function pedirEmailContato() {
-    const usuarioDigitado = prompt(
-        "Digite o nome de usuário da pessoa que deseja adicionar:"
-    );
-
+    const usuarioDigitado = prompt("Digite o nome de usuário da pessoa que deseja adicionar:");
     if (usuarioDigitado) {
-        adicionarNovoContato(
-            usuarioDigitado.trim()
-        );
+        adicionarNovoContato(usuarioDigitado.trim());
     }
 }
 
-
 function filtrarContatos() {
-    const termo = document
-        .getElementById("input-pesquisa")
-        .value
-        .toLowerCase();
+    const termo = document.getElementById("input-pesquisa").value.toLowerCase();
 
     const filtrados = todosContatos.filter(c => {
         const nome = (c.usuario || "").toLowerCase();
         const email = (c.email || "").toLowerCase();
-
-        return (
-            nome.includes(termo) ||
-            email.includes(termo)
-        );
+        return nome.includes(termo) || email.includes(termo);
     });
 
     renderizarContatos(filtrados);
 }
-
 
 // ==========================================
 // CHAT E MENSAGENS TEMPO REAL
 // ==========================================
 function renderizarBalao(texto, ehMinha, dataCriacao) {
     const container = document.getElementById("chat-mensagens");
-
     if (!container) return;
 
     const balao = document.createElement("div");
-
     balao.classList.add("balao-msg");
+    balao.classList.add(ehMinha ? "balao-enviada" : "balao-recebida");
 
-    balao.classList.add(
-        ehMinha
-            ? "balao-enviada"
-            : "balao-recebida"
-    );
-
-    const horaFormatada = formatarHora(
-        dataCriacao || new Date()
-    );
+    const horaFormatada = formatarHora(dataCriacao || new Date());
 
     balao.innerHTML = `
         <span>${texto}</span>
@@ -741,10 +619,8 @@ function renderizarBalao(texto, ehMinha, dataCriacao) {
     `;
 
     container.appendChild(balao);
-
     container.scrollTop = container.scrollHeight;
 }
-
 
 async function carregarMensagens() {
     const meuEmail = localStorage.getItem("usuarioLogado");
@@ -752,7 +628,6 @@ async function carregarMensagens() {
     if (!meuEmail || !destinatarioAtual) return;
 
     const container = document.getElementById("chat-mensagens");
-
     if (!container) return;
 
     container.innerHTML = "";
@@ -760,19 +635,11 @@ async function carregarMensagens() {
     const { data: mensagens, error } = await _supabase
         .from("mensagens")
         .select("*")
-        .or(
-            `and(remetente_email.eq.${meuEmail},destinatario_email.eq.${destinatarioAtual}),and(remetente_email.eq.${destinatarioAtual},destinatario_email.eq.${meuEmail})`
-        )
-        .order("created_at", {
-            ascending: true
-        });
+        .or(`and(remetente_email.eq.${meuEmail},destinatario_email.eq.${destinatarioAtual}),and(remetente_email.eq.${destinatarioAtual},destinatario_email.eq.${meuEmail})`)
+        .order("created_at", { ascending: true });
 
     if (error) {
-        console.error(
-            "Erro ao carregar mensagens:",
-            error.message
-        );
-
+        console.error("Erro ao carregar mensagens:", error.message);
         return;
     }
 
@@ -787,19 +654,12 @@ async function carregarMensagens() {
     container.scrollTop = container.scrollHeight;
 }
 
-
 async function enviarMensagem() {
     const input = document.getElementById("input-mensagem");
     const texto = input.value.trim();
     const meuEmail = localStorage.getItem("usuarioLogado");
 
-    if (
-        texto === "" ||
-        !destinatarioAtual ||
-        !meuEmail
-    ) {
-        return;
-    }
+    if (texto === "" || !destinatarioAtual || !meuEmail) return;
 
     input.value = "";
 
@@ -812,17 +672,12 @@ async function enviarMensagem() {
         }]);
 
     if (error) {
-        console.error(
-            "Erro ao enviar mensagem:",
-            error.message
-        );
-
+        console.error("Erro ao enviar mensagem:", error.message);
         alert("Erro ao enviar mensagem.");
     }
 
     carregarListaContatos();
 }
-
 
 function checarEnter(event) {
     if (event.key === "Enter") {
@@ -830,12 +685,8 @@ function checarEnter(event) {
     }
 }
 
-
 async function checarStatusContato(emailContato) {
-    const spanStatus = document.getElementById(
-        "chat-status-usuario"
-    );
-
+    const spanStatus = document.getElementById("chat-status-usuario");
     if (!spanStatus) return;
 
     const { data: usuario } = await _supabase
@@ -845,10 +696,7 @@ async function checarStatusContato(emailContato) {
         .maybeSingle();
 
     if (usuario) {
-        const textoStatus = formatarVistoPorUltimo(
-            usuario.visto_por_ultimo
-        );
-
+        const textoStatus = formatarVistoPorUltimo(usuario.visto_por_ultimo);
         spanStatus.innerText = textoStatus;
 
         if (textoStatus === "online") {
@@ -859,119 +707,71 @@ async function checarStatusContato(emailContato) {
     }
 }
 
-
-function abrirChatCom(
-    emailDestinatario,
-    nomeDestinatario,
-    fotoDestinatario
-) {
+function abrirChatCom(emailDestinatario, nomeDestinatario, fotoDestinatario) {
     destinatarioAtual = emailDestinatario;
 
-    const elemNome = document.getElementById(
-        "chat-nome-usuario"
-    );
+    const elemNome = document.getElementById("chat-nome-usuario");
+    const elemFoto = document.getElementById("chat-foto-usuario");
+    const telaChat = document.getElementById("tela-chat");
 
-    const elemFoto = document.getElementById(
-        "chat-foto-usuario"
-    );
+    if (elemNome) elemNome.innerText = nomeDestinatario || emailDestinatario;
+    if (elemFoto && fotoDestinatario) elemFoto.src = fotoDestinatario;
+    if (telaChat) telaChat.style.display = "flex";
 
-    const telaChat = document.getElementById(
-        "tela-chat"
-    );
-
-    if (elemNome) {
-        elemNome.innerText =
-            nomeDestinatario ||
-            emailDestinatario;
-    }
-
-    if (elemFoto && fotoDestinatario) {
-        elemFoto.src = fotoDestinatario;
-    }
-
-    if (telaChat) {
-        telaChat.style.display = "flex";
-    }
+    // Garante que a barra de digitação padrão esteja visível para chats normais
+    const chatInputBox = document.getElementById('chat-input-box');
+    const chatActionBar = document.getElementById('chat-action-bar');
+    if (chatInputBox) chatInputBox.classList.remove('hidden');
+    if (chatActionBar) chatActionBar.classList.add('hidden');
 
     checarStatusContato(emailDestinatario);
 
-    if (intervaloChecarStatusContato) {
-        clearInterval(
-            intervaloChecarStatusContato
-        );
-    }
+    if (intervaloChecarStatusContato) clearInterval(intervaloChecarStatusContato);
 
     intervaloChecarStatusContato = setInterval(() => {
         if (destinatarioAtual) {
-            checarStatusContato(
-                destinatarioAtual
-            );
+            checarStatusContato(destinatarioAtual);
         }
     }, 15000);
 
     carregarMensagens();
 }
 
-
 function fecharChat() {
-    const telaChat = document.getElementById(
-        "tela-chat"
-    );
-
-    if (telaChat) {
-        telaChat.style.display = "none";
-    }
+    const telaChat = document.getElementById("tela-chat");
+    if (telaChat) telaChat.style.display = "none";
 
     destinatarioAtual = null;
 
     if (intervaloChecarStatusContato) {
-        clearInterval(
-            intervaloChecarStatusContato
-        );
-
+        clearInterval(intervaloChecarStatusContato);
         intervaloChecarStatusContato = null;
     }
 }
-
 
 // ==========================================
 // REALTIME
 // ==========================================
 function inscreverRealtime() {
-    const meuEmail = localStorage.getItem(
-        "usuarioLogado"
-    );
+    const meuEmail = localStorage.getItem("usuarioLogado");
 
-    if (!meuEmail || !_supabase) {
-        return;
-    }
+    if (!meuEmail || !_supabase) return;
 
-    // Impede duas conexões sendo criadas ao mesmo tempo
-    if (realtimeConectando) {
-        return;
-    }
+    if (realtimeConectando) return;
 
     realtimeConectando = true;
 
-    // Cancela uma reconexão que ainda esteja agendada
     if (timeoutReconexaoRealtime) {
         clearTimeout(timeoutReconexaoRealtime);
         timeoutReconexaoRealtime = null;
     }
 
-    // Remove a conexão anterior
     if (escutaRealtime) {
-        _supabase.removeChannel(
-            escutaRealtime
-        );
-
+        _supabase.removeChannel(escutaRealtime);
         escutaRealtime = null;
     }
 
-    const canal = _supabase.channel(
-        `chat-room-${Date.now()}`
-    );
-
+    const canal = _supabase.channel(`chat-room-${Date.now()}`);
     escutaRealtime = canal;
 
     canal
@@ -985,55 +785,11 @@ function inscreverRealtime() {
             },
             async (payload) => {
                 const novaMsg = payload.new;
-
-                console.log(
-                    "📩 Nova mensagem recebida:",
-                    novaMsg
-                );
-
-                // Atualiza a lista de contatos
                 carregarListaContatos();
 
-                // Se o chat do remetente estiver aberto,
-                // mostra a mensagem imediatamente
-                if (
-                    destinatarioAtual &&
-                    novaMsg.remetente_email ===
-                    destinatarioAtual
-                ) {
-                    renderizarBalao(
-                        novaMsg.texto,
-                        false,
-                        novaMsg.created_at
-                    );
+                if (destinatarioAtual && novaMsg.remetente_email === destinatarioAtual) {
+                    renderizarBalao(novaMsg.texto, false, novaMsg.created_at);
                 }
-
-                // Procura os dados do remetente
-                const contato = todosContatos.find(
-                    c =>
-                        c.email ===
-                        novaMsg.remetente_email
-                );
-
-                const nomeRemetente = contato
-                    ? (
-                        contato.usuario ||
-                        contato.email
-                    )
-                    : novaMsg.remetente_email;
-
-                const fotoRemetente = contato
-                    ? contato.foto_url
-                    : null;
-
-                // Envia a notificação
-                enviarNotificacao(
-                    nomeRemetente,
-                    novaMsg.texto,
-                    novaMsg.remetente_email,
-                    fotoRemetente,
-                    novaMsg.id
-                );
             }
         )
         .on(
@@ -1047,16 +803,8 @@ function inscreverRealtime() {
             (payload) => {
                 const novaMsg = payload.new;
 
-                if (
-                    destinatarioAtual &&
-                    novaMsg.destinatario_email ===
-                    destinatarioAtual
-                ) {
-                    renderizarBalao(
-                        novaMsg.texto,
-                        true,
-                        novaMsg.created_at
-                    );
+                if (destinatarioAtual && novaMsg.destinatario_email === destinatarioAtual) {
+                    renderizarBalao(novaMsg.texto, true, novaMsg.created_at);
                 }
 
                 carregarListaContatos();
@@ -1065,539 +813,352 @@ function inscreverRealtime() {
         .subscribe((status, err) => {
             realtimeConectando = false;
 
-            console.log(
-                "🔌 Status do Realtime:",
-                status
-            );
-
-            if (err) {
-                console.error(
-                    "Erro no Realtime:",
-                    err
-                );
-            }
-
-            // Conexão funcionando
             if (status === "SUBSCRIBED") {
-                console.log(
-                    "✅ Realtime conectado com sucesso."
-                );
-
+                console.log("✅ Realtime conectado com sucesso.");
                 return;
             }
 
-            // Se o iOS derrubar a conexão,
-            // tenta conectar novamente
-            if (
-                status === "CHANNEL_ERROR" ||
-                status === "CLOSED" ||
-                status === "TIMED_OUT"
-            ) {
-                console.warn(
-                    "⚠️ Realtime caiu. Tentando reconectar..."
-                );
-
-                if (escutaRealtime === canal) {
-                    escutaRealtime = null;
-                }
-
+            if (status === "CHANNEL_ERROR" || status === "CLOSED" || status === "TIMED_OUT") {
+                console.warn("⚠️ Realtime caiu. Tentando reconectar...");
+                if (escutaRealtime === canal) escutaRealtime = null;
                 agendarReconexaoRealtime();
             }
         });
 }
 
-
-// ==========================================
-// RECONEXÃO AUTOMÁTICA DO REALTIME
-// ==========================================
 function agendarReconexaoRealtime() {
-    if (timeoutReconexaoRealtime) {
-        return;
-    }
+    if (timeoutReconexaoRealtime) return;
 
     timeoutReconexaoRealtime = setTimeout(() => {
         timeoutReconexaoRealtime = null;
 
-        if (
-            document.visibilityState === "visible" &&
-            localStorage.getItem("usuarioLogado")
-        ) {
-            console.log(
-                "🔄 Tentando reconectar o Realtime..."
-            );
-
+        if (document.visibilityState === "visible" && localStorage.getItem("usuarioLogado")) {
+            console.log("🔄 Tentando reconectar o Realtime...");
             inscreverRealtime();
         }
     }, 5000);
 }
 
-
 // ==========================================
 // MONITORAMENTO DE PRESENÇA
 // ==========================================
 async function atualizarPresenca() {
-    const meuEmail = localStorage.getItem(
-        "usuarioLogado"
-    );
+    const meuEmail = localStorage.getItem("usuarioLogado");
 
     if (!meuEmail) return;
 
     await _supabase
         .from("usuarios")
-        .update({
-            visto_por_ultimo:
-                new Date().toISOString()
-        })
+        .update({ visto_por_ultimo: new Date().toISOString() })
         .eq("email", meuEmail);
 }
-
 
 function iniciarMonitoramentoPresenca() {
     atualizarPresenca();
 
-    if (intervaloHeartbeat) {
-        clearInterval(intervaloHeartbeat);
-    }
+    if (intervaloHeartbeat) clearInterval(intervaloHeartbeat);
 
     intervaloHeartbeat = setInterval(() => {
         atualizarPresenca();
     }, 30000);
 }
 
-
 function pararMonitoramentoPresenca() {
     if (intervaloHeartbeat) {
-        clearInterval(
-            intervaloHeartbeat
-        );
-
+        clearInterval(intervaloHeartbeat);
         intervaloHeartbeat = null;
     }
 }
 
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+        console.log("📱 App em primeiro plano. Reiniciando conexões...");
+        inscreverRealtime();
+        carregarListaContatos();
 
-document.addEventListener(
-    "visibilitychange",
-    () => {
-        if (
-            document.visibilityState ===
-            "visible"
-        ) {
-            console.log(
-                "📱 App em primeiro plano. Reiniciando conexões..."
-            );
-
-            // Quando o iOS devolve o app,
-            // garante que o Realtime esteja conectado
-            inscreverRealtime();
-
-            carregarListaContatos();
-
-            if (destinatarioAtual) {
-                carregarMensagens();
-            }
+        if (destinatarioAtual) {
+            carregarMensagens();
         }
     }
-);
-
+});
 
 // ==========================================
 // ABA VOCÊ / PERFIL E CONFIGURAÇÕES
 // ==========================================
 function atualizarFotoAbaVoce() {
-    const fotoSalva =
-        localStorage.getItem(
-            "fotoUsuario"
-        );
-
-    const imgVoce =
-        document.getElementById(
-            "foto-aba-voce"
-        );
+    const fotoSalva = localStorage.getItem("fotoUsuario");
+    const imgVoce = document.getElementById("foto-aba-voce");
 
     if (imgVoce && fotoSalva) {
         imgVoce.src = fotoSalva;
     }
 }
 
-
 function carregarDadosAbaVoce() {
-    const email =
-        localStorage.getItem(
-            "usuarioLogado"
-        );
+    const email = localStorage.getItem("usuarioLogado");
+    const usuario = localStorage.getItem("nomeUsuario");
+    const foto = localStorage.getItem("fotoUsuario");
 
-    const usuario =
-        localStorage.getItem(
-            "nomeUsuario"
-        );
+    const elemNome = document.getElementById("voce-nome-usuario");
+    const elemEmail = document.getElementById("voce-email-usuario");
+    const elemFoto = document.getElementById("voce-foto-perfil");
 
-    const foto =
-        localStorage.getItem(
-            "fotoUsuario"
-        );
+    if (elemNome) elemNome.innerText = usuario || "Sem nome";
+    if (elemEmail) elemEmail.innerText = email || "";
+    if (elemFoto && foto) elemFoto.src = foto;
 
-    const elemNome =
-        document.getElementById(
-            "voce-nome-usuario"
-        );
+    const temaEscuro = localStorage.getItem("temaEscuro") === "true";
+    const permissaoConcedida = ("Notification" in window) && Notification.permission === "granted";
+    const prefNotificacoes = localStorage.getItem("notificacoes") !== "false";
 
-    const elemEmail =
-        document.getElementById(
-            "voce-email-usuario"
-        );
+    const checkTema = document.getElementById("check-tema-escuro");
+    const checkNotif = document.getElementById("check-notificacoes");
 
-    const elemFoto =
-        document.getElementById(
-            "voce-foto-perfil"
-        );
-
-    if (elemNome) {
-        elemNome.innerText =
-            usuario || "Sem nome";
-    }
-
-    if (elemEmail) {
-        elemEmail.innerText =
-            email || "";
-    }
-
-    if (elemFoto && foto) {
-        elemFoto.src = foto;
-    }
-
-    const temaEscuro =
-        localStorage.getItem(
-            "temaEscuro"
-        ) === "true";
-
-    const permissaoConcedida =
-        ("Notification" in window) &&
-        Notification.permission ===
-        "granted";
-
-    const prefNotificacoes =
-        localStorage.getItem(
-            "notificacoes"
-        ) !== "false";
-
-    const checkTema =
-        document.getElementById(
-            "check-tema-escuro"
-        );
-
-    const checkNotif =
-        document.getElementById(
-            "check-notificacoes"
-        );
-
-    if (checkTema) {
-        checkTema.checked =
-            temaEscuro;
-    }
-
-    if (checkNotif) {
-        checkNotif.checked =
-            permissaoConcedida &&
-            prefNotificacoes;
-    }
+    if (checkTema) checkTema.checked = temaEscuro;
+    if (checkNotif) checkNotif.checked = permissaoConcedida && prefNotificacoes;
 }
 
-
 async function trocarFotoPerfil(event) {
-    const arquivo =
-        event.target.files[0];
-
-    const email =
-        localStorage.getItem(
-            "usuarioLogado"
-        );
+    const arquivo = event.target.files[0];
+    const email = localStorage.getItem("usuarioLogado");
 
     if (!arquivo || !email) return;
 
-    const fileExt =
-        arquivo.name.split('.').pop();
+    const fileExt = arquivo.name.split('.').pop();
+    const fileName = `avatar_${Date.now()}.${fileExt}`;
 
-    const fileName =
-        `avatar_${Date.now()}.${fileExt}`;
-
-    const {
-        data: uploadData,
-        error: uploadError
-    } = await _supabase
+    const { data: uploadData, error: uploadError } = await _supabase
         .storage
         .from('avatars')
-        .upload(
-            fileName,
-            arquivo,
-            {
-                cacheControl: '3600',
-                upsert: true
-            }
-        );
+        .upload(fileName, arquivo, {
+            cacheControl: '3600',
+            upsert: true
+        });
 
     if (uploadError) {
-        alert(
-            "Erro ao enviar a imagem: " +
-            uploadError.message
-        );
-
+        alert("Erro ao enviar a imagem: " + uploadError.message);
         return;
     }
 
-    const {
-        data: publicUrlData
-    } = _supabase
+    const { data: publicUrlData } = _supabase
         .storage
         .from('avatars')
         .getPublicUrl(fileName);
 
-    const urlFotoPublica =
-        publicUrlData.publicUrl;
+    const urlFotoPublica = publicUrlData.publicUrl;
 
-    const {
-        error: updateError
-    } = await _supabase
+    const { error: updateError } = await _supabase
         .from("usuarios")
-        .update({
-            foto_url:
-                urlFotoPublica
-        })
+        .update({ foto_url: urlFotoPublica })
         .eq("email", email);
 
     if (updateError) {
-        alert(
-            "Erro ao salvar foto no perfil."
-        );
-
+        alert("Erro ao salvar foto de perfil.");
         return;
     }
 
-    localStorage.setItem(
-        "fotoUsuario",
-        urlFotoPublica
-    );
-
-    const elemFoto =
-        document.getElementById(
-            "voce-foto-perfil"
-        );
-
-    if (elemFoto) {
-        elemFoto.src =
-            urlFotoPublica;
-    }
-
+    localStorage.setItem("fotoUsuario", urlFotoPublica);
     atualizarFotoAbaVoce();
+    carregarDadosAbaVoce();
 }
 
+// ==========================================
+// GERENCIAMENTO DE SOLICITAÇÕES DE CHAT
+// ==========================================
+function inicializarEventosSolicitacoes() {
+    const btnOpcoes = document.getElementById('btn-opcoes');
+    const dropdownMenu = document.getElementById('dropdown-menu');
+    const btnAbrirSolicitacoes = document.getElementById('btn-abrir-solicitacoes');
+    const btnFecharModalSolicitacoes = document.getElementById('btn-fechar-modal-solicitacoes');
+    const modalSolicitacoes = document.getElementById('modal-solicitacoes');
+    const btnAceitarSolicitacao = document.getElementById('btn-aceitar-solicitacao');
+    const btnIgnorarSolicitacao = document.getElementById('btn-ignorar-solicitacao');
 
-function salvarPreferencias() {
-    const checkNotif =
-        document.getElementById(
-            "check-notificacoes"
-        );
+    if (btnOpcoes && dropdownMenu) {
+        btnOpcoes.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdownMenu.classList.toggle('hidden');
+        });
 
-    if (checkNotif) {
-        localStorage.setItem(
-            "notificacoes",
-            checkNotif.checked
-        );
+        document.addEventListener('click', () => {
+            dropdownMenu.classList.add('hidden');
+        });
+    }
+
+    if (btnAbrirSolicitacoes && modalSolicitacoes) {
+        btnAbrirSolicitacoes.addEventListener('click', () => {
+            if (dropdownMenu) dropdownMenu.classList.add('hidden');
+            modalSolicitacoes.classList.remove('hidden');
+            carregarSolicitacoes();
+        });
+    }
+
+    if (btnFecharModalSolicitacoes && modalSolicitacoes) {
+        btnFecharModalSolicitacoes.addEventListener('click', () => {
+            modalSolicitacoes.classList.add('hidden');
+        });
+    }
+
+    if (btnAceitarSolicitacao) {
+        btnAceitarSolicitacao.addEventListener('click', aceitarSolicitacaoAtual);
+    }
+
+    if (btnIgnorarSolicitacao) {
+        btnIgnorarSolicitacao.addEventListener('click', ignorarSolicitacaoAtual);
     }
 }
 
+async function carregarSolicitacoes() {
+    const meuEmail = localStorage.getItem("usuarioLogado");
+    if (!meuEmail || !_supabase) return;
 
-function alternarTema() {
-    const checkTema =
-        document.getElementById(
-            "check-tema-escuro"
-        );
+    const badgeSolicitacoes = document.getElementById('badge-solicitacoes');
+    const contadorMenu = document.getElementById('contador-menu');
+    const listaSolicitacoes = document.getElementById('lista-solicitacoes');
+    const msgSemSolicitacoes = document.getElementById('msg-sem-solicitacoes');
 
-    const ativo =
-        checkTema
-            ? checkTema.checked
-            : false;
+    const { data: solicitacoes, error } = await _supabase
+        .from('solicitacoes_chat')
+        .select('*')
+        .eq('destinatario_email', meuEmail)
+        .eq('status', 'pendente');
 
-    localStorage.setItem(
-        "temaEscuro",
-        ativo
-    );
-
-    if (ativo) {
-        document.body.classList.add(
-            "dark-theme"
-        );
-
-        document.body.classList.remove(
-            "light-theme"
-        );
-
-    } else {
-        document.body.classList.add(
-            "light-theme"
-        );
-
-        document.body.classList.remove(
-            "dark-theme"
-        );
-    }
-}
-
-
-function abrirPrivacidade() {
-    alert(
-        "Configurações de privacidade salvas por padrão."
-    );
-}
-
-
-// ==========================================
-// NOTIFICAÇÕES DO NAVEGADOR
-// ==========================================
-function solicitarPermissao() {
-    if ("Notification" in window) {
-
-        // Se já decidiu, não pede novamente
-        if (
-            Notification.permission !==
-            "default"
-        ) {
-            return;
-        }
-
-        Notification.requestPermission()
-            .then((permissao) => {
-
-                if (
-                    permissao ===
-                    "granted"
-                ) {
-                    console.log(
-                        "Permissão para notificações concedida."
-                    );
-
-                    localStorage.setItem(
-                        "notificacoes",
-                        "true"
-                    );
-
-                } else {
-                    console.log(
-                        "Permissão para notificações negada."
-                    );
-                }
-            });
-    } else {
-        console.log(
-            "Este navegador não suporta notificações."
-        );
-    }
-}
-
-
-// ==========================================
-// ENVIAR NOTIFICAÇÃO
-// ==========================================
-function enviarNotificacao(
-    remetente,
-    textoMensagem,
-    emailRemetente,
-    fotoRemetente,
-    idMensagem = null
-) {
-    const notificacoesAtivas =
-        localStorage.getItem(
-            "notificacoes"
-        ) !== "false";
-
-    if (
-        !("Notification" in window) ||
-        Notification.permission !==
-        "granted" ||
-        !notificacoesAtivas
-    ) {
+    if (error) {
+        console.error('Erro ao buscar solicitações:', error);
         return;
     }
 
-    // Se o usuário já está no chat da pessoa,
-    // não precisa mostrar notificação
-    if (
-        !document.hidden &&
-        destinatarioAtual ===
-        emailRemetente
-    ) {
+    const total = solicitacoes ? solicitacoes.length : 0;
+    if (contadorMenu) contadorMenu.textContent = total;
+    if (badgeSolicitacoes) {
+        badgeSolicitacoes.textContent = total;
+        if (total > 0) {
+            badgeSolicitacoes.classList.remove('hidden');
+        } else {
+            badgeSolicitacoes.classList.add('hidden');
+        }
+    }
+
+    if (!listaSolicitacoes) return;
+    listaSolicitacoes.innerHTML = '';
+
+    if (total === 0) {
+        if (msgSemSolicitacoes) msgSemSolicitacoes.classList.remove('hidden');
         return;
     }
 
-    /*
-     * ANTES:
-     * tag: msg-${emailRemetente}
-     *
-     * Isso fazia todas as mensagens do mesmo
-     * remetente usarem a mesma notificação.
-     *
-     * Agora cada mensagem tem sua própria tag.
-     */
-    const identificador =
-        idMensagem ||
-        `${emailRemetente}-${Date.now()}-${Math.random()
-            .toString(36)
-            .slice(2, 8)}`;
+    if (msgSemSolicitacoes) msgSemSolicitacoes.classList.add('hidden');
 
-    const opcoes = {
-        body: textoMensagem,
+    solicitacoes.forEach((solicitacao) => {
+        const li = document.createElement('li');
+        li.className = 'solicitacao-item';
+        li.innerHTML = `
+            <div class="user-info">
+                <strong>${solicitacao.remetente_email}</strong>
+                <p>Enviou um pedido de conversa</p>
+            </div>
+            <button class="btn-abrir-pedido">Ver</button>
+        `;
 
-        icon:
-            fotoRemetente ||
-            "svg/icon.svg",
+        li.querySelector('.btn-abrir-pedido').addEventListener('click', () => {
+            abrirChatSolicitacao(solicitacao);
+        });
 
-        badge:
-            "svg/icon.svg",
-
-        tag:
-            `msg-${identificador}`,
-
-        renotify: true,
-
-        data: {
-            emailRemetente:
-                emailRemetente,
-
-            remetente:
-                remetente,
-
-            fotoRemetente:
-                fotoRemetente
-        }
-    };
-
-    // Sempre tenta utilizar o Service Worker
-    if (
-        'serviceWorker' in navigator
-    ) {
-        navigator.serviceWorker.ready
-            .then(reg => {
-
-                return reg.showNotification(
-                    remetente,
-                    opcoes
-                );
-
-            })
-            .catch(err => {
-
-                console.error(
-                    "Erro ao exibir via Service Worker:",
-                    err
-                );
-
-            });
-
-    } else {
-        new Notification(
-            remetente,
-            opcoes
-        );
-    }
+        listaSolicitacoes.appendChild(li);
+    });
 }
 
+// 1. Ajuste na função de abrir o pedido (para apenas carregar os dados sem abrir o chat de verdade)
+function abrirChatSolicitacao(solicitacao) {
+    solicitacaoAtual = solicitacao;
+    
+    const modalSolicitacoes = document.getElementById('modal-solicitacoes');
+    const chatInputBox = document.getElementById('chat-input-box');
+    const chatActionBar = document.getElementById('chat-action-bar');
+    const telaChat = document.getElementById("tela-chat");
+
+    if (modalSolicitacoes) modalSolicitacoes.classList.add('hidden');
+    
+    // Mostra a barra de ações (Aceitar/Ignorar) e esconde a digitação
+    if (chatInputBox) chatInputBox.classList.add('hidden');
+    if (chatActionBar) chatActionBar.classList.remove('hidden');
+
+    // Preenche as informações do topo do chat
+    destinatarioAtual = solicitacao.remetente_email;
+    const elemNome = document.getElementById("chat-nome-usuario");
+    if (elemNome) elemNome.innerText = solicitacao.remetente_email;
+
+    // Abre a tela do chat apenas para visualização da solicitação
+    if (telaChat) telaChat.style.display = "flex";
+    
+    // Limpa a tela de mensagens até ser aceito
+    const container = document.getElementById("chat-mensagens");
+    if (container) container.innerHTML = `<div style="text-align:center; padding:20px; color:#888;">Aceite a solicitação para conversar com este usuário.</div>`;
+}
+
+// 2. Ajuste na função de Aceitar (salva o contato para AMBOS os usuários)
+async function aceitarSolicitacaoAtual() {
+    if (!solicitacaoAtual) return;
+
+    const meuEmail = localStorage.getItem("usuarioLogado");
+    const meuUsuario = localStorage.getItem("nomeUsuario");
+
+    // Atualiza status da solicitação
+    const { error: errorStatus } = await _supabase
+        .from('solicitacoes_chat')
+        .update({ status: 'aceito' })
+        .eq('id', solicitacaoAtual.id);
+
+    if (errorStatus) return console.error('Erro ao aceitar:', errorStatus);
+
+    // Adiciona o usuário na SUA lista de contatos
+    await _supabase
+        .from('contatos')
+        .insert([{ 
+            usuario_origem: meuUsuario, 
+            contato_usuario: solicitacaoAtual.remetente_email 
+        }]);
+
+    // Adiciona VOCÊ na lista de contatos DELE (reciprocidade)
+    await _supabase
+        .from('contatos')
+        .insert([{ 
+            usuario_origem: solicitacaoAtual.remetente_email, 
+            contato_usuario: meuUsuario 
+        }]);
+
+    // Alterna a barra de botões para a caixa de digitação
+    const chatActionBar = document.getElementById('chat-action-bar');
+    const chatInputBox = document.getElementById('chat-input-box');
+
+    if (chatActionBar) chatActionBar.classList.add('hidden');
+    if (chatInputBox) chatInputBox.classList.remove('hidden');
+
+    // Libera as mensagens do chat
+    carregarMensagens();
+    
+    solicitacaoAtual = null;
+    carregarSolicitacoes();
+    carregarListaContatos();
+}
+
+async function ignorarSolicitacaoAtual() {
+    if (!solicitacaoAtual) return;
+
+    const { error } = await _supabase
+        .from('solicitacoes_chat')
+        .update({ status: 'ignorado' })
+        .eq('id', solicitacaoAtual.id);
+
+    if (error) return console.error('Erro ao ignorar:', error);
+
+    const chatActionBar = document.getElementById('chat-action-bar');
+    const chatInputBox = document.getElementById('chat-input-box');
+
+    if (chatActionBar) chatActionBar.classList.add('hidden');
+    if (chatInputBox) chatInputBox.classList.remove('hidden');
+
+    solicitacaoAtual = null;
+    fecharChat();
+    carregarSolicitacoes();
+}

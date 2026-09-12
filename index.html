@@ -209,6 +209,86 @@
         </div>
     </section>
 
+<!-- 1. TOPO DA BARRA LATERAL (onde fica o botão de 3 pontos) -->
+<div class="sidebar-header">
+  <div class="user-avatar">
+    <!-- Imagem do perfil -->
+  </div>
+  
+  <div class="header-actions">
+    <!-- Botão de 3 pontos com menu dropdown -->
+    <div class="dropdown-container">
+      <button id="btn-opcoes" class="icon-btn" title="Mais opções">
+        <i class="fas fa-ellipsis-v"></i>
+        <!-- Badge para mostrar a quantidade de solicitações -->
+        <span id="badge-solicitacoes" class="badge hidden">0</span>
+      </button>
+
+      <!-- Submenu de opções -->
+      <div id="dropdown-menu" class="dropdown-menu hidden">
+        <ul>
+          <li id="btn-abrir-solicitacoes">
+            <i class="fas fa-user-clock"></i> 
+            Pedidos de conversa 
+            <span id="contador-menu" class="count-tag">0</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 2. MODAL DE SOLICITAÇÕES PENDENTES -->
+<div id="modal-solicitacoes" class="modal hidden">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Solicitações de Conversa</h3>
+      <button id="btn-fechar-modal-solicitacoes" class="close-btn">&times;</button>
+    </div>
+    
+    <div class="modal-body">
+      <!-- Lista onde as solicitações serão renderizadas pelo JS -->
+      <ul id="lista-solicitacoes" class="solicitacoes-list">
+        <!-- Exemplo de como o JS vai inserir cada item: -->
+        <!-- 
+        <li class="solicitacao-item" data-email="usuario@email.com">
+          <div class="user-info">
+            <strong>Nome do Usuário</strong>
+            <p>Primeira mensagem enviada...</p>
+          </div>
+          <button class="btn-abrir-pedido">Ver</button>
+        </li> 
+        -->
+      </ul>
+      <p id="msg-sem-solicitacoes" class="empty-state hidden">Nenhuma solicitação pendente.</p>
+    </div>
+  </div>
+</div>
+
+<!-- 3. RODAPÉ DA TELA DE CHAT (#tela-chat) -->
+<div class="chat-footer">
+  
+  <!-- Barra normal de envio (visível para contatos) -->
+  <div id="chat-input-box" class="chat-input-box">
+    <input type="text" id="input-mensagem" placeholder="Digite uma mensagem..." />
+    <button id="btn-enviar"><i class="fas fa-paper-plane"></i></button>
+  </div>
+
+  <!-- Barra de decisão (visível APENAS para solicitações pendentes) -->
+  <div id="chat-action-bar" class="chat-action-bar hidden">
+    <p class="warning-text">Este usuário não está nos seus contatos. Deseja aceitar a conversa?</p>
+    <div class="action-buttons">
+      <button id="btn-ignorar-solicitacao" class="btn-danger">
+        <i class="fas fa-ban"></i> Ignorar
+      </button>
+      <button id="btn-aceitar-solicitacao" class="btn-success">
+        <i class="fas fa-user-check"></i> Aceitar
+      </button>
+    </div>
+  </div>
+
+</div>
+
 </body>
 
 </html>
