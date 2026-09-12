@@ -20,7 +20,27 @@ document.addEventListener("DOMContentLoaded", () => {
     verificarSessao();
     registrarServiceWorker();
 });
+async function alternarNotificacoes(checkbox) {
+    if (checkbox.checked) {
+        if (!("Notification" in window)) {
+            alert("Este navegador não suporta notificações de trabalho.");
+            checkbox.checked = false;
+            return;
+        }
 
+        const permissao = await Notification.requestPermission();
+        
+        if (permissao === "granted") {
+            localStorage.setItem("notificacoes", "true");
+        } else {
+            alert("A permissão para notificações foi negada nas configurações do seu navegador.");
+            checkbox.checked = false;
+            localStorage.setItem("notificacoes", "false");
+        }
+    } else {
+        localStorage.setItem("notificacoes", "false");
+    }
+}
 function registrarServiceWorker() {
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js')
@@ -633,13 +653,11 @@ function inscreverRealtime() {
     const meuEmail = localStorage.getItem("usuarioLogado");
     if (!meuEmail || !_supabase) return;
 
-    // 1. Limpeza síncrona/segura para não travar a execução no iOS
     if (escutaRealtime) {
         _supabase.removeChannel(escutaRealtime);
         escutaRealtime = null;
     }
 
-    // 2. Inscreve novo canal com timestamp único
     escutaRealtime = _supabase
         .channel(`chat-room-${Date.now()}`)
         .on(
@@ -730,7 +748,6 @@ function pararMonitoramentoPresenca() {
     }
 }
 
-// Reconecta e atualiza instantaneamente quando o usuário abre o aplicativo/tela no iOS e PC
 document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {
         console.log("📱 Aplicativo visível novamente. Reconectando...");
@@ -773,13 +790,16 @@ function carregarDadosAbaVoce() {
     if (elemFoto && foto) elemFoto.src = foto;
 
     const temaEscuro = localStorage.getItem("temaEscuro") === "true";
-    const notificacoes = localStorage.getItem("notificacoes") !== "false";
+    
+    // Verifica tanto a permissão do sistema quanto o localStorage
+    const permissaoConcedida = ("Notification" in window) && Notification.permission === "granted";
+    const prefNotificacoes = localStorage.getItem("notificacoes") !== "false";
 
     const checkTema = document.getElementById("check-tema-escuro");
     const checkNotif = document.getElementById("check-notificacoes");
 
     if (checkTema) checkTema.checked = temaEscuro;
-    if (checkNotif) checkNotif.checked = notificacoes;
+    if (checkNotif) checkNotif.checked = permissaoConcedida && prefNotificacoes;
 }
 
 async function trocarFotoPerfil(event) {
@@ -872,7 +892,6 @@ function enviarNotificacao(remetente, textoMensagem, emailRemetente, fotoRemeten
 
     if ("Notification" in window && Notification.permission === "granted" && notificacoesAtivas) {
         
-        // Dispara se a aba estiver minimizada/segundo plano ou se o chat aberto não for o da pessoa
         if (document.hidden || destinatarioAtual !== emailRemetente) {
             const opcoes = {
                 body: textoMensagem,
@@ -886,12 +905,10 @@ function enviarNotificacao(remetente, textoMensagem, emailRemetente, fotoRemeten
                 }
             };
 
-            // Prioridade total ao Service Worker (único método aceito pelo iOS PWA)
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.ready.then(reg => {
                     reg.showNotification(remetente, opcoes);
                 }).catch(() => {
-                    // Fallback para desktop antigo se o SW falhar
                     if (typeof Notification === "function") {
                         const notificacao = new Notification(remetente, opcoes);
                         notificacao.onclick = () => {
