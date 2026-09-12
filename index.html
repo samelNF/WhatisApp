@@ -8,17 +8,18 @@
     <title>WhatisApp</title>
 
     <link rel="stylesheet" href="style.css">
+    <!-- FontAwesome para ícones das solicitações -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="script.js" defer></script>
-    <!-- Permite que o site rode como app no iOS -->
+    
+    <!-- Configurações iOS -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="WhatisApp">
-
-    <!-- Ícone específico para iOS -->
     <link rel="apple-touch-icon" href="./images/icon-192.png">
     <link rel="manifest" href="manifest.json">
-    <input type="checkbox" id="check-notificacoes" onchange="alternarNotificacoes(this)">
 </head>
 
 <body>
@@ -27,7 +28,24 @@
     <div id="tela-conversas" class="aba-conteudo">
         <header>
             <div class="topo">
-                <button class="cinza" title="•••">•••</button>
+                <!-- DROPDOWN DE OPÇÕES -->
+                <div class="dropdown-container" style="position: relative;">
+                    <button id="btn-opcoes" class="cinza" title="Mais opções">
+                        •••
+                        <span id="badge-solicitacoes" class="badge hidden">0</span>
+                    </button>
+
+                    <div id="dropdown-menu" class="dropdown-menu hidden">
+                        <ul>
+                            <li id="btn-abrir-solicitacoes">
+                                <i class="fas fa-user-clock"></i> 
+                                Pedidos de conversa 
+                                <span id="contador-menu" class="count-tag">0</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
                 <button class="verde" title="Adicionar" onclick="pedirEmailContato()">
                     <img src="svg/plus.svg" class="plusi">
                 </button>
@@ -79,7 +97,7 @@
                     <span class="subtitulo-config">Exibir alertas de novas mensagens</span>
                 </div>
                 <label class="switch">
-                    <input type="checkbox" id="check-notificacoes" onchange="salvarPreferencias()">
+                    <input type="checkbox" id="check-notificacoes" onchange="alternarNotificacoes(this)">
                     <span class="slider round"></span>
                 </label>
             </div>
@@ -154,7 +172,6 @@
     <!-- CADASTRO ETAPA 2 -->
     <section id="etapa-usuario" class="senhor-usuario" style="display: none;">
         <h1>Escolha seu Perfil</h1>
-    
         <div class="avatar-container">
             <img id="avatar-preview" src="svg/icon.svg" alt="Foto de Perfil" class="avatar-preview">
             <label for="foto-input" class="avatar-upload-btn">
@@ -162,7 +179,6 @@
             </label>
             <input type="file" id="foto-input" accept="image/*" onchange="previewFoto(event)" style="display: none;">
         </div>
-
         <input class="input-usuario-etapa2" type="text" id="usuario" placeholder="Nome de usuário">
         <button type="button" onclick="salvarUsuarioSegundaEtapa()" class="btn-concluir-usuario">Concluir Cadastro</button>
     </section>
@@ -192,7 +208,6 @@
             <img id="chat-foto-usuario" src="svg/icon.svg" class="chat-avatar">
             <div class="chat-info-usuario">
                 <h2 id="chat-nome-usuario">Contato</h2>
-                <!-- ID adiconado para permitir alteração dinâmica do status -->
                 <span id="chat-status-usuario" class="status-online"></span>
             </div>
         </div>
@@ -201,94 +216,47 @@
             <!-- Mensagens inseridas via JS -->
         </div>
 
-        <div class="chat-input-box">
-            <input type="text" id="input-mensagem" placeholder="Mensagem" onkeypress="checarEnter(event)">
-            <button onclick="enviarMensagem()" class="btn-enviar">
-                <img src="svg/paperplane.svg" alt="Enviar" style="transform: rotate(45deg);">
-            </button>
+        <!-- RODAPÉ DA TELA DE CHAT -->
+        <div class="chat-footer">
+            <!-- Barra normal de envio (visível para contatos salvos) -->
+            <div id="chat-input-box" class="chat-input-box">
+                <input type="text" id="input-mensagem" placeholder="Mensagem" onkeypress="checarEnter(event)">
+                <button id="btn-enviar" onclick="enviarMensagem()" class="btn-enviar">
+                    <img src="svg/paperplane.svg" alt="Enviar" style="transform: rotate(45deg);">
+                </button>
+            </div>
+
+            <!-- Barra de decisão (visível APENAS para solicitações pendentes) -->
+            <div id="chat-action-bar" class="chat-action-bar hidden">
+                <p class="warning-text">Este usuário não está nos seus contatos. Deseja aceitar a conversa?</p>
+                <div class="action-buttons">
+                    <button id="btn-ignorar-solicitacao" class="btn-danger">
+                        <i class="fas fa-ban"></i> Ignorar
+                    </button>
+                    <button id="btn-aceitar-solicitacao" class="btn-success">
+                        <i class="fas fa-user-check"></i> Aceitar
+                    </button>
+                </div>
+            </div>
         </div>
     </section>
 
-<!-- 1. TOPO DA BARRA LATERAL (onde fica o botão de 3 pontos) -->
-<div class="sidebar-header">
-  <div class="user-avatar">
-    <!-- Imagem do perfil -->
-  </div>
-  
-  <div class="header-actions">
-    <!-- Botão de 3 pontos com menu dropdown -->
-    <div class="dropdown-container">
-      <button id="btn-opcoes" class="icon-btn" title="Mais opções">
-        <i class="fas fa-ellipsis-v"></i>
-        <!-- Badge para mostrar a quantidade de solicitações -->
-        <span id="badge-solicitacoes" class="badge hidden">0</span>
-      </button>
-
-      <!-- Submenu de opções -->
-      <div id="dropdown-menu" class="dropdown-menu hidden">
-        <ul>
-          <li id="btn-abrir-solicitacoes">
-            <i class="fas fa-user-clock"></i> 
-            Pedidos de conversa 
-            <span id="contador-menu" class="count-tag">0</span>
-          </li>
-        </ul>
-      </div>
+    <!-- MODAL DE SOLICITAÇÕES PENDENTES -->
+    <div id="modal-solicitacoes" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Solicitações de Conversa</h3>
+                <button id="btn-fechar-modal-solicitacoes" class="close-btn">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <ul id="lista-solicitacoes" class="solicitacoes-list">
+                    <!-- Renderizado dinamicamente pelo JS -->
+                </ul>
+                <p id="msg-sem-solicitacoes" class="empty-state hidden">Nenhuma solicitação pendente.</p>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
-
-<!-- 2. MODAL DE SOLICITAÇÕES PENDENTES -->
-<div id="modal-solicitacoes" class="modal hidden">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3>Solicitações de Conversa</h3>
-      <button id="btn-fechar-modal-solicitacoes" class="close-btn">&times;</button>
-    </div>
-    
-    <div class="modal-body">
-      <!-- Lista onde as solicitações serão renderizadas pelo JS -->
-      <ul id="lista-solicitacoes" class="solicitacoes-list">
-        <!-- Exemplo de como o JS vai inserir cada item: -->
-        <!-- 
-        <li class="solicitacao-item" data-email="usuario@email.com">
-          <div class="user-info">
-            <strong>Nome do Usuário</strong>
-            <p>Primeira mensagem enviada...</p>
-          </div>
-          <button class="btn-abrir-pedido">Ver</button>
-        </li> 
-        -->
-      </ul>
-      <p id="msg-sem-solicitacoes" class="empty-state hidden">Nenhuma solicitação pendente.</p>
-    </div>
-  </div>
-</div>
-
-<!-- 3. RODAPÉ DA TELA DE CHAT (#tela-chat) -->
-<div class="chat-footer">
-  
-  <!-- Barra normal de envio (visível para contatos) -->
-  <div id="chat-input-box" class="chat-input-box">
-    <input type="text" id="input-mensagem" placeholder="Digite uma mensagem..." />
-    <button id="btn-enviar"><i class="fas fa-paper-plane"></i></button>
-  </div>
-
-  <!-- Barra de decisão (visível APENAS para solicitações pendentes) -->
-  <div id="chat-action-bar" class="chat-action-bar hidden">
-    <p class="warning-text">Este usuário não está nos seus contatos. Deseja aceitar a conversa?</p>
-    <div class="action-buttons">
-      <button id="btn-ignorar-solicitacao" class="btn-danger">
-        <i class="fas fa-ban"></i> Ignorar
-      </button>
-      <button id="btn-aceitar-solicitacao" class="btn-success">
-        <i class="fas fa-user-check"></i> Aceitar
-      </button>
-    </div>
-  </div>
-
-</div>
 
 </body>
-
 </html>
