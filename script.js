@@ -5,7 +5,7 @@ const supabaseUrl = 'https://qlvorxobvnjoovqxnfhp.supabase.co';
 const supabaseKey = 'sb_publishable_IoDWf91jWwRgamUfmdDQow_1-fIMHZO';
 const _supabase = window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null;
 
-// Variables globais de estado
+// Variáveis globais de estado
 let todosContatos = [];
 let destinatarioAtual = null;
 let escutaRealtime = null;
@@ -77,9 +77,7 @@ function mostrarTela(idTela) {
 }
 
 function proximo() {
-    // Marca no localStorage que o usuário já passou da tela de introdução
     localStorage.setItem("introducaoVista", "true");
-    
     document.getElementById("inicio").style.display = "none";
     
     const meuEmail = localStorage.getItem("usuarioLogado");
@@ -98,6 +96,9 @@ function mostrarAppPrincipal() {
 
     if (telaConversas) telaConversas.style.display = "block";
     if (barraNavegacao) barraNavegacao.style.display = "flex";
+
+    // Solicita permissão de notificação quando entra no app
+    solicitarPermissao();
 
     carregarListaContatos();
     iniciarMonitoramentoPresenca();
@@ -131,7 +132,6 @@ async function verificarSessao() {
     const introducaoVista = localStorage.getItem("introducaoVista");
     const emailSalvo = localStorage.getItem("usuarioLogado");
 
-    // 1. Exibe a introdução apenas se ela NUNCA tiver sido vista
     if (!introducaoVista) {
         esconderTelasAutenticacao();
         const telaInicio = document.getElementById("inicio");
@@ -139,14 +139,12 @@ async function verificarSessao() {
         return;
     }
 
-    // 2. Se a introdução já foi vista e não há usuário logado, vai para a tela de login
     if (!emailSalvo) {
         console.log("Nenhum usuário conectado.");
         mostrarTela('login');
         return;
     }
 
-    // 3. Valida se o usuário salvo existe no Supabase
     const { data: usuario, error } = await _supabase
         .from("usuarios")
         .select("*")
@@ -572,7 +570,7 @@ async function checarStatusContato(emailContato) {
         spanStatus.innerText = textoStatus;
         
         if (textoStatus === "online") {
-            spanStatus.style.color = "#00a884";
+            spanStatus.style.color = "#ff7b00";
         } else {
             spanStatus.style.color = "#8696a0";
         }
@@ -634,11 +632,27 @@ function inscreverRealtime() {
             (payload) => {
                 const novaMsg = payload.new;
                 carregarListaContatos();
+
+                // 1. Atualiza mensagens no chat aberto se o remetente/destinatário for o correto
                 if (
                     (novaMsg.remetente_email === destinatarioAtual && novaMsg.destinatario_email === meuEmail) ||
                     (novaMsg.remetente_email === meuEmail && novaMsg.destinatario_email === destinatarioAtual)
                 ) {
                     renderizarBalao(novaMsg.texto, novaMsg.remetente_email === meuEmail, novaMsg.created_at);
+                }
+
+                // 2. Envia notificação para o usuário destinatário quando chegar uma mensagem de outra pessoa
+                if (novaMsg.destinatario_email === meuEmail) {
+                    const contato = todosContatos.find(c => c.email === novaMsg.remetente_email);
+                    const nomeRemetente = contato ? (contato.usuario || contato.email) : novaMsg.remetente_email;
+                    const fotoRemetente = contato ? contato.foto_url : null;
+
+                    enviarNotificacao(
+                        nomeRemetente,
+                        novaMsg.texto,
+                        novaMsg.remetente_email,
+                        fotoRemetente
+                    );
                 }
             }
         )
@@ -784,36 +798,38 @@ function abrirPrivacidade() {
     alert("Configurações de privacidade salvas por padrão.");
 }
 
+// ==========================================
+// NOTIFICAÇÕES DO NAVEGADOR
+// ==========================================
 function solicitarPermissao() {
-  if ("Notification" in window) {
-    Notification.requestPermission().then((permissao) => {
-      if (permissao === "granted") {
-        console.log("Permissão concedida!");
-      } else {
-        console.log("Permissão negada.");
-      }
-    });
-  } else {
-    console.log("Este navegador não suporta notificações de área de trabalho.");
-  }
-}
-
-function enviarNotificacao(remetente, textoMensagem) {
-  // Verifica se o navegador suporta e se a permissão foi concedida
-  if ("Notification" in window && Notification.permission === "granted") {
-    
-    // Opcional: só envia a notificação se a aba do site não estiver visível no momento
-    if (document.hidden) {
-      const notificacao = new Notification(`Nova mensagem de ${remetente}`, {
-        body: textoMensagem,
-        icon: "/caminho/para/icone.png" // Opcional: caminho para o ícone
-      });
-
-      // Abre a aba do site ao clicar na notificação
-      notificacao.onclick = () => {
-        window.focus();
-      };
+    if ("Notification" in window) {
+        Notification.requestPermission().then((permissao) => {
+            if (permissao === "granted") {
+                console.log("Permissão para notificações concedida.");
+            } else {
+                console.log("Permissão para notificações negada.");
+            }
+        });
+    } else {
+        console.log("Este navegador não suporta notificações.");
     }
-  }
 }
 
+function enviarNotificacao(remetente, textoMensagem, emailRemetente, fotoRemetente) {
+    const notificacoesAtivas = localStorage.getItem("notificacoes") !== "false";
+
+    if ("Notification" in window && Notification.permission === "granted" && notificacoesAtivas) {
+        // Envia notificação apenas se o usuário estiver fora da aba do app
+        if (document.hidden) {
+            const notificacao = new Notification(`Nova mensagem de ${remetente}`, {
+                body: textoMensagem,
+                icon: fotoRemetente || "svg/icon.svg"
+            });
+
+            notificacao.onclick = () => {
+                window.focus();
+                abrirChatCom(emailRemetente, remetente, fotoRemetente);
+            };
+        }
+    }
+}
