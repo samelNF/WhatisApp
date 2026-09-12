@@ -202,6 +202,8 @@
 	}
 	.campo-senha input {
 		flex: 1;
+		width: 200px;
+		margin-right: 5px;
 	}
 	.campo-senha button{
 		color: #FAFAFA;
@@ -230,7 +232,7 @@
 		background-color: #0A0A0A;
 		transform: translateX(0%);
 		transition: transform 2.0s ease-in-out;
-		display: flex;
+		display: none;
 		flex-direction: column;
 		justify-content: center;
 	}
@@ -277,3 +279,58 @@
 		cursor: pointer;
 		color: #000000;
 	}
+.autenticacao-box, .senhor-usuario {
+    position: fixed;
+    inset: 0;
+    background-color: #0A0A0A;
+    display: displa;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+
+.autenticacao-box h1, .senhor-usuario h1 {
+    color: #FAFAFA;
+    font-family: sans-serif;
+    margin-bottom: 15px;
+}
+
+.autenticacao-box input, .input-usuario-etapa2 {
+    width: 200px;
+    height: 30px;
+    background-color: #1A1A1A;
+    border: none;
+    outline: none;
+    border-radius: 10000px;
+    margin-top: 5px;
+    font-size: 15px;
+    color: #FAFAFA;
+    padding-left: 10px;
+}
+
+.troca-tela {
+    color: #888;
+    font-family: sans-serif;
+    font-size: 13px;
+    margin-top: 15px;
+}
+
+.troca-tela span {
+    color: #21C063;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-concluir-usuario {
+    width: 200px;
+    height: 30px;
+    background-color: #21C063;
+    color: #000000;
+    border: none;
+    outline: none;
+    border-radius: 100px;
+    font-size: 15px;
+    margin-top: 15px;
+    cursor: pointer;
+}

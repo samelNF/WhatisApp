@@ -1,32 +1,30 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 
 <head>
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="icon" href="https://static.whatsapp.net/rsrc.php/yd/r/PfkSLByWV8O.webp">
-	<title>WhatisApp</title>
+    <title>WhatisApp</title>
 
     <link rel="stylesheet" href="style.css">
-	<script src="script.js"></script>
-	<link rel="manifest" href="manifest.json">
-
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="script.js" defer></script>
+    <link rel="manifest" href="manifest.json">
 </head>
 
 <body>
-	
+    
     <header>
         <div class="topo">
-            <button class="cinza">•••</button>
+            <button class="cinza" onclick="deslogar()">•••</button>
             <button class="verde">
-				<img src="svg/plus.svg" class="plusi">
-			</button>
+                <img src="svg/plus.svg" class="plusi">
+            </button>
         </div>
-		<div class="conversa">
-			<h1>Conversas</h1>
-		</div>
+        <div class="conversa">
+            <h1>Conversas</h1>
+        </div>
     </header>
 
     <main>
@@ -34,56 +32,79 @@
             <img src="svg/glasses.svg" class="glass">
             <input type="text" placeholder=" Pesquisar">
         </div>
-		<div class="contatos">
-        		<ul>
-        		<li>bi</li>
-        		</ul>
-		</div>
+        <div class="contatos">
+            <ul>
+                <li>bi</li>
+            </ul>
+        </div>
     </main>
 
     <nav>
-		<div class="ultrabaixo">
-			<div class="baixo">
-        			<button class="chat-bt">
-						<img src="svg/chat.svg" class="chat">
-						Conversas
-					</button>
-        			<button class="tu">
-						<img src="svg/icon.svg" class="vose">
-						Você
-					</button>
-			</div>
-		</div>
+        <div class="ultrabaixo">
+            <div class="baixo">
+                <button class="chat-bt">
+                    <img src="svg/chat.svg" class="chat">
+                    Conversas
+                </button>
+                <button class="tu">
+                    <img src="svg/icon.svg" class="vose">
+                    Você
+                </button>
+            </div>
+        </div>
     </nav>
 
-	<section id="criar-conta" class="criar-conta">
-		<h1>Criar Conta</h1>
-		<input type="email" id="email" placeholder="Email">
-		<input class="usuario" type="text" id="usuario" placeholder="Usuário">
-		<div class="campo-senha">
-			<input type="password" id="senha" placeholder="Senha">
-			<button type="button" onclick="mostrarSenha()">
-				<img id="olho" src="svg/eye.svg" class="olho">
-			</button>
-		</div>
-		<button onclick="criarConta()" class="grande">Criar a Conta</button>
-	</section>
-	<section id="inicio" class="inicio">
-		<label class="bondia">Bem-vindo(a) ao WhatisApp</label>
-		<div id="app">
-			<div class="logo">
-				<img src="svg/sei nem o nome.svg" class="coisinha">
-			</div>
-			<div class="trem">
-				<label>
-					Leia nossa <span style="color: #5daa90; cursor: pointer;">Política de Privacidade</span>.
-					Toque em CONCORDAR E CONTINUAR para aceitar os
-					<span style="color: #5daa90; cursor: pointer;">Termos de Serviço</span>
-				</label>
-				<button onclick="proximo()">Concordar e Continuar</button>
-			</div>
-		</div>
-	</section>
+    <!-- TELA DE LOGIN (ENTRAR) -->
+    <section id="login" class="autenticacao-box">
+        <h1>Entrar na Conta</h1>
+        <input type="email" id="login-email" placeholder="Email">
+        <div class="campo-senha">
+            <input type="password" id="login-senha" placeholder="Senha">
+            <button type="button" onclick="mostrarSenhaLogin()">
+                <img id="olho-login" src="svg/eye.svg" class="olho">
+            </button>
+        </div>
+        <button type="button" onclick="conectarConta()" class="grande">Entrar</button>
+        <p class="troca-tela">Não tem uma conta? <span onclick="mostrarTela('criar-conta')">Criar conta</span></p>
+    </section>
+
+    <!-- ETAPA 1: Cadastro (E-mail e Senha) -->
+    <section id="criar-conta" class="autenticacao-box" style="display: none;">
+        <h1>Criar Conta</h1>
+        <input type="email" id="email" placeholder="Email">
+        <div class="campo-senha">
+            <input type="password" id="senha" placeholder="Senha">
+            <button type="button" onclick="mostrarSenha()">
+                <img id="olho" src="svg/eye.svg" class="olho">
+            </button>
+        </div>
+        <button type="button" onclick="criarConta()" class="grande">Avançar</button>
+        <p class="troca-tela">Já tem uma conta? <span onclick="mostrarTela('login')">Entrar</span></p>
+    </section>
+
+    <!-- ETAPA 2: Nome de Usuário -->
+    <section id="etapa-usuario" class="senhor-usuario" style="display: none;">
+        <h1>Escolha seu Usuário</h1>
+        <input class="input-usuario-etapa2" type="text" id="usuario" placeholder="Nome de usuário">
+        <button type="button" onclick="salvarUsuarioSegundaEtapa()" class="btn-concluir-usuario">Concluir Cadastro</button>
+    </section>
+
+    <section id="inicio" class="inicio" style="display: none;">
+        <label class="bondia">Bem-vindo(a) ao WhatisApp</label>
+        <div id="app">
+            <div class="logo">
+                <img src="svg/sei nem o nome.svg" class="coisinha">
+            </div>
+            <div class="trem">
+                <label>
+                    Leia nossa <span style="color: #5daa90; cursor: pointer;">Política de Privacidade</span>.
+                    Toque em CONCORDAR E CONTINUAR para aceitar os
+                    <span style="color: #5daa90; cursor: pointer;">Termos de Serviço</span>
+                </label>
+                <button onclick="proximo()">Concordar e Continuar</button>
+            </div>
+        </div>
+    </section>
 
 </body>
 
