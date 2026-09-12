@@ -88,7 +88,7 @@ function proximo() {
     }
 }
 
-function mostrarAppPrincipal() {
+async function mostrarAppPrincipal() {
     esconderTelasAutenticacao();
 
     const telaConversas = document.getElementById("tela-conversas");
@@ -97,11 +97,14 @@ function mostrarAppPrincipal() {
     if (telaConversas) telaConversas.style.display = "block";
     if (barraNavegacao) barraNavegacao.style.display = "flex";
 
-    // Solicita permissão e liga o escutador em tempo real global
     solicitarPermissao();
+    
+    // Primeiro carrega a lista para que a notificação reconheça os nomes/fotos
+    await carregarListaContatos();
+    
+    // Inicia a escuta global de mensagens
     inscreverRealtime();
-
-    carregarListaContatos();
+    
     iniciarMonitoramentoPresenca();
 }
 
@@ -176,6 +179,7 @@ function deslogar() {
     pararMonitoramentoPresenca();
     if (escutaRealtime) {
         _supabase.removeChannel(escutaRealtime);
+        escutaRealtime = null;
     }
     localStorage.removeItem("usuarioLogado");
     localStorage.removeItem("nomeUsuario");
@@ -620,22 +624,21 @@ function inscreverRealtime() {
     const meuEmail = localStorage.getItem("usuarioLogado");
     if (!meuEmail) return;
 
-    if (escutaRealtime) {
-        _supabase.removeChannel(escutaRealtime);
-    }
+    // Se já houver um canal registrado, não recria para evitar perda de conexão
+    if (escutaRealtime) return;
 
     escutaRealtime = _supabase
-        .channel('chat-em-tempo-real')
+        .channel('chat-global-realtime')
         .on(
             'postgres_changes',
             { event: 'INSERT', schema: 'public', table: 'mensagens' },
             (payload) => {
                 const novaMsg = payload.new;
 
-                // 1. Atualiza a lista de conversas recentes com o novo texto e hora
+                // 1. Atualiza a lista lateral com a nova conversa
                 carregarListaContatos();
 
-                // 2. Se o chat com a pessoa estiver aberto, insere o balão na tela
+                // 2. Se for uma mensagem da conversa aberta atualmente, insere o balão na tela
                 if (
                     destinatarioAtual &&
                     ((novaMsg.remetente_email === destinatarioAtual && novaMsg.destinatario_email === meuEmail) ||
@@ -644,7 +647,7 @@ function inscreverRealtime() {
                     renderizarBalao(novaMsg.texto, novaMsg.remetente_email === meuEmail, novaMsg.created_at);
                 }
 
-                // 3. Notifica se for uma mensagem nova vinda de outra pessoa
+                // 3. Dispara a notificação de sistema para toda mensagem recebida pelo usuário logado
                 if (novaMsg.destinatario_email === meuEmail) {
                     const contato = todosContatos.find(c => c.email === novaMsg.remetente_email);
                     const nomeRemetente = contato ? (contato.usuario || contato.email) : novaMsg.remetente_email;
@@ -822,11 +825,12 @@ function enviarNotificacao(remetente, textoMensagem, emailRemetente, fotoRemeten
     const notificacoesAtivas = localStorage.getItem("notificacoes") !== "false";
 
     if ("Notification" in window && Notification.permission === "granted" && notificacoesAtivas) {
-        // Exibe notificação apenas se o usuário não estiver na aba ativa
+        // Envia notificação apenas se o usuário estiver fora da aba do site
         if (document.hidden) {
             const notificacao = new Notification(`Nova mensagem de ${remetente}`, {
                 body: textoMensagem,
-                icon: fotoRemetente || "svg/icon.svg"
+                icon: fotoRemetente || "svg/icon.svg",
+                tag: `msg-${Date.now()}` // Garante que novas notificações não substituam as anteriores
             });
 
             notificacao.onclick = () => {
