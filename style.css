@@ -808,6 +808,7 @@ input:checked + .slider:before {
 
 .dropdown-menu {
   position: absolute;
+  left: 10px;
   right: 0;
   top: 100%;
   margin-top: 8px;
