@@ -750,17 +750,15 @@ function pararMonitoramentoPresenca() {
 
 document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {
-        console.log("📱 Aplicativo visível novamente. Reconectando...");
-        iniciarMonitoramentoPresenca();
+        console.log("📱 App em primeiro plano. Reiniciando conexões...");
         
+        // Inicia novamente a escuta em tempo real se ela tiver sido derrubada pelo iOS
         inscreverRealtime();
         carregarListaContatos();
 
         if (destinatarioAtual) {
             carregarMensagens();
         }
-    } else {
-        pararMonitoramentoPresenca();
     }
 });
 
@@ -892,12 +890,13 @@ function enviarNotificacao(remetente, textoMensagem, emailRemetente, fotoRemeten
 
     if ("Notification" in window && Notification.permission === "granted" && notificacoesAtivas) {
         
+        // Verifica se a tela está oculta ou se o usuário não está no chat do remetente
         if (document.hidden || destinatarioAtual !== emailRemetente) {
             const opcoes = {
                 body: textoMensagem,
                 icon: fotoRemetente || "svg/icon.svg",
                 badge: "svg/icon.svg",
-                tag: `msg-${Date.now()}`,
+                tag: `msg-${emailRemetente}`, // Evita acumular várias notificações duplicadas do mesmo remetente
                 data: {
                     emailRemetente: emailRemetente,
                     remetente: remetente,
@@ -905,24 +904,13 @@ function enviarNotificacao(remetente, textoMensagem, emailRemetente, fotoRemeten
                 }
             };
 
+            // No iOS, é essencial disparar através do Service Worker registrado
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.ready.then(reg => {
                     reg.showNotification(remetente, opcoes);
-                }).catch(() => {
-                    if (typeof Notification === "function") {
-                        const notificacao = new Notification(remetente, opcoes);
-                        notificacao.onclick = () => {
-                            window.focus();
-                            abrirChatCom(emailRemetente, remetente, fotoRemetente);
-                        };
-                    }
-                });
-            } else if (typeof Notification === "function") {
-                const notificacao = new Notification(remetente, opcoes);
-                notificacao.onclick = () => {
-                    window.focus();
-                    abrirChatCom(emailRemetente, remetente, fotoRemetente);
-                };
+                }).catch(err => console.error("Erro ao exibir via Service Worker:", err));
+            } else {
+                new Notification(remetente, opcoes);
             }
         }
     }
