@@ -42,14 +42,20 @@
     <nav>
         <div class="ultrabaixo">
             <div class="baixo">
-                <button class="chat-bt">
-                    <img src="svg/chat.svg" class="chat">
-                    Conversas
-                </button>
-                <button class="tu">
-                    <img src="svg/icon.svg" class="vose">
-                    Você
-                </button>
+				<nav>
+        			<div class="ultrabaixo">
+            			<div class="baixo">
+                			<button class="chat-bt ativo" onclick="alternarAba(this)">
+                    			<img src="svg/chat.svg" class="chat">
+                    			<span>Conversas</span>
+                			</button>
+                			<button class="tu" onclick="alternarAba(this)">
+                    			<img id="foto-aba-voce" src="svg/icon.svg" class="vose">
+                    			<span>Você</span>
+                			</button>
+            			</div>
+        			</div>
+    			</nav>
             </div>
         </div>
     </nav>
@@ -83,11 +89,22 @@
     </section>
 
     <!-- ETAPA 2: Nome de Usuário -->
-    <section id="etapa-usuario" class="senhor-usuario" style="display: none;">
-        <h1>Escolha seu Usuário</h1>
-        <input class="input-usuario-etapa2" type="text" id="usuario" placeholder="Nome de usuário">
-        <button type="button" onclick="salvarUsuarioSegundaEtapa()" class="btn-concluir-usuario">Concluir Cadastro</button>
-    </section>
+    <!-- ETAPA 2: Nome de Usuário e Foto de Perfil -->
+	<section id="etapa-usuario" class="senhor-usuario" style="display: none;">
+    	<h1>Escolha seu Perfil</h1>
+    
+    	<!-- Container da Foto Redonda -->
+    	<div class="avatar-container">
+        	<img id="avatar-preview" src="svg/icon.svg" alt="Foto de Perfil" class="avatar-preview">
+        	<label for="foto-input" class="avatar-upload-btn">
+            	<img src="svg/plus.svg" alt="Adicionar">
+        	</label>
+        	<input type="file" id="foto-input" accept="image/*" onchange="previewFoto(event)" style="display: none;">
+    	</div>
+
+    	<input class="input-usuario-etapa2" type="text" id="usuario" placeholder="Nome de usuário">
+    	<button type="button" onclick="salvarUsuarioSegundaEtapa()" class="btn-concluir-usuario">Concluir Cadastro</button>
+	</section>
 
     <section id="inicio" class="inicio" style="display: none;">
         <label class="bondia">Bem-vindo(a) ao WhatisApp</label>

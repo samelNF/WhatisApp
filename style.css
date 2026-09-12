@@ -108,10 +108,14 @@
 		font-size: 12px;
 	}
 	.vose {
-		width: 60%;
-		height: 60%;
-		object-fit: contain;
-		filter: brightness(0) invert(1);
+    	width: 28px;
+    	height: 28px;
+    	object-fit: cover;
+    	border-radius: 50%;
+	}
+	.vose[src$=".svg"] {
+    	filter: brightness(0) invert(1);
+    	border-radius: 0;
 	}
 	.chat {
 		width: 70%;
@@ -119,18 +123,32 @@
 		object-fit: contain;
 		filter: brightness(0) invert(1);
 	}
-	.chat-bt {
-		width: 48.5%;
-		height: 63.5px;
-		border-radius: 88483px;
-		color: #FAFAFA;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		background-color: #121212;
-		border:none;
-	}
+	/* Estilo base dos botões da barra inferior */
+.chat-bt, .tu {
+    position: relative;
+    cursor: pointer;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+    opacity: 0.6;
+}
+
+/* Estado ativo (botão selecionado) */
+.chat-bt.ativo, .tu.ativo {
+    opacity: 1;
+    background-color: #121212;
+	border-radius: 1000px;
+	border: none;
+}
+
+/* Indicador (tracinho verde) em baixo do botão ativo */
+.chat-bt.ativo::after, .tu.ativo::after {
+    content: '';
+    position: absolute;
+    bottom: 4px;
+    width: 30px;
+    height: 3px;
+    background-color: #21C063;
+    border-radius: 10000px;
+}
 	.verde {
         color: #0A0A0A;
         border-radius: 100px;
@@ -333,4 +351,40 @@
     font-size: 15px;
     margin-top: 15px;
     cursor: pointer;
+}
+/* CONTAINER E FOTO DE PERFIL REDONDA */
+.avatar-container {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    margin-bottom: 20px;
+}
+
+.avatar-preview {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    background-color: #292929;
+    border: 2px solid #21C063;
+}
+
+.avatar-upload-btn {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 32px;
+    height: 32px;
+    background-color: #21C063;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+
+.avatar-upload-btn img {
+    width: 16px;
+    height: 16px;
 }
