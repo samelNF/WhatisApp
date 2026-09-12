@@ -97,8 +97,9 @@ function mostrarAppPrincipal() {
     if (telaConversas) telaConversas.style.display = "block";
     if (barraNavegacao) barraNavegacao.style.display = "flex";
 
-    // Solicita permissão de notificação quando entra no app
+    // Solicita permissão e liga o escutador em tempo real global
     solicitarPermissao();
+    inscreverRealtime();
 
     carregarListaContatos();
     iniciarMonitoramentoPresenca();
@@ -173,6 +174,9 @@ async function verificarSessao() {
 
 function deslogar() {
     pararMonitoramentoPresenca();
+    if (escutaRealtime) {
+        _supabase.removeChannel(escutaRealtime);
+    }
     localStorage.removeItem("usuarioLogado");
     localStorage.removeItem("nomeUsuario");
     localStorage.removeItem("fotoUsuario");
@@ -598,7 +602,6 @@ function abrirChatCom(emailDestinatario, nomeDestinatario, fotoDestinatario) {
     }, 15000);
 
     carregarMensagens();
-    inscreverRealtime();
 }
 
 function fecharChat() {
@@ -611,14 +614,11 @@ function fecharChat() {
         clearInterval(intervaloChecarStatusContato);
         intervaloChecarStatusContato = null;
     }
-
-    if (escutaRealtime) {
-        _supabase.removeChannel(escutaRealtime);
-    }
 }
 
 function inscreverRealtime() {
     const meuEmail = localStorage.getItem("usuarioLogado");
+    if (!meuEmail) return;
 
     if (escutaRealtime) {
         _supabase.removeChannel(escutaRealtime);
@@ -631,17 +631,20 @@ function inscreverRealtime() {
             { event: 'INSERT', schema: 'public', table: 'mensagens' },
             (payload) => {
                 const novaMsg = payload.new;
+
+                // 1. Atualiza a lista de conversas recentes com o novo texto e hora
                 carregarListaContatos();
 
-                // 1. Atualiza mensagens no chat aberto se o remetente/destinatário for o correto
+                // 2. Se o chat com a pessoa estiver aberto, insere o balão na tela
                 if (
-                    (novaMsg.remetente_email === destinatarioAtual && novaMsg.destinatario_email === meuEmail) ||
-                    (novaMsg.remetente_email === meuEmail && novaMsg.destinatario_email === destinatarioAtual)
+                    destinatarioAtual &&
+                    ((novaMsg.remetente_email === destinatarioAtual && novaMsg.destinatario_email === meuEmail) ||
+                     (novaMsg.remetente_email === meuEmail && novaMsg.destinatario_email === destinatarioAtual))
                 ) {
                     renderizarBalao(novaMsg.texto, novaMsg.remetente_email === meuEmail, novaMsg.created_at);
                 }
 
-                // 2. Envia notificação para o usuário destinatário quando chegar uma mensagem de outra pessoa
+                // 3. Notifica se for uma mensagem nova vinda de outra pessoa
                 if (novaMsg.destinatario_email === meuEmail) {
                     const contato = todosContatos.find(c => c.email === novaMsg.remetente_email);
                     const nomeRemetente = contato ? (contato.usuario || contato.email) : novaMsg.remetente_email;
@@ -819,7 +822,7 @@ function enviarNotificacao(remetente, textoMensagem, emailRemetente, fotoRemeten
     const notificacoesAtivas = localStorage.getItem("notificacoes") !== "false";
 
     if ("Notification" in window && Notification.permission === "granted" && notificacoesAtivas) {
-        // Envia notificação apenas se o usuário estiver fora da aba do app
+        // Exibe notificação apenas se o usuário não estiver na aba ativa
         if (document.hidden) {
             const notificacao = new Notification(`Nova mensagem de ${remetente}`, {
                 body: textoMensagem,
