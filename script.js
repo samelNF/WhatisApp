@@ -631,38 +631,57 @@ function fecharChat() {
 
 function inscreverRealtime() {
     const meuEmail = localStorage.getItem("usuarioLogado");
+
     if (!meuEmail || escutaRealtime) return;
 
     escutaRealtime = _supabase
-        .channel('chat-global-realtime', {
-            config: {
-                presence: { key: meuEmail },
-                broadcast: { ack: true }
-            }
-        })
+        .channel('chat-global-realtime')
         .on(
             'postgres_changes',
-            { event: 'INSERT', schema: 'public', table: 'mensagens' },
+            {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'mensagens'
+            },
             (payload) => {
                 const novaMsg = payload.new;
 
-                // 1. Atualiza a lista lateral com a nova conversa
+                console.log(novaMsg);
+
+                // Atualiza a lista de conversas
                 carregarListaContatos();
 
-                // 2. Se for uma mensagem da conversa aberta atualmente, insere o balão na tela
+                // Se a mensagem pertence ao chat aberto, mostra na tela
                 if (
                     destinatarioAtual &&
-                    ((novaMsg.remetente_email === destinatarioAtual && novaMsg.destinatario_email === meuEmail) ||
-                     (novaMsg.remetente_email === meuEmail && novaMsg.destinatario_email === destinatarioAtual))
+                    (
+                        (novaMsg.remetente_email === destinatarioAtual &&
+                         novaMsg.destinatario_email === meuEmail) ||
+                        (novaMsg.remetente_email === meuEmail &&
+                         novaMsg.destinatario_email === destinatarioAtual)
+                    )
                 ) {
-                    renderizarBalao(novaMsg.texto, novaMsg.remetente_email === meuEmail, novaMsg.created_at);
+                    renderizarBalao(
+                        novaMsg.texto,
+                        novaMsg.remetente_email === meuEmail,
+                        novaMsg.created_at
+                    );
                 }
 
-                // 3. Dispara a notificação de sistema para toda mensagem recebida pelo usuário logado
+                // Se a mensagem foi recebida por mim
                 if (novaMsg.destinatario_email === meuEmail) {
-                    const contato = todosContatos.find(c => c.email === novaMsg.remetente_email);
-                    const nomeRemetente = contato ? (contato.usuario || contato.email) : novaMsg.remetente_email;
-                    const fotoRemetente = contato ? contato.foto_url : null;
+
+                    const contato = todosContatos.find(
+                        c => c.email === novaMsg.remetente_email
+                    );
+
+                    const nomeRemetente = contato
+                        ? (contato.usuario || contato.email)
+                        : novaMsg.remetente_email;
+
+                    const fotoRemetente = contato
+                        ? contato.foto_url
+                        : null;
 
                     enviarNotificacao(
                         nomeRemetente,
@@ -674,11 +693,30 @@ function inscreverRealtime() {
             }
         )
         .subscribe((status) => {
-            console.log("Status do canal Realtime:", status);
-            // Reconecta automaticamente se a conexão for suspensa pelo navegador
-            if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-                escutaRealtime = null;
-                setTimeout(inscreverRealtime, 2000);
+
+            console.log("🔌 Status Realtime:", status);
+
+            if (status === "SUBSCRIBED") {
+                console.log("✅ Realtime conectado!");
+                return;
+            }
+
+            // Se perder a conexão, limpa o canal
+            if (
+                status === "CLOSED" ||
+                status === "CHANNEL_ERROR" ||
+                status === "TIMED_OUT"
+            ) {
+                console.log("⚠️ Realtime desconectado. Tentando reconectar...");
+
+                if (escutaRealtime) {
+                    _supabase.removeChannel(escutaRealtime);
+                    escutaRealtime = null;
+                }
+
+                setTimeout(() => {
+                    inscreverRealtime();
+                }, 2000);
             }
         });
 }
@@ -867,11 +905,11 @@ function enviarNotificacao(remetente, textoMensagem, emailRemetente, fotoRemeten
             // Se um Service Worker estiver registrado, envia a notificação através dele
             if (navigator.serviceWorker && navigator.serviceWorker.controller) {
                 navigator.serviceWorker.ready.then(reg => {
-                    reg.showNotification(`Nova mensagem de ${remetente}`, opcoes);
+                    reg.showNotification(`${remetente}`, opcoes);
                 });
             } else {
                 // Notificação padrão do navegador
-                const notificacao = new Notification(`Nova mensagem de ${remetente}`, opcoes);
+                const notificacao = new Notification(`${remetente}`, opcoes);
                 notificacao.onclick = () => {
                     window.focus();
                     abrirChatCom(emailRemetente, remetente, fotoRemetente);
