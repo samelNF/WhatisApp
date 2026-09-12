@@ -14,11 +14,20 @@ let intervaloChecarStatusContato = null;
 let arquivoFotoSelecionado = null;
 
 // ==========================================
-// INICIALIZAÇÃO
+// INICIALIZAÇÃO E SERVICE WORKER
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
     verificarSessao();
+    registrarServiceWorker();
 });
+
+function registrarServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('Service Worker registrado:', reg.scope))
+            .catch(err => console.log('Service Worker não registrado (modo normal):', err));
+    }
+}
 
 // ==========================================
 // UTILITÁRIOS E FORMATAÇÃO
@@ -99,10 +108,10 @@ async function mostrarAppPrincipal() {
 
     solicitarPermissao();
     
-    // Primeiro carrega a lista para que a notificação reconheça os nomes/fotos
+    // Primeiro carrega a lista para reconhecer remetentes nas notificações
     await carregarListaContatos();
     
-    // Inicia a escuta global de mensagens
+    // Inicia a escuta em tempo real resiliente
     inscreverRealtime();
     
     iniciarMonitoramentoPresenca();
@@ -622,13 +631,15 @@ function fecharChat() {
 
 function inscreverRealtime() {
     const meuEmail = localStorage.getItem("usuarioLogado");
-    if (!meuEmail) return;
-
-    // Se já houver um canal registrado, não recria para evitar perda de conexão
-    if (escutaRealtime) return;
+    if (!meuEmail || escutaRealtime) return;
 
     escutaRealtime = _supabase
-        .channel('chat-global-realtime')
+        .channel('chat-global-realtime', {
+            config: {
+                presence: { key: meuEmail },
+                broadcast: { ack: true }
+            }
+        })
         .on(
             'postgres_changes',
             { event: 'INSERT', schema: 'public', table: 'mensagens' },
@@ -662,7 +673,14 @@ function inscreverRealtime() {
                 }
             }
         )
-        .subscribe();
+        .subscribe((status) => {
+            console.log("Status do canal Realtime:", status);
+            // Reconecta automaticamente se a conexão for suspensa pelo navegador
+            if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+                escutaRealtime = null;
+                setTimeout(inscreverRealtime, 2000);
+            }
+        });
 }
 
 // ==========================================
@@ -693,9 +711,22 @@ function pararMonitoramentoPresenca() {
     }
 }
 
+// Reconecta e atualiza instantaneamente quando o usuário abre o aplicativo/tela
 document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {
         iniciarMonitoramentoPresenca();
+        
+        // Garante que a escuta esteja ativa ao voltar para a aba
+        if (!escutaRealtime || escutaRealtime.state !== 'joined') {
+            if (escutaRealtime) _supabase.removeChannel(escutaRealtime);
+            escutaRealtime = null;
+            inscreverRealtime();
+        }
+        
+        carregarListaContatos();
+        if (destinatarioAtual) {
+            carregarMensagens();
+        }
     } else {
         pararMonitoramentoPresenca();
     }
@@ -825,18 +856,27 @@ function enviarNotificacao(remetente, textoMensagem, emailRemetente, fotoRemeten
     const notificacoesAtivas = localStorage.getItem("notificacoes") !== "false";
 
     if ("Notification" in window && Notification.permission === "granted" && notificacoesAtivas) {
-        // Envia notificação apenas se o usuário estiver fora da aba do site
-        if (document.hidden) {
-            const notificacao = new Notification(`Nova mensagem de ${remetente}`, {
+        // Envia a notificação sempre que o remetente não for a conversa focada na tela
+        if (document.hidden || destinatarioAtual !== emailRemetente) {
+            const opcoes = {
                 body: textoMensagem,
                 icon: fotoRemetente || "svg/icon.svg",
-                tag: `msg-${Date.now()}` // Garante que novas notificações não substituam as anteriores
-            });
-
-            notificacao.onclick = () => {
-                window.focus();
-                abrirChatCom(emailRemetente, remetente, fotoRemetente);
+                tag: `msg-${Date.now()}` // Garante que notificações sucessivas não se sobreponham
             };
+
+            // Se um Service Worker estiver registrado, envia a notificação através dele
+            if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                navigator.serviceWorker.ready.then(reg => {
+                    reg.showNotification(`Nova mensagem de ${remetente}`, opcoes);
+                });
+            } else {
+                // Notificação padrão do navegador
+                const notificacao = new Notification(`Nova mensagem de ${remetente}`, opcoes);
+                notificacao.onclick = () => {
+                    window.focus();
+                    abrirChatCom(emailRemetente, remetente, fotoRemetente);
+                };
+            }
         }
     }
 }
