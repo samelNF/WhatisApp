@@ -24,8 +24,8 @@ document.addEventListener("DOMContentLoaded", () => {
 function registrarServiceWorker() {
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('Service Worker registrado:', reg.scope))
-            .catch(err => console.log('Service Worker não registrado (modo normal):', err));
+            .then(reg => console.log('✅ Service Worker registrado:', reg.scope))
+            .catch(err => console.error('⚠️ Erro ao registrar Service Worker:', err));
     }
 }
 
@@ -629,35 +629,33 @@ function fecharChat() {
     }
 }
 
-async function inscreverRealtime() {
+function inscreverRealtime() {
     const meuEmail = localStorage.getItem("usuarioLogado");
-    if (!meuEmail) return;
+    if (!meuEmail || !_supabase) return;
 
-    // 1. Se já existe um canal ativo, remove para evitar duplicações/canais zumbis
+    // 1. Limpeza síncrona/segura para não travar a execução no iOS
     if (escutaRealtime) {
-        await _supabase.removeChannel(escutaRealtime);
+        _supabase.removeChannel(escutaRealtime);
         escutaRealtime = null;
     }
 
-    // 2. Cria o canal escutando FILTRADO APENAS para mensagens endereçadas a mim ou enviadas por mim
+    // 2. Inscreve novo canal com timestamp único
     escutaRealtime = _supabase
-        .channel(`chat-user-${Date.now()}`) // Nome único com timestamp para evitar cache no iOS
+        .channel(`chat-room-${Date.now()}`)
         .on(
             'postgres_changes',
             {
                 event: 'INSERT',
                 schema: 'public',
                 table: 'mensagens',
-                filter: `destinatario_email=eq.${meuEmail}` // Escuta apenas o que é recebido por você
+                filter: `destinatario_email=eq.${meuEmail}`
             },
             (payload) => {
                 const novaMsg = payload.new;
                 console.log("📩 Nova mensagem recebida:", novaMsg);
 
-                // Atualiza a lista de conversas
                 carregarListaContatos();
 
-                // Se o chat com este remetente estiver aberto na tela
                 if (destinatarioAtual && novaMsg.remetente_email === destinatarioAtual) {
                     renderizarBalao(
                         novaMsg.texto,
@@ -666,7 +664,6 @@ async function inscreverRealtime() {
                     );
                 }
 
-                // Dispara a notificação local
                 const contato = todosContatos.find(c => c.email === novaMsg.remetente_email);
                 const nomeRemetente = contato ? (contato.usuario || contato.email) : novaMsg.remetente_email;
                 const fotoRemetente = contato ? contato.foto_url : null;
@@ -685,12 +682,10 @@ async function inscreverRealtime() {
                 event: 'INSERT',
                 schema: 'public',
                 table: 'mensagens',
-                filter: `remetente_email=eq.${meuEmail}` // Escuta também o que você enviou de outro dispositivo
+                filter: `remetente_email=eq.${meuEmail}`
             },
             (payload) => {
                 const novaMsg = payload.new;
-                
-                // Se você mesmo enviou e o chat tá aberto, apenas renderiza na tela
                 if (destinatarioAtual && novaMsg.destinatario_email === destinatarioAtual) {
                     renderizarBalao(novaMsg.texto, true, novaMsg.created_at);
                 }
@@ -698,18 +693,15 @@ async function inscreverRealtime() {
             }
         )
         .subscribe((status, err) => {
-            console.log("🔌 Status Realtime:", status);
-
-            if (status === "SUBSCRIBED") {
-                console.log("✅ Realtime conectado com sucesso no iOS!");
-            }
-
+            console.log("🔌 Status do Realtime:", status);
+            if (err) console.error("Erro no Realtime:", err);
+            
             if (status === "CHANNEL_ERROR" || status === "CLOSED" || status === "TIMED_OUT") {
-                console.warn("⚠️ Canal desconectado. Limpando referência...");
                 escutaRealtime = null;
             }
         });
 }
+
 // ==========================================
 // MONITORAMENTO DE PRESENÇA (ONLINE/OFFLINE)
 // ==========================================
@@ -738,19 +730,15 @@ function pararMonitoramentoPresenca() {
     }
 }
 
-// Reconecta e atualiza instantaneamente quando o usuário abre o aplicativo/tela
+// Reconecta e atualiza instantaneamente quando o usuário abre o aplicativo/tela no iOS e PC
 document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {
+        console.log("📱 Aplicativo visível novamente. Reconectando...");
         iniciarMonitoramentoPresenca();
         
-        // Garante que a escuta esteja ativa ao voltar para a aba
-        if (!escutaRealtime || escutaRealtime.state !== 'joined') {
-            if (escutaRealtime) _supabase.removeChannel(escutaRealtime);
-            escutaRealtime = null;
-            inscreverRealtime();
-        }
-        
+        inscreverRealtime();
         carregarListaContatos();
+
         if (destinatarioAtual) {
             carregarMensagens();
         }
@@ -884,11 +872,12 @@ function enviarNotificacao(remetente, textoMensagem, emailRemetente, fotoRemeten
 
     if ("Notification" in window && Notification.permission === "granted" && notificacoesAtivas) {
         
-        // Dispara se a aba estiver em segundo plano ou o chat não estiver aberto
+        // Dispara se a aba estiver minimizada/segundo plano ou se o chat aberto não for o da pessoa
         if (document.hidden || destinatarioAtual !== emailRemetente) {
             const opcoes = {
                 body: textoMensagem,
                 icon: fotoRemetente || "svg/icon.svg",
+                badge: "svg/icon.svg",
                 tag: `msg-${Date.now()}`,
                 data: {
                     emailRemetente: emailRemetente,
@@ -897,16 +886,21 @@ function enviarNotificacao(remetente, textoMensagem, emailRemetente, fotoRemeten
                 }
             };
 
-            // 1. Tenta disparar priorizando o Service Worker (Obrigatório para iOS)
+            // Prioridade total ao Service Worker (único método aceito pelo iOS PWA)
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.ready.then(reg => {
                     reg.showNotification(remetente, opcoes);
-                }).catch(err => {
-                    console.error("Erro ao disparar notificação via SW:", err);
+                }).catch(() => {
+                    // Fallback para desktop antigo se o SW falhar
+                    if (typeof Notification === "function") {
+                        const notificacao = new Notification(remetente, opcoes);
+                        notificacao.onclick = () => {
+                            window.focus();
+                            abrirChatCom(emailRemetente, remetente, fotoRemetente);
+                        };
+                    }
                 });
-            } 
-            // 2. Fallback apenas para navegadores antigos de desktop que não usam SW
-            else if (typeof Notification === "function") {
+            } else if (typeof Notification === "function") {
                 const notificacao = new Notification(remetente, opcoes);
                 notificacao.onclick = () => {
                     window.focus();
