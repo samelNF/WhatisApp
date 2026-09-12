@@ -1,7 +1,9 @@
 {
   "name": "WhatisApp",
   "short_name": "WhatisApp",
+  "id": "/",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "icons": [
     {
