@@ -1,165 +1,165 @@
-	@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-	header div h1 {
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    header div h1 {
         color: white;
         font-size: 33px;
-		font-family: sans-serif;
-	}
-	.quadrado-criar {
-		width: 190px;
-		height: 195px;
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		align-items: center;
-		background-color: #5f5f5f;
-		position: fixed;
-	}
-	.conversa {
-		width: 100%;
-		height: 100%;
-		display: flex;
-		padding-top: 24px;
-		cursor: default;
-	}
-	body {
-        background-color: #0A0A0A;
-	}
-	.topo {
+        font-family: sans-serif;
+    }
+    .quadrado-criar {
+        width: 190px;
+        height: 195px;
         display: flex;
-		justify-content: space-between;
-		flex-direction: row;
-		width: 95%;
-		height: 55px;
-		background-color: #0A0A0AB3;
-		top: 0px;
-		position: fixed;
-		padding-top: 5px;
-	}
-	.camera {
-		filter: brightness(0) invert(1);
-		transform: rotateY(180deg);
-	}
-	.plusi {
-		width: 85%;
-		height: 85%;
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		padding-left: 2.5px;
-	}
-	.cinza {
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background-color: #5f5f5f;
+        position: fixed;
+    }
+    .conversa {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        padding-top: 24px;
+        cursor: default;
+    }
+    body {
+        background-color: #0A0A0A;
+    }
+    .topo {
+        display: flex;
+        justify-content: space-between;
+        flex-direction: row;
+        width: 95%;
+        height: 55px;
+        background-color: #0A0A0AB3;
+        top: 0px;
+        position: fixed;
+        padding-top: 5px;
+    }
+    .camera {
+        filter: brightness(0) invert(1);
+        transform: rotateY(180deg);
+    }
+    .plusi {
+        width: 85%;
+        height: 85%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding-left: 2.5px;
+    }
+    .cinza {
         color: white;
         border-radius: 100px;
         font-size: 20px;
         width: 45px;
         height: 45px;
-		background-color: #292929;
-		border: none;
-		outline: none;
-		cursor: pointer;
-	}
-	.pesquisa {
-		display: flex;
-		justify-items: center;
-		align-items: center;
-		width: 100%;
-		height: 45px;
-		background-color: #222222;
-		border-radius: 2000px;
-	}
-	.pesquisa input {
-		background: transparent;
-		border: none;
-		outline: none;
-		color: #FAFAFA;
-		font-size: 19px;
-		flex: 1;
-	}
-	.pesquisa img {
-		width: 20px;
-		height: 20px;
-		filter: brightness(100%) invert(1);
-		padding-left: 10px;
-	}
-	.ultrabaixo {
-		display: flex;
-		justify-content: center;
-		flex-direction: row;
-	}
-	.baixo {
-		display: flex;
-		justify-content: center;
-		align-items: space-between;
-		flex-direction: row;
-		width: 66%;
-		height: 67px;
-		background-color: #FAFAFA40;
-		border-radius: 1000px;
-		position: fixed;
-		padding-top: 3px;
-		bottom: 22px;
-	}
-	.tu {
-		width: 48.5%;
-		height: 63.5px;
-		border: none;
-		background-color: transparent;
-		color: #FAFAFA;
-		display: flex;
-		align-items: center;
-		flex-direction: column;
-		justify-content: center;
-		font-size: 12px;
-	}
-	.chat-bt {
-		width: 48.5%;
-		height: 63.5px;
-		border: none;
-		background-color: transparent;
-		color: #FAFAFA;
-		display: flex;
-		align-items: center;
-		flex-direction: column;
-		justify-content: center;
-		font-size: 12px;
-	}
-	.vose {
-    	width: 45px;
-    	height: 45px;
-    	object-fit: cover;
-    	border-radius: 50%;
-	}
-	.vose[src$=".svg"] {
-    	filter: brightness(0) invert(1);
-    	border-radius: 0;
-	}
-	.chat {
-		width: 60%;
-		height: 60%;
-		object-fit: contain;
-		filter: brightness(0) invert(1);
-	}
-	/* Estilo base dos botões da barra inferior */
+        background-color: #292929;
+        border: none;
+        outline: none;
+        cursor: pointer;
+    }
+    .pesquisa {
+        display: flex;
+        justify-items: center;
+        align-items: center;
+        width: 100%;
+        height: 45px;
+        background-color: #222222;
+        border-radius: 2000px;
+    }
+    .pesquisa input {
+        background: transparent;
+        border: none;
+        outline: none;
+        color: #FAFAFA;
+        font-size: 19px;
+        flex: 1;
+    }
+    .pesquisa img {
+        width: 20px;
+        height: 20px;
+        filter: brightness(100%) invert(1);
+        padding-left: 10px;
+    }
+    .ultrabaixo {
+        display: flex;
+        justify-content: center;
+        flex-direction: row;
+    }
+    .baixo {
+        display: flex;
+        justify-content: center;
+        align-items: space-between;
+        flex-direction: row;
+        width: 66%;
+        height: 67px;
+        background-color: #FAFAFA40;
+        border-radius: 1000px;
+        position: fixed;
+        padding-top: 3px;
+        bottom: 22px;
+    }
+    .tu {
+        width: 48.5%;
+        height: 63.5px;
+        border: none;
+        background-color: transparent;
+        color: #FAFAFA;
+        display: flex;
+        align-items: center;
+        flex-direction: column;
+        justify-content: center;
+        font-size: 12px;
+    }
+    .chat-bt {
+        width: 48.5%;
+        height: 63.5px;
+        border: none;
+        background-color: transparent;
+        color: #FAFAFA;
+        display: flex;
+        align-items: center;
+        flex-direction: column;
+        justify-content: center;
+        font-size: 12px;
+    }
+    .vose {
+        width: 45px;
+        height: 45px;
+        object-fit: cover;
+        border-radius: 50%;
+    }
+    .vose[src$=".svg"] {
+        filter: brightness(0) invert(1);
+        border-radius: 0;
+    }
+    .chat {
+        width: 60%;
+        height: 60%;
+        object-fit: contain;
+        filter: brightness(0) invert(1);
+    }
+    /* Estilo base dos botões da barra inferior */
 .chat-bt, .tu {
     position: relative;
     cursor: pointer;
     transition: background-color 0.2s ease, opacity 0.2s ease;
     opacity: 1;
-	background-color: transparent;
-	border: none;
-	border-radius: 1000px;
+    background-color: transparent;
+    border: none;
+    border-radius: 1000px;
 }
 
 /* Estado ativo (botão selecionado) */
 .chat-bt.ativo, .tu.ativo {
-	opacity: 100%;
+    opacity: 100%;
     background-color: #121212;
-	border-radius: 1000px;
-	border: none;
-	color: white;
+    border-radius: 1000px;
+    border: none;
+    color: white;
 }
 
-/* Indicador (tracinho verde) em baixo do botão ativo */
+/* Indicador (tracinho laranja) em baixo do botão ativo */
 .chat-bt.ativo::after, .tu.ativo::after {
     content: '';
     position: absolute;
@@ -168,162 +168,162 @@
     height: 3px;
     background-color: transparent;
     border-radius: 10000px;
-	color: white;
+    color: white;
 }
-	.verde {
+    .verde {
         color: #0A0A0A;
         border-radius: 100px;
         font-size: 30px;
         width: 45px;
         height: 45px;
-		background-color: #21C063;
-		border: none;
-		outline: none;
-		right: 0;
-		cursor: pointer;
-	}
-	.contatos ul {
-		list-style-type: none;
-		margin: 0;
-		padding: 0;
-		color: #FAFAFA;
-		font-family: sans-serif;
-	}
-	.criar-conta {
-		position: fixed;
-		inset: 0;
-		background-color: #0A0A0A;
-		transform: translateX(0%);
-		transition: transform 2.0s ease-in-out;
-		display: flex;
-		flex-direction: column;
-		justify-content: up;
-		padding-top: 50px;
-		align-items: center;
-	}
-	#criar-conta.esquerda {
-		transform: translateX(-300%);
-	}
-	.criar-conta h1 {
-		color: #FAFAFA;
-		font-family: sans-serif;
-	}
-	.grande {
-		width: 200px;
-		height: 30px;
-		background-color: #21C063;
-		color: #000000;
-		border: none;
-		outline: none;
-		border-radius: 100px;
-		font-size: 15px;
-		margin-top: 3px;
-		cursor: pointer;
-	}
-	.criar-conta input {
-		width: 200px;
-		height: 30px;
-		background-color: #1A1A1A;
-		border: none;
-		outline: none;
-		border-radius: 10px;
-		margin-top: 2px;
-		font-size: 15px;
-		color: #FAFAFA;
-	}
-	.campo-senha {
-		display: flex;
-		align-items: center;
-		width: 217px;
-		height: 30px;
-		border-radius: 10px;
-		margin-top: 5px;
-		margin-bottom: 5px;
-	}
-	.campo-senha input {
-		flex: 1;
-		width: 200px;
-		margin-right: 5px;
-	}
-	.campo-senha button{
-		color: #FAFAFA;
-		width: 15px;
-		height: 15px;
-		cursor: pointer;
-		filter: brightness(0) invert(1);
-		background-color: transparent;
-		border: none;
-		outline: none;
-	}
-	.logo {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-	}
-	.nome {
-		font-family: sans-serif;
-		font-size: 25px;
-		color: #FAFAFA;
-		padding: 10%;	
-	}
-	.inicio {
-		position: fixed;
-		inset: 0;
-		background-color: #0A0A0A;
-		transform: translateX(0%);
-		transition: transform 2.0s ease-in-out;
-		display: none;
-		flex-direction: column;
-		justify-content: center;
-	}
-	#inicio.esquerda {
-		transform: translateX(-300%);
-	}
-	.usuario {
-		display: none;
-	}
-	.coisinha {
-		width: 70%;
-		height: 70%;
-		object-fit: contain;
-	}
-	.bondia {
-		color: #FAFAFA;
-		font-family: sans-serif;
-		font-size: 20px;
-		text-align: center;
-		padding-bottom: 70px;
-	}
-	.trem {
-		padding-top: 70px;
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		align-items: center;
-	}
-	.trem label {
-		color: #FAFAFA;
-		font-family: sans-serif;
-		font-size: 10px;
-		text-align: center;
-	}
-	.trem button {
-		width: 200px;
-		height: 30px;
-		background-color: #21C063;
-		border: none;
-		outline: none;
-		border-radius: 100px;
-		font-size: 15px;
-		margin-top: 3px;
-		cursor: pointer;
-		color: #000000;
-	}
+        background-color: #ff7b00;
+        border: none;
+        outline: none;
+        right: 0;
+        cursor: pointer;
+    }
+    .contatos ul {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+        color: #FAFAFA;
+        font-family: sans-serif;
+    }
+    .criar-conta {
+        position: fixed;
+        inset: 0;
+        background-color: #0A0A0A;
+        transform: translateX(0%);
+        transition: transform 2.0s ease-in-out;
+        display: flex;
+        flex-direction: column;
+        justify-content: up;
+        padding-top: 50px;
+        align-items: center;
+    }
+    #criar-conta.esquerda {
+        transform: translateX(-300%);
+    }
+    .criar-conta h1 {
+        color: #FAFAFA;
+        font-family: sans-serif;
+    }
+    .grande {
+        width: 200px;
+        height: 30px;
+        background-color: #ff7b00;
+        color: #000000;
+        border: none;
+        outline: none;
+        border-radius: 100px;
+        font-size: 15px;
+        margin-top: 3px;
+        cursor: pointer;
+    }
+    .criar-conta input {
+        width: 200px;
+        height: 30px;
+        background-color: #1A1A1A;
+        border: none;
+        outline: none;
+        border-radius: 10px;
+        margin-top: 2px;
+        font-size: 15px;
+        color: #FAFAFA;
+    }
+    .campo-senha {
+        display: flex;
+        align-items: center;
+        width: 217px;
+        height: 30px;
+        border-radius: 10px;
+        margin-top: 5px;
+        margin-bottom: 5px;
+    }
+    .campo-senha input {
+        flex: 1;
+        width: 200px;
+        margin-right: 5px;
+    }
+    .campo-senha button{
+        color: #FAFAFA;
+        width: 15px;
+        height: 15px;
+        cursor: pointer;
+        filter: brightness(0) invert(1);
+        background-color: transparent;
+        border: none;
+        outline: none;
+    }
+    .logo {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .nome {
+        font-family: sans-serif;
+        font-size: 25px;
+        color: #FAFAFA;
+        padding: 10%;   
+    }
+    .inicio {
+        position: fixed;
+        inset: 0;
+        background-color: #0A0A0A;
+        transform: translateX(0%);
+        transition: transform 2.0s ease-in-out;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    #inicio.esquerda {
+        transform: translateX(-300%);
+    }
+    .usuario {
+        display: none;
+    }
+    .coisinha {
+        width: 70%;
+        height: 70%;
+        object-fit: contain;
+    }
+    .bondia {
+        color: #FAFAFA;
+        font-family: sans-serif;
+        font-size: 20px;
+        text-align: center;
+        padding-bottom: 70px;
+    }
+    .trem {
+        padding-top: 70px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+    .trem label {
+        color: #FAFAFA;
+        font-family: sans-serif;
+        font-size: 10px;
+        text-align: center;
+    }
+    .trem button {
+        width: 200px;
+        height: 30px;
+        background-color: #ff7b00;
+        border: none;
+        outline: none;
+        border-radius: 100px;
+        font-size: 15px;
+        margin-top: 3px;
+        cursor: pointer;
+        color: #000000;
+    }
 .autenticacao-box, .senhor-usuario {
     position: fixed;
     inset: 0;
     background-color: #0A0A0A;
-    display: displa;
+    display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
@@ -357,7 +357,7 @@
 }
 
 .troca-tela span {
-    color: #21C063;
+    color: #ff7b00;
     cursor: pointer;
     font-weight: bold;
 }
@@ -365,7 +365,7 @@
 .btn-concluir-usuario {
     width: 200px;
     height: 30px;
-    background-color: #21C063;
+    background-color: #ff7b00;
     color: #000000;
     border: none;
     outline: none;
@@ -388,7 +388,7 @@
     border-radius: 50%;
     object-fit: cover;
     background-color: #292929;
-    border: 2px solid #21C063;
+    border: 2px solid #ff7b00;
 }
 
 .avatar-upload-btn {
@@ -397,7 +397,7 @@
     right: 0;
     width: 32px;
     height: 32px;
-    background-color: #21C063;
+    background-color: #fdfbf8;
     border-radius: 50%;
     display: flex;
     justify-content: center;
@@ -405,8 +405,384 @@
     cursor: pointer;
     box-shadow: 0 2px 5px rgba(0,0,0,0.5);
 }
-
 .avatar-upload-btn img {
     width: 16px;
     height: 16px;
+}
+/* JANELA DE CHAT */
+.tela-chat {
+    position: fixed;
+    inset: 0;
+    background-color: #0A0A0A;
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+}
+.chat-header {
+    height: 60px;
+    background-color: #ffffff11;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    border: none;
+}
+.btn-voltar {
+    background: transparent;
+    border: none;
+    color: #fdfbf8;
+    font-size: 32px;
+    cursor: pointer;
+    padding-right: 10px;
+}
+.chat-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 10px;
+}
+.chat-info-usuario h2 {
+    color: #fdfbf8;
+    font-size: 16px;
+    margin: 0;
+    font-family: sans-serif;
+    cursor: default;
+}
+.status-online {
+    color: #b5b0ad;
+    font-size: 12px;
+    font-family: sans-serif;
+    cursor: default;
+}
+/* ÁREA DE BALÕES DE MENSAGEM */
+.chat-mensagens {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+/* Hora dentro do balão de mensagem */
+
+/* Container base do balão */
+.balao-msg {
+    display: inline-flex;
+    flex-direction: column;
+    max-width: 70%;
+    padding: 8px 12px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    word-break: break-word;
+}
+
+/* Garante o alinhamento correto das mensagens enviadas (direta) e recebidas (esquerda) */
+.balao-enviada {
+    align-self: flex-end;
+    background-color: #333333;
+    color: #ffffff;
+    border-bottom-right-radius: 4px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    cursor: default;
+}
+
+.balao-recebida {
+    align-self: flex-start;
+    background-color: #242625;
+    color: #ffffff;
+    border-bottom-left-radius: 4px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    cursor: default;
+}
+
+/* Formatação do texto do horário */
+.balao-hora {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.6);
+    align-self: flex-end;
+    margin-top: 2px;
+    margin-left: 12px;
+    cursor: default;
+}
+
+/* Ajuste na lista de contatos para alinhar nome, mensagem e hora */
+.info-contato-topo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.hora-contato {
+    font-size: 11px;
+    color: #888;
+    font-family: sans-serif;
+}
+
+/* INPUT DE MENSAGEM */
+.chat-input-box {
+    padding: 10px;
+    background-color: #121212;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.chat-input-box input {
+    flex: 1;
+    height: 40px;
+    background-color: #5353535b;
+    border: none;
+    outline: none;
+    border-radius: 20px;
+    padding: 0 15px;
+    color: #FAFAFA;
+    font-size: 15px;
+}
+.btn-enviar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #fdfbf8;
+    border: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    padding-right: 10px;
+}
+.btn-enviar img {
+    width: 20px;
+    height: 20px;
+}
+/* LISTA DE CONTATOS / CONVERSAS */
+.contatos ul {
+    list-style: none;
+    margin: 15px 0 0 0;
+    padding: 0;
+}
+
+.item-contato {
+    display: flex;
+    align-items: center;
+    padding: 12px 10px;
+    border-bottom: 1px solid #1A1A1A;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.item-contato:active {
+    background-color: #1A1A1A;
+}
+
+.foto-contato {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 15px;
+    background-color: #292929;
+}
+
+.info-contato {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.nome-contato {
+    color: #FAFAFA;
+    font-size: 20px;
+    font-weight: 500;
+    font-family: sans-serif;
+    padding-bottom: 18px;
+}
+
+.ultima-msg {
+    color: #888;
+    font-size: 16px;
+    font-family: sans-serif;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+    padding-bottom: 10px;
+}
+/* Container Geral da Aba Você */
+#tela-voce {
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    height: 100%;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+.topo-aba h2 {
+    color: #e9edef;
+    margin-bottom: 20px;
+    font-size: 22px;
+    font-family: sans-serif;
+}
+
+/* Card do Perfil */
+.perfil-card {
+    display: flex;
+    align-items: center;
+    background-color: #111b21;
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    gap: 16px;
+}
+
+.foto-container {
+    position: relative;
+    width: 68px;
+    height: 68px;
+}
+
+.foto-perfil-grande {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.btn-editar-foto {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background-color: #ff7b00;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: sans-serif;
+}
+
+.info-usuario-voce h3 {
+    margin: 0;
+    color: #e9edef;
+    font-size: 18px;
+    font-family: sans-serif;
+}
+
+.info-usuario-voce p {
+    margin: 4px 0 0 0;
+    color: #8696a0;
+    font-size: 14px;
+    font-family: sans-serif;
+}
+
+/* Seção de Configurações */
+.secao-configuracoes h4 {
+    color: #8696a0;
+    font-size: 13px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    font-family: sans-serif;
+}
+
+.item-config {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 0;
+    border-bottom: 1px solid #222d34;
+    cursor: pointer;
+}
+
+.info-config {
+    display: flex;
+    flex-direction: column;
+}
+
+.titulo-config {
+    color: #e9edef;
+    font-size: 15px;
+    font-family: sans-serif;
+}
+
+.subtitulo-config {
+    color: #8696a0;
+    font-size: 12px;
+    margin-top: 2px;
+    font-family: sans-serif;
+}
+
+.seta-opcao {
+    color: #8696a0;
+    font-size: 20px;
+    font-family: sans-serif;
+}
+
+/* Switch (Chave de Ativar/Desativar) */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #3b4a54;
+    transition: .3s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #ff7b00;
+}
+
+input:checked + .slider:before {
+    transform: translateX(20px);
+}
+
+/* Botão Sair */
+.secao-sair {
+    margin-top: 32px;
+    text-align: center;
+}
+
+.btn-deslogar {
+    width: 100%;
+    padding: 12px;
+    background-color: transparent;
+    border: 1px solid #ea868f;
+    color: #ea868f;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-deslogar:hover {
+    background-color: rgba(234, 134, 143, 0.1);
 }

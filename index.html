@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="icon" href="https://static.whatsapp.net/rsrc.php/yd/r/PfkSLByWV8O.webp">
+    <link rel="icon" href="svg/mini-logo.svg">
     <title>WhatisApp</title>
 
     <link rel="stylesheet" href="style.css">
@@ -15,52 +15,107 @@
 
 <body>
     
-    <header>
-        <div class="topo">
-            <button class="cinza" onclick="deslogar()" title="Deslogar">•••</button>
-            <button class="verde" title="Adicionar">
-                <img src="svg/plus.svg" class="plusi">
+    <!-- ABA 1: CONVERSAS E LISTA DE CONTATOS -->
+    <div id="tela-conversas" class="aba-conteudo">
+        <header>
+            <div class="topo">
+                <button class="cinza" title="•••">•••</button>
+                <button class="verde" title="Adicionar" onclick="pedirEmailContato()">
+                    <img src="svg/plus.svg" class="plusi">
+                </button>
+            </div>
+            <div class="conversa">
+                <h1>Conversas</h1>
+            </div>
+        </header>
+
+        <main>
+            <div class="pesquisa">
+                <img src="svg/glasses.svg" class="glass">
+                <input type="text" id="input-pesquisa" placeholder=" Pesquisar" oninput="filtrarContatos()" title="Pesquisa">
+            </div>
+            <div class="contatos">
+                <ul id="lista-contatos">
+                    <!-- Os contatos carregam via JS -->
+                </ul>
+            </div>
+        </main>
+    </div>
+
+    <!-- ABA 2: VOCÊ / PERFIL E CONFIGURAÇÕES -->
+    <div id="tela-voce" class="aba-conteudo" style="display: none;">
+        <div class="topo-aba">
+            <h2>Você</h2>
+        </div>
+
+        <div class="perfil-card">
+            <div class="foto-container">
+                <img id="voce-foto-perfil" src="svg/icon.svg" class="foto-perfil-grande">
+                <label for="input-trocar-foto" class="btn-editar-foto">
+                    <i class="fas fa-camera">📷</i>
+                </label>
+                <input type="file" id="input-trocar-foto" accept="image/*" onchange="trocarFotoPerfil(event)" style="display: none;">
+            </div>
+            <div class="info-usuario-voce">
+                <h3 id="voce-nome-usuario">Carregando...</h3>
+                <p id="voce-email-usuario">email@exemplo.com</p>
+            </div>
+        </div>
+
+        <div class="secao-configuracoes">
+            <h4>Configurações</h4>
+
+            <div class="item-config">
+                <div class="info-config">
+                    <span class="titulo-config">Notificações</span>
+                    <span class="subtitulo-config">Exibir alertas de novas mensagens</span>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="check-notificacoes" onchange="salvarPreferencias()">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+
+            <div class="item-config">
+                <div class="info-config">
+                    <span class="titulo-config">Tema Escuro</span>
+                    <span class="subtitulo-config">Alternar entre modo claro e escuro</span>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="check-tema-escuro" onchange="alternarTema()">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+
+            <div class="item-config" onclick="abrirPrivacidade()">
+                <div class="info-config">
+                    <span class="titulo-config">Privacidade</span>
+                    <span class="subtitulo-config">Visto por último e confirmações</span>
+                </div>
+                <span class="seta-opcao">›</span>
+            </div>
+        </div>
+
+        <div class="secao-sair">
+            <button class="btn-deslogar" onclick="deslogar()">Sair da Conta</button>
+        </div>
+    </div>
+
+    <!-- BARRA DE NAVEGAÇÃO INFERIOR -->
+    <nav class="ultrabaixo">
+        <div class="baixo">
+            <button class="chat-bt ativo" onclick="alternarAba('conversas', this)" title="Conversas">
+                <img src="svg/chat.svg" class="chat">
+                <span>Conversas</span>
+            </button>
+            <button class="tu" onclick="alternarAba('voce', this)" title="Você">
+                <img id="foto-aba-voce" src="svg/icon.svg" class="vose">
+                <span>Você</span>
             </button>
         </div>
-        <div class="conversa">
-            <h1>Conversas</h1>
-        </div>
-    </header>
+    </nav>
 
-    <main>
-        <div class="pesquisa">
-            <img src="svg/glasses.svg" class="glass">
-            <input type="text" placeholder=" Pesquisar" title="Pesquisar">
-        </div>
-        <div class="contatos">
-            <ul>
-                <li>bi</li>
-            </ul>
-        </div>
-    </main>
-
-    <nav>
-        <div class="ultrabaixo">
-            <div class="baixo">
-				<nav>
-					<div class="ultrabaixo">
-						<div class="baixo">
-							<button class="chat-bt ativo" onclick="alternarAba(this)" title="Conversas">
-								<img src="svg/chat.svg" class="chat">
-								<span>Conversas</span>
-							</button>
-							<button class="tu" onclick="alternarAba(this)" title="Você">
-								<img id="foto-aba-voce" src="svg/icon.svg" class="vose">
-								<span>Você</span>
-							</button>
-						</div>
-					</div>
-				</nav>
-			</div>
-		</div>
-	</nav>
-
-    <!-- TELA DE LOGIN (ENTRAR) -->
+    <!-- TELA DE LOGIN -->
     <section id="login" class="autenticacao-box">
         <h1>Entrar na Conta</h1>
         <input type="email" id="login-email" placeholder="Email">
@@ -74,7 +129,7 @@
         <p class="troca-tela">Não tem uma conta? <span onclick="mostrarTela('criar-conta')">Criar conta</span></p>
     </section>
 
-    <!-- ETAPA 1: Cadastro (E-mail e Senha) -->
+    <!-- CADASTRO ETAPA 1 -->
     <section id="criar-conta" class="autenticacao-box" style="display: none;">
         <h1>Criar Conta</h1>
         <input type="email" id="email" placeholder="Email">
@@ -88,24 +143,23 @@
         <p class="troca-tela">Já tem uma conta? <span onclick="mostrarTela('login')">Entrar</span></p>
     </section>
 
-    <!-- ETAPA 2: Nome de Usuário -->
-    <!-- ETAPA 2: Nome de Usuário e Foto de Perfil -->
-	<section id="etapa-usuario" class="senhor-usuario" style="display: none;">
-    	<h1>Escolha seu Perfil</h1>
+    <!-- CADASTRO ETAPA 2 -->
+    <section id="etapa-usuario" class="senhor-usuario" style="display: none;">
+        <h1>Escolha seu Perfil</h1>
     
-    	<!-- Container da Foto Redonda -->
-    	<div class="avatar-container">
-        	<img id="avatar-preview" src="svg/icon.svg" alt="Foto de Perfil" class="avatar-preview">
-        	<label for="foto-input" class="avatar-upload-btn">
-            	<img src="svg/plus.svg" alt="Adicionar">
-        	</label>
-        	<input type="file" id="foto-input" accept="image/*" onchange="previewFoto(event)" style="display: none;">
-    	</div>
+        <div class="avatar-container">
+            <img id="avatar-preview" src="svg/icon.svg" alt="Foto de Perfil" class="avatar-preview">
+            <label for="foto-input" class="avatar-upload-btn">
+                <img src="svg/plus.svg" alt="Adicionar">
+            </label>
+            <input type="file" id="foto-input" accept="image/*" onchange="previewFoto(event)" style="display: none;">
+        </div>
 
-    	<input class="input-usuario-etapa2" type="text" id="usuario" placeholder="Nome de usuário">
-    	<button type="button" onclick="salvarUsuarioSegundaEtapa()" class="btn-concluir-usuario">Concluir Cadastro</button>
-	</section>
+        <input class="input-usuario-etapa2" type="text" id="usuario" placeholder="Nome de usuário">
+        <button type="button" onclick="salvarUsuarioSegundaEtapa()" class="btn-concluir-usuario">Concluir Cadastro</button>
+    </section>
 
+    <!-- TELA DE BOAS-VINDAS / TERMOS -->
     <section id="inicio" class="inicio" style="display: none;">
         <label class="bondia">Bem-vindo(a) ao WhatisApp</label>
         <div id="app">
@@ -120,6 +174,30 @@
                 </label>
                 <button onclick="proximo()">Concordar e Continuar</button>
             </div>
+        </div>
+    </section>
+
+    <!-- JANELA DE CHAT -->
+    <section id="tela-chat" class="tela-chat" style="display: none;">
+        <div class="chat-header">
+            <button class="btn-voltar" onclick="fecharChat()">‹</button>
+            <img id="chat-foto-usuario" src="svg/icon.svg" class="chat-avatar">
+            <div class="chat-info-usuario">
+                <h2 id="chat-nome-usuario">Contato</h2>
+                <!-- ID adiconado para permitir alteração dinâmica do status -->
+                <span id="chat-status-usuario" class="status-online"></span>
+            </div>
+        </div>
+
+        <div id="chat-mensagens" class="chat-mensagens">
+            <!-- Mensagens inseridas via JS -->
+        </div>
+
+        <div class="chat-input-box">
+            <input type="text" id="input-mensagem" placeholder="Mensagem" onkeypress="checarEnter(event)">
+            <button onclick="enviarMensagem()" class="btn-enviar">
+                <img src="svg/paperplane.svg" alt="Enviar" style="transform: rotate(45deg);">
+            </button>
         </div>
     </section>
 
