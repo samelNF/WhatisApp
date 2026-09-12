@@ -582,14 +582,14 @@ async function adicionarNovoContato(nomeUsuarioAdicionar) {
 }
 
 async function pedirEmailContato() {
-    const emailDestino = prompt("Digite o e-mail do usuário com quem deseja conversar:");
+    const userDestino = prompt("Digite o usuário de quem deseja conversar:");
 
-    if (!emailDestino) return;
+    if (!userDestino) return;
 
-    const meuEmail = localStorage.getItem("usuarioLogado");
+    const meuUser = localStorage.getItem("nomeUsuario");
 
     // Evita enviar solicitação para si mesmo
-    if (emailDestino.trim().toLowerCase() === meuEmail.trim().toLowerCase()) {
+    if (userDestino.trim().toLowerCase() === meuUser.trim().toLowerCase()) {
         alert("Você não pode enviar uma solicitação para si mesmo.");
         return;
     }
@@ -597,8 +597,8 @@ async function pedirEmailContato() {
     // 1. Verifica se o usuário de destino existe no sistema
     const { data: usuarioExiste, error: errUsuario } = await _supabase
         .from('usuarios')
-        .select('email')
-        .eq('email', emailDestino.trim())
+        .select('usuario')
+        .eq('usuario', userDestino.trim())
         .maybeSingle();
 
     if (!usuarioExiste) {
@@ -610,8 +610,8 @@ async function pedirEmailContato() {
     const { data: solicitacaoExistente } = await _supabase
         .from('solicitacoes_chat')
         .select('id, status')
-        .eq('remetente_email', meuEmail)
-        .eq('destinatario_email', emailDestino.trim())
+        .eq('remetente_email', meuUser)
+        .eq('destinatario_email', userDestino.trim())
         .maybeSingle();
 
     if (solicitacaoExistente) {
@@ -624,8 +624,8 @@ async function pedirEmailContato() {
         .from('solicitacoes_chat')
         .insert([
             {
-                remetente_email: meuEmail,
-                destinatario_email: emailDestino.trim(),
+                remetente_email: meuUser,
+                destinatario_email: userDestino.trim(),
                 status: 'pendente'
             }
         ]);
