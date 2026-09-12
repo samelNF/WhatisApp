@@ -581,10 +581,60 @@ async function adicionarNovoContato(nomeUsuarioAdicionar) {
     carregarListaContatos();
 }
 
-function pedirEmailContato() {
-    const usuarioDigitado = prompt("Digite o nome de usuário da pessoa que deseja adicionar:");
-    if (usuarioDigitado) {
-        adicionarNovoContato(usuarioDigitado.trim());
+async function pedirEmailContato() {
+    const emailDestino = prompt("Digite o e-mail do usuário com quem deseja conversar:");
+
+    if (!emailDestino) return;
+
+    const meuEmail = localStorage.getItem("usuarioLogado");
+
+    // Evita enviar solicitação para si mesmo
+    if (emailDestino.trim().toLowerCase() === meuEmail.trim().toLowerCase()) {
+        alert("Você não pode enviar uma solicitação para si mesmo.");
+        return;
+    }
+
+    // 1. Verifica se o usuário de destino existe no sistema
+    const { data: usuarioExiste, error: errUsuario } = await _supabase
+        .from('usuarios')
+        .select('email')
+        .eq('email', emailDestino.trim())
+        .maybeSingle();
+
+    if (!usuarioExiste) {
+        alert("Usuário não encontrado!");
+        return;
+    }
+
+    // 2. Verifica se a solicitação já foi enviada previamente
+    const { data: solicitacaoExistente } = await _supabase
+        .from('solicitacoes_chat')
+        .select('id, status')
+        .eq('remetente_email', meuEmail)
+        .eq('destinatario_email', emailDestino.trim())
+        .maybeSingle();
+
+    if (solicitacaoExistente) {
+        alert(`Você já enviou uma solicitação para este usuário (Status: ${solicitacaoExistente.status}).`);
+        return;
+    }
+
+    // 3. Insere a solicitação no banco de dados com status 'pendente'
+    const { error: errInserir } = await _supabase
+        .from('solicitacoes_chat')
+        .insert([
+            {
+                remetente_email: meuEmail,
+                destinatario_email: emailDestino.trim(),
+                status: 'pendente'
+            }
+        ]);
+
+    if (errInserir) {
+        console.error("Erro ao enviar solicitação:", errInserir);
+        alert("Erro ao enviar solicitação. Tente novamente.");
+    } else {
+        alert("Solicitação enviada com sucesso!");
     }
 }
 
