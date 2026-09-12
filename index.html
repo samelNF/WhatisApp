@@ -17,8 +17,8 @@
     
     <header>
         <div class="topo">
-            <button class="cinza" onclick="deslogar()">•••</button>
-            <button class="verde">
+            <button class="cinza" onclick="deslogar()" title="Deslogar">•••</button>
+            <button class="verde" title="Adicionar">
                 <img src="svg/plus.svg" class="plusi">
             </button>
         </div>
@@ -30,7 +30,7 @@
     <main>
         <div class="pesquisa">
             <img src="svg/glasses.svg" class="glass">
-            <input type="text" placeholder=" Pesquisar">
+            <input type="text" placeholder=" Pesquisar" title="Pesquisar">
         </div>
         <div class="contatos">
             <ul>
@@ -43,22 +43,22 @@
         <div class="ultrabaixo">
             <div class="baixo">
 				<nav>
-        			<div class="ultrabaixo">
-            			<div class="baixo">
-                			<button class="chat-bt ativo" onclick="alternarAba(this)">
-                    			<img src="svg/chat.svg" class="chat">
-                    			<span>Conversas</span>
-                			</button>
-                			<button class="tu" onclick="alternarAba(this)">
-                    			<img id="foto-aba-voce" src="svg/icon.svg" class="vose">
-                    			<span>Você</span>
-                			</button>
-            			</div>
-        			</div>
-    			</nav>
-            </div>
-        </div>
-    </nav>
+					<div class="ultrabaixo">
+						<div class="baixo">
+							<button class="chat-bt ativo" onclick="alternarAba(this)" title="Conversas">
+								<img src="svg/chat.svg" class="chat">
+								<span>Conversas</span>
+							</button>
+							<button class="tu" onclick="alternarAba(this)" title="Você">
+								<img id="foto-aba-voce" src="svg/icon.svg" class="vose">
+								<span>Você</span>
+							</button>
+						</div>
+					</div>
+				</nav>
+			</div>
+		</div>
+	</nav>
 
     <!-- TELA DE LOGIN (ENTRAR) -->
     <section id="login" class="autenticacao-box">

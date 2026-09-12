@@ -19,6 +19,7 @@
 		height: 100%;
 		display: flex;
 		padding-top: 24px;
+		cursor: default;
 	}
 	body {
         background-color: #0A0A0A;
@@ -55,6 +56,7 @@
 		background-color: #292929;
 		border: none;
 		outline: none;
+		cursor: pointer;
 	}
 	.pesquisa {
 		display: flex;
@@ -69,8 +71,9 @@
 		background: transparent;
 		border: none;
 		outline: none;
-		color: #959393;
+		color: #FAFAFA;
 		font-size: 19px;
+		flex: 1;
 	}
 	.pesquisa img {
 		width: 20px;
@@ -86,6 +89,7 @@
 	.baixo {
 		display: flex;
 		justify-content: center;
+		align-items: space-between;
 		flex-direction: row;
 		width: 66%;
 		height: 67px;
@@ -107,9 +111,21 @@
 		justify-content: center;
 		font-size: 12px;
 	}
+	.chat-bt {
+		width: 48.5%;
+		height: 63.5px;
+		border: none;
+		background-color: transparent;
+		color: #FAFAFA;
+		display: flex;
+		align-items: center;
+		flex-direction: column;
+		justify-content: center;
+		font-size: 12px;
+	}
 	.vose {
-    	width: 28px;
-    	height: 28px;
+    	width: 45px;
+    	height: 45px;
     	object-fit: cover;
     	border-radius: 50%;
 	}
@@ -118,8 +134,8 @@
     	border-radius: 0;
 	}
 	.chat {
-		width: 70%;
-		height: 70%;
+		width: 60%;
+		height: 60%;
 		object-fit: contain;
 		filter: brightness(0) invert(1);
 	}
@@ -128,15 +144,19 @@
     position: relative;
     cursor: pointer;
     transition: background-color 0.2s ease, opacity 0.2s ease;
-    opacity: 0.6;
+    opacity: 1;
+	background-color: transparent;
+	border: none;
+	border-radius: 1000px;
 }
 
 /* Estado ativo (botão selecionado) */
 .chat-bt.ativo, .tu.ativo {
-    opacity: 1;
+	opacity: 100%;
     background-color: #121212;
 	border-radius: 1000px;
 	border: none;
+	color: white;
 }
 
 /* Indicador (tracinho verde) em baixo do botão ativo */
@@ -146,8 +166,9 @@
     bottom: 4px;
     width: 30px;
     height: 3px;
-    background-color: #21C063;
+    background-color: transparent;
     border-radius: 10000px;
+	color: white;
 }
 	.verde {
         color: #0A0A0A;
@@ -159,6 +180,7 @@
 		border: none;
 		outline: none;
 		right: 0;
+		cursor: pointer;
 	}
 	.contatos ul {
 		list-style-type: none;
