@@ -894,22 +894,31 @@ function enviarNotificacao(remetente, textoMensagem, emailRemetente, fotoRemeten
     const notificacoesAtivas = localStorage.getItem("notificacoes") !== "false";
 
     if ("Notification" in window && Notification.permission === "granted" && notificacoesAtivas) {
-        // Envia a notificação sempre que o remetente não for a conversa focada na tela
+        
+        // Dispara se a aba estiver em segundo plano ou o chat não estiver aberto
         if (document.hidden || destinatarioAtual !== emailRemetente) {
             const opcoes = {
                 body: textoMensagem,
                 icon: fotoRemetente || "svg/icon.svg",
-                tag: `msg-${Date.now()}` // Garante que notificações sucessivas não se sobreponham
+                tag: `msg-${Date.now()}`,
+                data: {
+                    emailRemetente: emailRemetente,
+                    remetente: remetente,
+                    fotoRemetente: fotoRemetente
+                }
             };
 
-            // Se um Service Worker estiver registrado, envia a notificação através dele
-            if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+            // 1. Tenta disparar priorizando o Service Worker (Obrigatório para iOS)
+            if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.ready.then(reg => {
-                    reg.showNotification(`${remetente}`, opcoes);
+                    reg.showNotification(remetente, opcoes);
+                }).catch(err => {
+                    console.error("Erro ao disparar notificação via SW:", err);
                 });
-            } else {
-                // Notificação padrão do navegador
-                const notificacao = new Notification(`${remetente}`, opcoes);
+            } 
+            // 2. Fallback apenas para navegadores antigos de desktop que não usam SW
+            else if (typeof Notification === "function") {
+                const notificacao = new Notification(remetente, opcoes);
                 notificacao.onclick = () => {
                     window.focus();
                     abrirChatCom(emailRemetente, remetente, fotoRemetente);
