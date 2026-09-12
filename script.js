@@ -629,98 +629,87 @@ function fecharChat() {
     }
 }
 
-function inscreverRealtime() {
+async function inscreverRealtime() {
     const meuEmail = localStorage.getItem("usuarioLogado");
+    if (!meuEmail) return;
 
-    if (!meuEmail || escutaRealtime) return;
+    // 1. Se já existe um canal ativo, remove para evitar duplicações/canais zumbis
+    if (escutaRealtime) {
+        await _supabase.removeChannel(escutaRealtime);
+        escutaRealtime = null;
+    }
 
+    // 2. Cria o canal escutando FILTRADO APENAS para mensagens endereçadas a mim ou enviadas por mim
     escutaRealtime = _supabase
-        .channel('chat-global-realtime')
+        .channel(`chat-user-${Date.now()}`) // Nome único com timestamp para evitar cache no iOS
         .on(
             'postgres_changes',
             {
                 event: 'INSERT',
                 schema: 'public',
-                table: 'mensagens'
+                table: 'mensagens',
+                filter: `destinatario_email=eq.${meuEmail}` // Escuta apenas o que é recebido por você
             },
             (payload) => {
                 const novaMsg = payload.new;
-
-                console.log(novaMsg);
+                console.log("📩 Nova mensagem recebida:", novaMsg);
 
                 // Atualiza a lista de conversas
                 carregarListaContatos();
 
-                // Se a mensagem pertence ao chat aberto, mostra na tela
-                if (
-                    destinatarioAtual &&
-                    (
-                        (novaMsg.remetente_email === destinatarioAtual &&
-                         novaMsg.destinatario_email === meuEmail) ||
-                        (novaMsg.remetente_email === meuEmail &&
-                         novaMsg.destinatario_email === destinatarioAtual)
-                    )
-                ) {
+                // Se o chat com este remetente estiver aberto na tela
+                if (destinatarioAtual && novaMsg.remetente_email === destinatarioAtual) {
                     renderizarBalao(
                         novaMsg.texto,
-                        novaMsg.remetente_email === meuEmail,
+                        false,
                         novaMsg.created_at
                     );
                 }
 
-                // Se a mensagem foi recebida por mim
-                if (novaMsg.destinatario_email === meuEmail) {
+                // Dispara a notificação local
+                const contato = todosContatos.find(c => c.email === novaMsg.remetente_email);
+                const nomeRemetente = contato ? (contato.usuario || contato.email) : novaMsg.remetente_email;
+                const fotoRemetente = contato ? contato.foto_url : null;
 
-                    const contato = todosContatos.find(
-                        c => c.email === novaMsg.remetente_email
-                    );
-
-                    const nomeRemetente = contato
-                        ? (contato.usuario || contato.email)
-                        : novaMsg.remetente_email;
-
-                    const fotoRemetente = contato
-                        ? contato.foto_url
-                        : null;
-
-                    enviarNotificacao(
-                        nomeRemetente,
-                        novaMsg.texto,
-                        novaMsg.remetente_email,
-                        fotoRemetente
-                    );
-                }
+                enviarNotificacao(
+                    nomeRemetente,
+                    novaMsg.texto,
+                    novaMsg.remetente_email,
+                    fotoRemetente
+                );
             }
         )
-        .subscribe((status) => {
-
+        .on(
+            'postgres_changes',
+            {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'mensagens',
+                filter: `remetente_email=eq.${meuEmail}` // Escuta também o que você enviou de outro dispositivo
+            },
+            (payload) => {
+                const novaMsg = payload.new;
+                
+                // Se você mesmo enviou e o chat tá aberto, apenas renderiza na tela
+                if (destinatarioAtual && novaMsg.destinatario_email === destinatarioAtual) {
+                    renderizarBalao(novaMsg.texto, true, novaMsg.created_at);
+                }
+                carregarListaContatos();
+            }
+        )
+        .subscribe((status, err) => {
             console.log("🔌 Status Realtime:", status);
 
             if (status === "SUBSCRIBED") {
-                console.log("✅ Realtime conectado!");
-                return;
+                console.log("✅ Realtime conectado com sucesso no iOS!");
             }
 
-            // Se perder a conexão, limpa o canal
-            if (
-                status === "CLOSED" ||
-                status === "CHANNEL_ERROR" ||
-                status === "TIMED_OUT"
-            ) {
-                console.log("⚠️ Realtime desconectado. Tentando reconectar...");
-
-                if (escutaRealtime) {
-                    _supabase.removeChannel(escutaRealtime);
-                    escutaRealtime = null;
-                }
-
-                setTimeout(() => {
-                    inscreverRealtime();
-                }, 2000);
+            if (status === "CHANNEL_ERROR" || status === "CLOSED" || status === "TIMED_OUT") {
+                console.warn("⚠️ Canal desconectado. Limpando referência...");
+                escutaRealtime = null;
             }
         });
 }
-
 // ==========================================
 // MONITORAMENTO DE PRESENÇA (ONLINE/OFFLINE)
 // ==========================================
