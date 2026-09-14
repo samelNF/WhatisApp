@@ -628,10 +628,11 @@ async function pedirEmailContato() {
 
     if (errInserir) {
         console.error("Erro ao enviar solicitação:", errInserir);
-        alert("Erro ao enviar solicitação. Tente novamente.");
+        alert("Erro ao enviar: " + errInserir.message);
     } else {
         alert("Solicitação enviada com sucesso!");
     }
+
 }
 
 function filtrarContatos() {
