@@ -223,6 +223,12 @@
             <!-- Barra normal de envio (visível para contatos salvos) -->
             <div id="chat-input-box" class="chat-input-box">
                 <input type="text" id="input-mensagem" placeholder="Mensagem" onkeypress="checarEnter(event)">
+                <!-- Botão para disparar o seletor de arquivos -->
+                <button type="button" id="btn-enviar-foto" onclick="acionarSeletorFotoChat()">
+                    <img src="svg/clip.svg" alt="Anexar">
+                </button>
+                <!-- Input file oculto -->
+                <input type="file" id="input-arquivo-chat" accept="image/*" style="display: none;" onchange="enviarFotoChat(event)">
                 <button id="btn-enviar" onclick="enviarMensagem()" class="btn-enviar">
                     <img src="svg/paperplane.svg" alt="Enviar" style="transform: rotate(45deg);">
                 </button>
