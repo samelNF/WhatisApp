@@ -210,6 +210,8 @@
                 <h2 id="chat-nome-usuario">Contato</h2>
                 <span id="chat-status-usuario" class="status-online"></span>
             </div>
+            <!-- Botão para abrir opções/perfil do contato dentro do chat (Adicionado) -->
+            <button id="btn-abrir-dados-contato" class="cinza" style="margin-left: auto; background: none; border: none; color: white; font-size: 20px;" onclick="abrirPainelDadosContato()">⚙️</button>
         </div>
 
         <div id="chat-mensagens" class="chat-mensagens">
@@ -240,6 +242,21 @@
             </div>
         </div>
     </section>
+
+    <!-- PAINEL DE DADOS DO CONTATO / TEMA (Adicionado) -->
+    <div id="painel-dados-contato" class="modal hidden" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Dados do contato</h3>
+                <button onclick="fecharPainelDadosContato()" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <p style="margin-bottom: 15px; cursor: pointer;" id="btn-tema-conversa" onclick="acionarTrocaFundo()">🎨 Tema da conversa</p>
+                <!-- Input oculto para selecionar a foto de fundo do chat -->
+                <input type="file" id="input-fundo-chat" accept="image/*" style="display: none;" onchange="alterarFundoChat(event)">
+            </div>
+        </div>
+    </div>
 
     <!-- MODAL DE SOLICITAÇÕES PENDENTES -->
     <div id="modal-solicitacoes" class="modal hidden">
