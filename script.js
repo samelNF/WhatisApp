@@ -1261,3 +1261,69 @@ async function ignorarSolicitacaoAtual() {
     fecharChat();
     carregarSolicitacoes();
 }
+// ==========================================
+// TEMA / FUNDO PERSONALIZADO DO CHAT
+// ==========================================
+function abrirPainelDadosContato() {
+    const painel = document.getElementById('painel-dados-contato');
+    if (painel) painel.style.display = 'flex';
+}
+
+function fecharPainelDadosContato() {
+    const painel = document.getElementById('painel-dados-contato');
+    if (painel) painel.style.display = 'none';
+}
+
+function acionarTrocaFundo() {
+    const inputFundo = document.getElementById('input-fundo-chat');
+    if (inputFundo) inputFundo.click();
+}
+
+async function alterarFundoChat(event) {
+    const arquivo = event.target.files[0];
+    const meuEmail = localStorage.getItem("usuarioLogado");
+
+    if (!arquivo || !meuEmail || !destinatarioAtual) return;
+
+    const fileExt = arquivo.name.split('.').pop();
+    const fileName = `fundo_${Date.now()}.${fileExt}`;
+
+    const { data: uploadData, error: uploadError } = await _supabase
+        .storage
+        .from('avatars') // Você pode usar o mesmo bucket ou criar um para fundos
+        .upload(fileName, arquivo, {
+            cacheControl: '3600',
+            upsert: true
+        });
+
+    if (uploadError) {
+        alert("Erro ao enviar imagem de fundo: " + uploadError.message);
+        return;
+    }
+
+    const { data: publicUrlData } = _supabase
+        .storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+    const urlFundoPublica = publicUrlData.publicUrl;
+
+    // Salva a preferência do fundo na tabela de contatos ou mensagens, ou atualiza a interface diretamente
+    aplicarFundoNaTela(urlFundoPublica);
+    fecharPainelDadosContato();
+    alert("Fundo do chat alterado com sucesso!");
+}
+
+function aplicarFundoNaTela(urlImagem) {
+    const chatMensagens = document.getElementById('chat-mensagens');
+    if (chatMensagens) {
+        if (urlImagem) {
+            chatMensagens.style.backgroundImage = `url('${urlImagem}')`;
+            chatMensagens.style.backgroundSize = 'cover';
+            chatMensagens.style.backgroundPosition = 'center';
+        } else {
+            chatMensagens.style.backgroundImage = 'none';
+        }
+    }
+}
+
