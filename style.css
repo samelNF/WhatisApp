@@ -418,6 +418,27 @@
     flex-direction: column;
     z-index: 1000;
 }
+/* Container ou Tela de Chat */
+#tela-chat {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #0A0A0A; /* Ou a cor de fundo do seu chat */
+    z-index: 1000;
+    
+    /* Começa escondida para a direita */
+    transform: translateX(100%);
+    
+    /* Animação suave de 0.3 segundos */
+    transition: transform 0.3s ease-in-out;
+}
+
+/* Classe que ativa a tela (traz para o centro) */
+#tela-chat.ativa {
+    transform: translateX(0);
+}
 .chat-header {
     height: 60px;
     background-color: #ffffff11;
