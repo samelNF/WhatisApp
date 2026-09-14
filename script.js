@@ -679,6 +679,16 @@ function renderizarBalao(texto, ehMinha, dataCriacao) {
     container.scrollTop = container.scrollHeight;
 }
 
+function acionarSeletorFotoChat() {
+    const input = document.getElementById('input-arquivo-chat');
+    if (input) {
+        input.click();
+    } else {
+        console.error("Elemento 'input-arquivo-chat' não encontrado no HTML.");
+    }
+}
+
+
 async function enviarFotoChat(event) {
     const arquivo = event.target.files[0];
     const meuEmail = localStorage.getItem("usuarioLogado");
