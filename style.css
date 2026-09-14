@@ -993,3 +993,6 @@ input:checked + .slider:before {
 .hidden {
   display: none !important;
 }
+.clip {
+        filter: brightness(0) invert(1);
+    }
