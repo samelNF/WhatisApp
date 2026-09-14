@@ -467,42 +467,41 @@
 
 /* Container base do balão */
 .balao-msg {
-    display: inline-flex;
+    display: flex;
     flex-direction: column;
     max-width: 70%;
-    padding: 8px 12px;
+    padding: 10px 14px;
     border-radius: 12px;
     margin-bottom: 8px;
     word-break: break-word;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 
-/* Garante o alinhamento correto das mensagens enviadas (direta) e recebidas (esquerda) */
+/* Suas mensagens (Enviadas) - Fundo cinza escuro/chumbo ou mude para #ff7b00 se preferir laranja */
 .balao-enviada {
     align-self: flex-end;
-    background-color: #333333;
-    color: #ffffff;
+    background-color: #2b2b2b !important; 
+    color: #ffffff !important;
     border-bottom-right-radius: 4px;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    cursor: default;
 }
 
+/* Mensagens dos outros (Recebidas) - Fundo um pouco mais claro para destacar */
 .balao-recebida {
     align-self: flex-start;
-    background-color: #242625;
-    color: #ffffff;
+    background-color: #1f1f1f !important; 
+    color: #ffffff !important;
     border-bottom-left-radius: 4px;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    cursor: default;
 }
 
 /* Formatação do texto do horário */
 .balao-hora {
     font-size: 10px;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.5);
     align-self: flex-end;
-    margin-top: 2px;
-    margin-left: 12px;
-    cursor: default;
+    margin-top: 4px;
+    margin-left: 10px;
 }
 
 /* Ajuste na lista de contatos para alinhar nome, mensagem e hora */
@@ -852,6 +851,34 @@ input:checked + .slider:before {
 /* ==========================================
    2. MODAL DE SOLICITAÇÕES
    ========================================== */
+.menu-chat-header {
+    height: 60px;
+    width: 100%;
+    background-color: transparent;
+    display: flex;
+    padding: 0 10px;
+    border: none;
+    color: #FAFAFA;
+}
+.menu-chat-header h3{
+    display: flex;
+    align-content: center;
+    justify-content: center;
+    padding-left: 27%;
+}
+.menu-chat {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #0A0A0A;
+  display: flex;
+  align-content: center;
+  flex-direction: column;
+  z-index: 2000;
+  font-family: sans-serif;
+}
 .modal {
   position: fixed;
   top: 0;
@@ -1003,4 +1030,139 @@ input:checked + .slider:before {
     height: 45px;
     width: 45px;
     border: none;
+}
+/* ==========================================
+   TELA DE DADOS DO USUÁRIO
+   ========================================== */
+
+.painel-dados-usuario {
+    position: fixed;
+    inset: 0;
+    background-color: #0A0A0A;
+    z-index: 3000;
+    display: none;
+    flex-direction: column;
+    font-family: sans-serif;
+}
+
+.dados-usuario-header {
+    height: 60px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
+.dados-usuario-header h3 {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+    color: #FAFAFA;
+    font-size: 21px;
+    white-space: nowrap;
+}
+
+.btn-voltar-dados {
+    width: 50px;
+    height: 50px;
+    margin-left: 15px;
+    border: none;
+    border-radius: 50%;
+    background-color: #292929;
+    color: #FAFAFA;
+    font-size: 42px;
+    line-height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+}
+
+.dados-usuario-conteudo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    padding-top: 35px;
+}
+
+.dados-foto-grande {
+    width: 225px;
+    height: 225px;
+    border-radius: 50%;
+    object-fit: cover;
+    background-color: #292929;
+}
+
+.dados-usuario-conteudo h2 {
+    color: #FAFAFA;
+    font-size: 42px;
+    margin: 25px 0 55px 0;
+    font-weight: 700;
+}
+
+.dados-opcoes {
+    width: 92%;
+    max-width: 680px;
+    display: flex;
+    flex-direction: column;
+    background-color: #171717;
+    border-radius: 25px;
+    overflow: hidden;
+}
+
+.dados-opcao {
+    min-height: 72px;
+    display: flex;
+    align-items: center;
+    padding: 0 22px;
+    border-bottom: 1px solid #292929;
+    cursor: pointer;
+}
+
+.dados-opcao:last-child {
+    border-bottom: none;
+}
+
+.dados-opcao:active {
+    background-color: #222222;
+}
+
+.dados-opcao-icone {
+    width: 42px;
+    font-size: 23px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.dados-opcao-texto {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    margin-left: 12px;
+}
+
+.dados-opcao-texto span {
+    color: #FAFAFA;
+    font-size: 16px;
+}
+
+.dados-opcao-texto small {
+    color: #888;
+    font-size: 13px;
+    margin-top: 4px;
+}
+
+.dados-seta {
+    color: #777;
+    font-size: 32px;
+    font-weight: 300;
+}
+
+.seta-perfil {
+    color: #777;
+    font-size: 30px;
+    margin-left: auto;
 }

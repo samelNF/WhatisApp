@@ -462,25 +462,22 @@ async function carregarListaContatos() {
 
     if (!meuUsuario || !meuEmail) return;
 
-    const { data: relacaoContatos, error: erroRelacao } = await _supabase
+    // 1. Busca os contatos individuais
+    const { data: relacaoContatos } = await _supabase
         .from("contatos")
         .select("contato_usuario")
         .eq("usuario_origem", meuUsuario);
 
-    if (erroRelacao || !relacaoContatos || relacaoContatos.length === 0) {
-        todosContatos = [];
-        renderizarContatos([]);
-        return;
+    const nomesSalvos = relacaoContatos ? relacaoContatos.map(c => c.contato_usuario) : [];
+
+    let usuarios = [];
+    if (nomesSalvos.length > 0) {
+        const { data: dadosUsuarios } = await _supabase
+            .from("usuarios")
+            .select("email, usuario, foto_url")
+            .in("usuario", nomesSalvos);
+        usuarios = dadosUsuarios || [];
     }
-
-    const nomesSalvos = relacaoContatos.map(c => c.contato_usuario);
-
-    const { data: usuarios, error: erroUsuarios } = await _supabase
-        .from("usuarios")
-        .select("email, usuario, foto_url")
-        .in("usuario", nomesSalvos);
-
-    if (erroUsuarios || !usuarios) return;
 
     const contatosComMensagens = await Promise.all(
         usuarios.map(async (contato) => {
@@ -495,13 +492,42 @@ async function carregarListaContatos() {
 
             return {
                 ...contato,
+                tipo: 'contato',
+                identificador: contato.email,
                 ultimaMsg: temMsg ? ultimasMsgs[0].texto : "Nenhuma mensagem ainda",
                 horaUltimaMsg: temMsg ? formatarHora(ultimasMsgs[0].created_at) : ""
             };
         })
     );
 
-    todosContatos = contatosComMensagens;
+    // 2. BUSCA OS GRUPOS USANDO A COLUNA CORRETA "usuario_nome"
+    const { data: relacaoGrupos } = await _supabase
+        .from("grupo_membros")
+        .select("grupo_id")
+        .eq("usuario_nome", meuUsuario);
+
+    const idsGrupos = relacaoGrupos ? relacaoGrupos.map(g => g.grupo_id) : [];
+
+    let meusGrupos = [];
+    if (idsGrupos.length > 0) {
+        const { data: dadosGrupos } = await _supabase
+            .from("grupos")
+            .select("id, nome, foto_url")
+            .in("id", idsGrupos);
+        meusGrupos = dadosGrupos || [];
+    }
+
+    const gruposFormatados = meusGrupos.map(grupo => ({
+        ...grupo,
+        tipo: 'grupo',
+        identificador: grupo.id,
+        usuario: grupo.nome,
+        foto_url: grupo.foto_url || "svg/icon.svg", // Define um ícone padrão caso esteja vazio
+        ultimaMsg: "Toque para ver o grupo",
+        horaUltimaMsg: ""
+    }));
+
+    todosContatos = [...contatosComMensagens, ...gruposFormatados];
     renderizarContatos(todosContatos);
 }
 
@@ -514,32 +540,37 @@ function renderizarContatos(lista) {
     if (lista.length === 0) {
         container.innerHTML = `
             <li style="color: #888; text-align: center; margin-top: 20px; font-family: sans-serif;">
-                Nenhum contato encontrado.
+                Nenhum contato ou grupo encontrado.
             </li>
         `;
         return;
     }
 
-    lista.forEach(contato => {
+    lista.forEach(item => {
         const li = document.createElement("li");
         li.classList.add("item-contato");
 
-        const foto = contato.foto_url || "svg/icon.svg";
-        const nome = contato.usuario || contato.email;
+        const foto = item.foto_url || "svg/icon.svg";
+        const nome = item.usuario || item.nome;
 
         li.innerHTML = `
             <img src="${foto}" class="foto-contato">
             <div class="info-contato">
                 <div class="info-contato-topo">
-                    <span class="nome-contato">${nome}</span>
-                    <span class="hora-contato">${contato.horaUltimaMsg || ''}</span>
+                    <span class="nome-contato">${nome} ${item.tipo === 'grupo' ? ' ' : ''}</span>
+                    <span class="hora-contato">${item.horaUltimaMsg || ''}</span>
                 </div>
-                <span class="ultima-msg">${contato.ultimaMsg}</span>
+                <span class="ultima-msg">${item.ultimaMsg}</span>
             </div>
         `;
 
+        // Ao clicar, verifica se é um grupo ou um chat normal
         li.onclick = () => {
-            abrirChatCom(contato.email, nome, foto);
+            if (item.tipo === 'grupo') {
+                abrirChatGrupo(item.id, item.nome, foto);
+            } else {
+                abrirChatCom(item.identificador, nome, foto);
+            }
         };
 
         container.appendChild(li);
@@ -678,6 +709,51 @@ function renderizarBalao(texto, ehMinha, dataCriacao) {
     container.appendChild(balao);
     container.scrollTop = container.scrollHeight;
 }
+function renderizarBalaoGrupo(texto, ehMinha, timestamp, nomeRemetente) {
+    const containerChat = document.getElementById("chat-mensagens");
+    if (!containerChat) return;
+
+    // Cria o elemento principal do balão
+    const divBalao = document.createElement("div");
+    
+    // ATRIBUIÇÃO CORRETA DAS CLASSES DO CSS:
+    divBalao.className = ehMinha ? "balao-msg balao-enviada" : "balao-msg balao-recebida";
+
+    let conteudoHTML = "";
+
+    // Se for mensagem de outra pessoa no grupo, mostra o nome dela em cima
+    if (!ehMinha && nomeRemetente) {
+        const spanNome = document.createElement("span");
+        spanNome.style.color = "#ff7b00"; // Cor de destaque para o nome
+        spanNome.style.fontSize = "11px";
+        spanNome.style.fontWeight = "bold";
+        spanNome.style.marginBottom = "2px";
+        spanNome.textContent = nomeRemetente;
+        divBalao.appendChild(spanNome);
+    }
+
+    // Texto da mensagem
+    const spanTexto = document.createElement("span");
+    spanTexto.textContent = texto;
+    divBalao.appendChild(spanTexto);
+
+    // Horário da mensagem
+    if (timestamp) {
+        const spanHora = document.createElement("span");
+        spanHora.className = "balao-hora";
+        
+        // Formata a hora (ex: 16:36) caso venha em formato ISO
+        const data = new Date(timestamp);
+        const horaFormatada = !isNaN(data.getTime()) 
+            ? data.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+            : timestamp;
+            
+        spanHora.textContent = horaFormatada;
+        divBalao.appendChild(spanHora);
+    }
+
+    containerChat.appendChild(divBalao);
+}
 
 function acionarSeletorFotoChat() {
     const input = document.getElementById('input-arquivo-chat');
@@ -773,28 +849,38 @@ async function carregarMensagens() {
 }
 
 async function enviarMensagem() {
-    const input = document.getElementById("input-mensagem");
-    const texto = input.value.trim();
+    const inputMsg = document.getElementById("input-mensagem");
+    const texto = inputMsg ? inputMsg.value.trim() : "";
     const meuEmail = localStorage.getItem("usuarioLogado");
 
-    if (texto === "" || !destinatarioAtual || !meuEmail) return;
+    if (!texto) return;
 
-    input.value = "";
+    // Define os dados da mensagem dependendo se está num grupo ou chat privado
+    const dadosMensagem = {
+        texto: texto,
+        remetente_email: meuEmail,
+        grupo_id: window.grupoAtualId ? window.grupoAtualId : null,
+        destinatario_email: window.grupoAtualId ? null : destinatarioAtual
+    };
 
     const { error } = await _supabase
         .from("mensagens")
-        .insert([{
-            remetente_email: meuEmail,
-            destinatario_email: destinatarioAtual,
-            texto: texto
-        }]);
+        .insert([dadosMensagem]);
 
     if (error) {
         console.error("Erro ao enviar mensagem:", error.message);
         alert("Erro ao enviar mensagem.");
+        return;
     }
 
-    carregarListaContatos();
+    if (inputMsg) inputMsg.value = "";
+    
+    // Atualiza a tela imediatamente após o envio bem-sucedido
+    if (window.grupoAtualId) {
+        carregarMensagensGrupo(window.grupoAtualId);
+    } else if (typeof carregarMensagens === 'function') {
+        carregarMensagens();
+    }
 }
 
 function checarEnter(event) {
@@ -825,8 +911,81 @@ async function checarStatusContato(emailContato) {
     }
 }
 
+
+function abrirChatGrupo(idGrupo, nomeGrupo, fotoGrupo) {
+    window.grupoAtualId = idGrupo; 
+    destinatarioAtual = null; // Zera o chat privado
+
+    const elemNome = document.getElementById("chat-nome-usuario");
+    const elemFoto = document.getElementById("chat-foto-usuario");
+    const telaChat = document.getElementById("tela-chat");
+
+    if (elemNome) elemNome.innerText = nomeGrupo;
+    if (elemFoto && fotoGrupo) elemFoto.src = fotoGrupo;
+    if (telaChat) telaChat.style.display = "flex";
+
+    // CHAMA A FUNÇÃO PARA PUXAR AS MENSAGENS DO GRUPO
+    carregarMensagensGrupo(idGrupo);
+
+    const chatInputBox = document.getElementById('chat-input-box');
+    const chatActionBar = document.getElementById('chat-action-bar');
+    if (chatInputBox) chatInputBox.classList.remove('hidden');
+    if (chatActionBar) chatActionBar.classList.add('hidden');
+}
+
+async function carregarMensagensGrupo(idGrupo) {
+    const meuEmail = localStorage.getItem("usuarioLogado");
+
+    const { data: mensagens, error } = await _supabase
+        .from("mensagens")
+        .select("*")
+        .eq("grupo_id", idGrupo)
+        .order("created_at", { ascending: true });
+
+    if (error) {
+        console.error("Erro ao carregar mensagens do grupo:", error.message);
+        return;
+    }
+
+    const containerChat = document.getElementById("chat-mensagens"); 
+    if (!containerChat) return;
+
+    containerChat.innerHTML = "";
+
+    for (const msg of (mensagens || [])) {
+        // Validação correta comparando diretamente com o email logado
+        const ehMinha = msg.remetente_email === meuEmail;
+        let nomeRemetente = msg.remetente_email;
+
+        if (!ehMinha) {
+            // Busca amigável do nome de usuário pelo email remetente
+            const { data: userData } = await _supabase
+                .from("usuarios")
+                .select("usuario, email")
+                .eq("email", msg.remetente_email)
+                .maybeSingle();
+            
+            if (userData) {
+                nomeRemetente = userData.usuario || userData.email;
+            }
+        } else {
+            nomeRemetente = "Você";
+        }
+
+        renderizarBalaoGrupo(
+            msg.texto,
+            ehMinha,
+            msg.created_at,
+            ehMinha ? null : nomeRemetente
+        );
+    }
+
+    containerChat.scrollTop = containerChat.scrollHeight;
+}
+
 function abrirChatCom(emailDestinatario, nomeDestinatario, fotoDestinatario) {
     destinatarioAtual = emailDestinatario;
+    window.grupoAtualId = null; // Garante que limpa o grupo ao abrir chat privado
 
     const elemNome = document.getElementById("chat-nome-usuario");
     const elemFoto = document.getElementById("chat-foto-usuario");
@@ -836,10 +995,8 @@ function abrirChatCom(emailDestinatario, nomeDestinatario, fotoDestinatario) {
     if (elemFoto && fotoDestinatario) elemFoto.src = fotoDestinatario;
     if (telaChat) telaChat.style.display = "flex";
 
-    // Carrega o fundo salvo para este chat específico
     carregarFundoChatSalvo(emailDestinatario);
 
-    // Garante que a barra de digitação padrão esteja visível para chats normais
     const chatInputBox = document.getElementById('chat-input-box');
     const chatActionBar = document.getElementById('chat-action-bar');
     if (chatInputBox) chatInputBox.classList.remove('hidden');
@@ -862,11 +1019,11 @@ function fecharChat() {
     const telaChat = document.getElementById("tela-chat");
     if (telaChat) telaChat.style.display = "none";
 
-    // Reseta o fundo do chat ao fechar
     const containerMensagens = document.getElementById("chat-mensagens");
     if (containerMensagens) containerMensagens.style.backgroundImage = "";
 
     destinatarioAtual = null;
+    window.grupoAtualId = null; // Reseta o ID do grupo ao fechar
 
     if (intervaloChecarStatusContato) {
         clearInterval(intervaloChecarStatusContato);
@@ -957,6 +1114,28 @@ function inscreverRealtime() {
     escutaRealtime = canal;
 
     canal
+        .on(
+            'postgres_changes',
+            {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'mensagens'
+            },
+            async (payload) => {
+                const novaMsg = payload.new;
+                carregarListaContatos(); // Atualiza a lista lateral com a última mensagem
+
+                // Se o chat aberto for um grupo e a mensagem for desse grupo
+                if (window.grupoAtualId && novaMsg.grupo_id === window.grupoAtualId) {
+                    carregarMensagensGrupo(window.grupoAtualId);
+                }
+                
+                // Se o chat aberto for privado (mantendo a sua lógica anterior)
+                if (destinatarioAtual && novaMsg.remetente_email === destinatarioAtual) {
+                    renderizarBalao(novaMsg.texto, false, novaMsg.created_at);
+                }
+            }
+        )
         .on(
             'postgres_changes',
             {
@@ -1423,4 +1602,287 @@ function carregarFundoChatSalvo(emailContato) {
     aplicarFundoNaTela(fundoSalvo);
 }
 
+function abrirDadosUsuario() {
+    const painel = document.getElementById('painel-dados-usuario');
 
+    const nome = document.getElementById('voce-nome-usuario');
+    const email = document.getElementById('voce-email-usuario');
+    const foto = document.getElementById('voce-foto-perfil');
+
+    const dadosNome = document.getElementById('dados-nome-usuario');
+    const dadosUsuario = document.getElementById('dados-usuario-atual');
+    const dadosEmail = document.getElementById('dados-email-usuario');
+    const dadosFoto = document.getElementById('dados-foto-usuario');
+
+    if (nome) {
+        dadosNome.textContent = nome.textContent;
+        dadosUsuario.textContent = nome.textContent;
+    }
+
+    if (email) {
+        dadosEmail.textContent = email.textContent;
+    }
+
+    if (foto) {
+        dadosFoto.src = foto.src;
+    }
+
+    painel.style.display = 'flex';
+}
+
+function fecharDadosUsuario() {
+    document.getElementById('painel-dados-usuario').style.display = 'none';
+}
+
+function acionarAlterarFotoUsuario() {
+    document.getElementById('input-foto-dados-usuario').click();
+}
+
+function alterarFotoDadosUsuario(event) {
+    const arquivo = event.target.files[0];
+
+    if (!arquivo) return;
+
+    const url = URL.createObjectURL(arquivo);
+
+    document.getElementById('dados-foto-usuario').src = url;
+    document.getElementById('voce-foto-perfil').src = url;
+    document.getElementById('foto-aba-voce').src = url;
+}
+
+function abrirAlterarNome() {
+    const nomeAtual = document.getElementById('voce-nome-usuario').textContent;
+
+    const novoNome = prompt('Digite seu novo nome de usuário:', nomeAtual);
+
+    if (!novoNome || novoNome.trim() === '') return;
+
+    document.getElementById('voce-nome-usuario').textContent = novoNome.trim();
+    document.getElementById('dados-nome-usuario').textContent = novoNome.trim();
+    document.getElementById('dados-usuario-atual').textContent = novoNome.trim();
+}
+let membrosSelecionadosParaGrupo = [];
+let arquivoFotoGrupoSelecionado = null;
+
+// Exibir o menu flutuante do botão "+"
+function alternarMenuMais(event) {
+    if(event) event.stopPropagation();
+    const menu = document.getElementById('dropdown-menu-mais');
+    if(menu) menu.classList.toggle('hidden');
+}
+
+// Fechar menu ao clicar fora
+document.addEventListener('click', () => {
+    const menu = document.getElementById('dropdown-menu-mais');
+    if(menu) menu.classList.add('hidden');
+});
+
+// Iniciar o fluxo de criação de grupo
+async function iniciarCriacaoGrupo() {
+    membrosSelecionadosParaGrupo = [];
+    document.getElementById('tela-criar-grupo-membros').style.display = 'flex';
+    await carregarContatosParaSelecao();
+    atualizarContadorGrupoUI();
+}
+
+async function carregarContatosParaSelecao() {
+    const meuUsuario = localStorage.getItem("nomeUsuario");
+    const container = document.getElementById('lista-contatos-selecao');
+    if(!container) return;
+    
+    container.innerHTML = '';
+    
+    // Aproveita a sua lista de contatos já carregada em memória (todosContatos)
+    if (!todosContatos || todosContatos.length === 0) {
+        container.innerHTML = '<li style="text-align:center; padding:20px; color:#888;">Nenhum contato disponível.</li>';
+        return;
+    }
+
+    todosContatos.forEach(contato => {
+        const li = document.createElement('li');
+        li.className = 'item-selecao-contato';
+        const foto = contato.foto_url || "svg/icon.svg";
+        const nome = contato.usuario || contato.email;
+
+        li.innerHTML = `
+            <div class="esq-contato-sel">
+                <input type="checkbox" class="checkbox-membro" data-email="${contato.email}" data-nome="${nome}" onchange="tratarSelecaoMembro(this)">
+                <img src="${foto}" class="foto-contato-pequena">
+                <span class="nome-contato-sel">${nome}</span>
+            </div>
+        `;
+        container.appendChild(li);
+    });
+}
+
+function tratarSelecaoMembro(checkbox) {
+    const email = checkbox.getAttribute('data-email');
+    const nome = checkbox.getAttribute('data-nome');
+
+    if (checkbox.checked) {
+        if (membrosSelecionadosParaGrupo.length >= 15) {
+            alert("O grupo pode ter no máximo 15 pessoas!");
+            checkbox.checked = false;
+            return;
+        }
+        membrosSelecionadosParaGrupo.push({ email, nome });
+    } else {
+        membrosSelecionadosParaGrupo = membrosSelecionadosParaGrupo.filter(m => m.email !== email);
+    }
+
+    atualizarContadorGrupoUI();
+}
+
+function atualizarContadorGrupoUI() {
+    const contador = document.getElementById('contador-selecao-grupo');
+    const btnAvancar = document.getElementById('btn-avancar-grupo');
+    const total = membrosSelecionadosParaGrupo.length;
+
+    if (contador) contador.textContent = `${total}/15`;
+
+    // Mostra o botão verde se houver pelo menos 1 membro selecionado
+    if (btnAvancar) {
+        if (total > 0) {
+            btnAvancar.classList.remove('hidden');
+        } else {
+            btnAvancar.classList.add('hidden');
+        }
+    }
+}
+
+function irParaDetalhesGrupo() {
+    if (membrosSelecionadosParaGrupo.length === 0) {
+        alert("Selecione pelo menos uma pessoa para criar o grupo.");
+        return;
+    }
+    document.getElementById('tela-criar-grupo-membros').style.display = 'none';
+    document.getElementById('tela-criar-grupo-detalhes').style.display = 'flex';
+    
+    // Prepara cor aleatória inicial para o preview do avatar padrão
+    gerarAvatarPadraoVisual('Grupo');
+}
+
+function voltarParaSelecaoMembros() {
+    document.getElementById('tela-criar-grupo-detalhes').style.display = 'none';
+    document.getElementById('tela-criar-grupo-membros').style.display = 'flex';
+}
+
+function acionarTrocaFotoGrupo() {
+    document.getElementById('input-foto-grupo').click();
+}
+
+function previewFotoGrupo(event) {
+    const arquivo = event.target.files[0];
+    if (arquivo) {
+        arquivoFotoGrupoSelecionado = arquivo;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = document.getElementById('img-avatar-grupo-preview');
+            const letra = document.getElementById('letra-inicial-grupo');
+            if(img && letra) {
+                img.src = e.target.result;
+                img.style.display = 'block';
+                letra.style.display = 'none';
+            }
+        }
+        reader.readAsDataURL(arquivo);
+    }
+}
+
+function atualizarLetraPreview() {
+    const nome = document.getElementById('nome-grupo-input').value;
+    const letraSpan = document.getElementById('letra-inicial-grupo');
+    if (letraSpan && nome.length > 0) {
+        letraSpan.textContent = nome.charAt(0).toUpperCase();
+    } else if (letraSpan) {
+        letraSpan.textContent = 'G';
+    }
+    if (!arquivoFotoGrupoSelecionado) {
+        gerarAvatarPadraoVisual(nome || 'Grupo');
+    }
+}
+
+// Gera cor de fundo aleatória caso não tenha foto
+function gerarAvatarPadraoVisual(nomeTexto) {
+    const previewDiv = document.getElementById('preview-avatar-grupo');
+    const letraSpan = document.getElementById('letra-inicial-grupo');
+    const img = document.getElementById('img-avatar-grupo-preview');
+    
+    if(img && img.style.display === 'block') return; // Se tem foto, não mexe na cor
+
+    const cores = ['#ff5722', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#009688', '#4caf50', '#ff9800'];
+    const corAleatoria = cores[Math.floor(Math.random() * cores.length)];
+    
+    if(previewDiv) previewDiv.style.backgroundColor = corAleatoria;
+    if(letraSpan && nomeTexto) letraSpan.textContent = nomeTexto.charAt(0).toUpperCase();
+}
+
+// Finaliza e salva o grupo no Supabase
+async function finalizarCriacaoGrupo() {
+    const nomeGrupo = document.getElementById('nome-grupo-input').value.trim();
+    const meuEmail = localStorage.getItem("usuarioLogado");
+    const meuUsuario = localStorage.getItem("nomeUsuario");
+
+    if (!nomeGrupo) {
+        alert("Por favor, digite um nome para o grupo.");
+        return;
+    }
+
+    let urlFotoGrupo = null;
+
+    // 1. Upload da foto do grupo se houver
+    if (arquivoFotoGrupoSelecionado) {
+        const fileExt = arquivoFotoGrupoSelecionado.name.split('.').pop();
+        const fileName = `grupo_${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await _supabase.storage.from('avatars').upload(fileName, arquivoFotoGrupoSelecionado);
+        if (!uploadError) {
+            const { data: pub } = _supabase.storage.from('avatars').getPublicUrl(fileName);
+            urlFotoGrupo = pub.publicUrl;
+        }
+    }
+
+    // 2. Insere o grupo na tabela 'grupos' (crie essa tabela no Supabase se ainda não tiver)
+    const { data: grupoCriado, error: erroGrupo } = await _supabase
+        .from('grupos')
+        .insert([{
+            nome: nomeGrupo,
+            foto_url: urlFotoGrupo,
+            criado_por: meuEmail
+        }])
+        .select()
+        .single();
+
+    if (erroGrupo || !grupoCriado) {
+        alert("Erro ao criar o grupo: " + (erroGrupo?.message || "Erro desconhecido"));
+        return;
+    }
+
+    const grupoId = grupoCriado.id;
+
+    // 3. Monta a lista de membros inserindo o criador + os selecionados na tabela 'grupo_membros'
+    let listaMembrosParaInserir = [
+        { grupo_id: grupoId, usuario_email: meuEmail, usuario_nome: meuUsuario }
+    ];
+
+    membrosSelecionadosParaGrupo.forEach(m => {
+        listaMembrosParaInserir.push({
+            grupo_id: grupoId,
+            usuario_email: m.email,
+            usuario_nome: m.nome
+        });
+    });
+
+    const { error: erroMembros } = await _supabase
+        .from('grupo_membros')
+        .insert(listaMembrosParaInserir);
+
+    if (erroMembros) {
+        alert("Erro ao adicionar membros ao grupo.");
+        return;
+    }
+
+    alert("Grupo criado com sucesso!");
+    // Limpa e fecha as telas de criação
+    document.getElementById('tela-criar-grupo-detalhes').style.display = 'none';
+    mostrarAppPrincipal();
+}
