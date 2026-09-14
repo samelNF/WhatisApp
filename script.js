@@ -765,6 +765,9 @@ function abrirChatCom(emailDestinatario, nomeDestinatario, fotoDestinatario) {
     if (elemFoto && fotoDestinatario) elemFoto.src = fotoDestinatario;
     if (telaChat) telaChat.style.display = "flex";
 
+    // Carrega o fundo salvo para este chat específico
+    carregarFundoChatSalvo(emailDestinatario);
+
     // Garante que a barra de digitação padrão esteja visível para chats normais
     const chatInputBox = document.getElementById('chat-input-box');
     const chatActionBar = document.getElementById('chat-action-bar');
@@ -788,11 +791,72 @@ function fecharChat() {
     const telaChat = document.getElementById("tela-chat");
     if (telaChat) telaChat.style.display = "none";
 
+    // Reseta o fundo do chat ao fechar
+    const containerMensagens = document.getElementById("chat-mensagens");
+    if (containerMensagens) containerMensagens.style.backgroundImage = "";
+
     destinatarioAtual = null;
 
     if (intervaloChecarStatusContato) {
         clearInterval(intervaloChecarStatusContato);
         intervaloChecarStatusContato = null;
+    }
+}
+
+// Funções para controle do painel de dados/fundo do chat
+function abrirPainelDadosContato() {
+    const painel = document.getElementById('painel-dados-contato');
+    if (painel) painel.style.display = 'flex';
+}
+
+function fecharPainelDadosContato() {
+    const painel = document.getElementById('painel-dados-contato');
+    if (painel) painel.style.display = 'none';
+}
+
+function acionarTrocaFundo() {
+    const inputFundo = document.getElementById('input-fundo-chat');
+    if (inputFundo) inputFundo.click();
+}
+
+function alterarFundoChat(event) {
+    const arquivo = event.target.files[0];
+    if (!arquivo || !destinatarioAtual) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const urlImagem = e.target.result;
+        
+        // Aplica o fundo visualmente no chat atual
+        const containerMensagens = document.getElementById("chat-mensagens");
+        if (containerMensagens) {
+            containerMensagens.style.backgroundImage = `url(${urlImagem})`;
+            containerMensagens.style.backgroundSize = 'cover';
+            containerMensagens.style.backgroundPosition = 'center';
+        }
+
+        // Salva no localStorage usando o e-mail do usuário logado + contato atual como chave
+        const meuEmail = localStorage.getItem("usuarioLogado");
+        localStorage.setItem(`fundo_chat_${meuEmail}_${destinatarioAtual}`, urlImagem);
+
+        fecharPainelDadosContato();
+    };
+    reader.readAsDataURL(arquivo);
+}
+
+function carregarFundoChatSalvo(emailContato) {
+    const meuEmail = localStorage.getItem("usuarioLogado");
+    const fundoSalvo = localStorage.getItem(`fundo_chat_${meuEmail}_${emailContato}`);
+    const containerMensagens = document.getElementById("chat-mensagens");
+
+    if (containerMensagens) {
+        if (fundoSalvo) {
+            containerMensagens.style.backgroundImage = `url(${fundoSalvo})`;
+            containerMensagens.style.backgroundSize = 'cover';
+            containerMensagens.style.backgroundPosition = 'center';
+        } else {
+            containerMensagens.style.backgroundImage = "";
+        }
     }
 }
 
@@ -1115,7 +1179,6 @@ async function carregarSolicitacoes() {
     });
 }
 
-// 1. Ajuste na função de abrir o pedido (para apenas carregar os dados sem abrir o chat de verdade)
 function abrirChatSolicitacao(solicitacao) {
     solicitacaoAtual = solicitacao;
     
@@ -1126,31 +1189,24 @@ function abrirChatSolicitacao(solicitacao) {
 
     if (modalSolicitacoes) modalSolicitacoes.classList.add('hidden');
     
-    // Mostra a barra de ações (Aceitar/Ignorar) e esconde a digitação
     if (chatInputBox) chatInputBox.classList.add('hidden');
     if (chatActionBar) chatActionBar.classList.remove('hidden');
 
-    // Preenche as informações do topo do chat
     destinatarioAtual = solicitacao.remetente_email;
     const elemNome = document.getElementById("chat-nome-usuario");
     if (elemNome) elemNome.innerText = solicitacao.remetente_email;
 
-    // Abre a tela do chat apenas para visualização da solicitação
     if (telaChat) telaChat.style.display = "flex";
     
-    // Limpa a tela de mensagens até ser aceito
     const container = document.getElementById("chat-mensagens");
     if (container) container.innerHTML = `<div style="text-align:center; padding:20px; color:#888;">Aceite a solicitação para conversar com este usuário.</div>`;
 }
 
-// 2. Ajuste na função de Aceitar (salva o contato para AMBOS os usuários)
 async function aceitarSolicitacaoAtual() {
     if (!solicitacaoAtual) return;
 
-    const meuEmail = localStorage.getItem("usuarioLogado");
     const meuUsuario = localStorage.getItem("nomeUsuario");
 
-    // Atualiza status da solicitação
     const { error: errorStatus } = await _supabase
         .from('solicitacoes_chat')
         .update({ status: 'aceito' })
@@ -1158,7 +1214,6 @@ async function aceitarSolicitacaoAtual() {
 
     if (errorStatus) return console.error('Erro ao aceitar:', errorStatus);
 
-    // Adiciona o usuário na SUA lista de contatos
     await _supabase
         .from('contatos')
         .insert([{ 
@@ -1166,7 +1221,6 @@ async function aceitarSolicitacaoAtual() {
             contato_usuario: solicitacaoAtual.remetente_email 
         }]);
 
-    // Adiciona VOCÊ na lista de contatos DELE (reciprocidade)
     await _supabase
         .from('contatos')
         .insert([{ 
@@ -1174,14 +1228,12 @@ async function aceitarSolicitacaoAtual() {
             contato_usuario: meuUsuario 
         }]);
 
-    // Alterna a barra de botões para a caixa de digitação
     const chatActionBar = document.getElementById('chat-action-bar');
     const chatInputBox = document.getElementById('chat-input-box');
 
     if (chatActionBar) chatActionBar.classList.add('hidden');
     if (chatInputBox) chatInputBox.classList.remove('hidden');
 
-    // Libera as mensagens do chat
     carregarMensagens();
     
     solicitacaoAtual = null;
