@@ -1056,8 +1056,8 @@ function inicializarEventosSolicitacoes() {
 }
 
 async function carregarSolicitacoes() {
-    const meuEmail = localStorage.getItem("usuarioLogado");
-    if (!meuEmail || !_supabase) return;
+    const meuUsuario = localStorage.getItem("nomeUsuario");
+    if (!meuUsuario || !_supabase) return;
 
     const badgeSolicitacoes = document.getElementById('badge-solicitacoes');
     const contadorMenu = document.getElementById('contador-menu');
@@ -1067,7 +1067,7 @@ async function carregarSolicitacoes() {
     const { data: solicitacoes, error } = await _supabase
         .from('solicitacoes_chat')
         .select('*')
-        .eq('destinatario_email', meuEmail)
+        .eq('destinatario_email', meuUsuario)
         .eq('status', 'pendente');
 
     if (error) {
