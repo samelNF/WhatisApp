@@ -27,7 +27,9 @@ document.addEventListener("DOMContentLoaded", () => {
     verificarSessao();
     registrarServiceWorker();
     inicializarEventosSolicitacoes();
+    
 });
+
 
 async function alternarNotificacoes(checkbox) {
     if (checkbox.checked) {
@@ -1051,7 +1053,7 @@ async function carregarMensagensGrupo(idGrupo) {
 
 function abrirChatCom(emailDestinatario, nomeDestinatario, fotoDestinatario) {
     destinatarioAtual = emailDestinatario;
-    window.grupoAtualId = null; // Garante que limpa o grupo ao abrir chat privado
+    window.grupoAtualId = null;
 
     const elemNome = document.getElementById("chat-nome-usuario");
     const elemFoto = document.getElementById("chat-foto-usuario");
@@ -1059,7 +1061,13 @@ function abrirChatCom(emailDestinatario, nomeDestinatario, fotoDestinatario) {
 
     if (elemNome) elemNome.innerText = nomeDestinatario || emailDestinatario;
     if (elemFoto && fotoDestinatario) elemFoto.src = fotoDestinatario;
-    if (telaChat) telaChat.style.display = "flex";
+    
+    if (telaChat) {
+        telaChat.style.display = "flex";
+        setTimeout(() => {
+            telaChat.classList.add("ativa");
+        }, 10);
+    }
 
     carregarFundoChatSalvo(emailDestinatario);
 
@@ -1083,13 +1091,18 @@ function abrirChatCom(emailDestinatario, nomeDestinatario, fotoDestinatario) {
 
 function fecharChat() {
     const telaChat = document.getElementById("tela-chat");
-    if (telaChat) telaChat.style.display = "none";
+    if (telaChat) {
+        telaChat.classList.remove("ativa");
+        setTimeout(() => {
+            telaChat.style.display = "none";
+        }, 300);
+    }
 
     const containerMensagens = document.getElementById("chat-mensagens");
     if (containerMensagens) containerMensagens.style.backgroundImage = "";
 
     destinatarioAtual = null;
-    window.grupoAtualId = null; // Reseta o ID do grupo ao fechar
+    window.grupoAtualId = null;
 
     if (intervaloChecarStatusContato) {
         clearInterval(intervaloChecarStatusContato);
@@ -1952,3 +1965,25 @@ async function finalizarCriacaoGrupo() {
     document.getElementById('tela-criar-grupo-detalhes').style.display = 'none';
     mostrarAppPrincipal();
 }
+let toqueInicialX = 0;
+let toqueInicialY = 0;
+
+document.addEventListener('touchstart', (e) => {
+    toqueInicialX = e.touches[0].clientX;
+    toqueInicialY = e.touches[0].clientY;
+}, false);
+
+document.addEventListener('touchend', (e) => {
+    let toqueFinalX = e.changedTouches[0].clientX;
+    let toqueFinalY = e.changedTouches[0].clientY;
+
+    let diferencaX = toqueFinalX - toqueInicialX;
+    let diferencaY = Math.abs(toqueFinalY - toqueInicialY);
+
+    const telaChat = document.getElementById("tela-chat");
+    const chatAberto = telaChat && telaChat.style.display === "flex";
+
+    if (chatAberto && toqueInicialX < 40 && diferencaX > 100 && diferencaY < 50) {
+        fecharChat();
+    }
+}, false);
