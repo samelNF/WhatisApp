@@ -1266,13 +1266,20 @@ async function ignorarSolicitacaoAtual() {
 // ==========================================
 function abrirPainelDadosContato() {
     const painel = document.getElementById('painel-dados-contato');
-    if (painel) painel.style.display = 'flex';
+    if (painel) {
+        painel.classList.remove('hidden');
+        painel.style.display = 'flex';
+    }
 }
 
 function fecharPainelDadosContato() {
     const painel = document.getElementById('painel-dados-contato');
-    if (painel) painel.style.display = 'none';
+    if (painel) {
+        painel.classList.add('hidden');
+        painel.style.display = 'none';
+    }
 }
+
 
 function acionarTrocaFundo() {
     const inputFundo = document.getElementById('input-fundo-chat');
