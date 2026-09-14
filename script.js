@@ -697,10 +697,14 @@ function renderizarBalao(texto, ehMinha, dataCriacao) {
     if (texto && texto.startsWith("[FOTO]:")) {
         const urlImagem = texto.replace("[FOTO]:", "");
         conteudoHtml = `<img src="${urlImagem}" style="max-width: 200px; border-radius: 8px; display: block; cursor: pointer;" onclick="window.open('${urlImagem}', '_blank')">`;
+    } else if (texto && texto.startsWith("[VIDEO]:")) {
+        const urlVideo = texto.replace("[VIDEO]:", "");
+        conteudoHtml = `<video src="${urlVideo}" controls preload="metadata" style="max-width: 200px; width: 100%; border-radius: 8px; display: block; background: #000;"></video>`;
     } else {
         conteudoHtml = `<span>${texto}</span>`;
     }
 
+    
     balao.innerHTML = `
         ${conteudoHtml}
         <span class="balao-hora">${horaFormatada}</span>
@@ -713,18 +717,13 @@ function renderizarBalaoGrupo(texto, ehMinha, timestamp, nomeRemetente) {
     const containerChat = document.getElementById("chat-mensagens");
     if (!containerChat) return;
 
-    // Cria o elemento principal do balão
     const divBalao = document.createElement("div");
-    
-    // ATRIBUIÇÃO CORRETA DAS CLASSES DO CSS:
     divBalao.className = ehMinha ? "balao-msg balao-enviada" : "balao-msg balao-recebida";
 
-    let conteudoHTML = "";
-
-    // Se for mensagem de outra pessoa no grupo, mostra o nome dela em cima
+    // Se houver nome do remetente (em grupo)
     if (!ehMinha && nomeRemetente) {
         const spanNome = document.createElement("span");
-        spanNome.style.color = "#ff7b00"; // Cor de destaque para o nome
+        spanNome.style.color = "#ff7b00";
         spanNome.style.fontSize = "11px";
         spanNome.style.fontWeight = "bold";
         spanNome.style.marginBottom = "2px";
@@ -732,23 +731,42 @@ function renderizarBalaoGrupo(texto, ehMinha, timestamp, nomeRemetente) {
         divBalao.appendChild(spanNome);
     }
 
-    // Texto da mensagem
-    const spanTexto = document.createElement("span");
-    spanTexto.textContent = texto;
-    divBalao.appendChild(spanTexto);
+    // --- VERIFICAÇÃO DE MÍDIA (IMAGEM OU VÍDEO) ---
+    if (texto && texto.startsWith("[MIDIA_")) {
+        const ehVideo = texto.startsWith("[MIDIA_VIDEO]");
+        const urlArquivo = texto.split(": ")[1]; // Extrai o link após o prefixo
+
+        if (ehVideo) {
+            const videoElem = document.createElement("video");
+            videoElem.src = urlArquivo;
+            videoElem.controls = true; // Mostra os botões de play/pause/volume
+            videoElem.style.maxWidth = "220px";
+            videoElem.style.borderRadius = "8px";
+            videoElem.style.marginTop = "4px";
+            divBalao.appendChild(videoElem);
+        } else {
+            const imgElem = document.createElement("img");
+            imgElem.src = urlArquivo;
+            imgElem.style.maxWidth = "220px";
+            imgElem.style.borderRadius = "8px";
+            imgElem.style.marginTop = "4px";
+            divBalao.appendChild(imgElem);
+        }
+    } else {
+        // Mensagem de texto normal
+        const spanTexto = document.createElement("span");
+        spanTexto.textContent = texto;
+        divBalao.appendChild(spanTexto);
+    }
 
     // Horário da mensagem
     if (timestamp) {
         const spanHora = document.createElement("span");
         spanHora.className = "balao-hora";
-        
-        // Formata a hora (ex: 16:36) caso venha em formato ISO
         const data = new Date(timestamp);
-        const horaFormatada = !isNaN(data.getTime()) 
+        spanHora.textContent = !isNaN(data.getTime()) 
             ? data.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
             : timestamp;
-            
-        spanHora.textContent = horaFormatada;
         divBalao.appendChild(spanHora);
     }
 
@@ -764,55 +782,103 @@ function acionarSeletorFotoChat() {
     }
 }
 
-
-async function enviarFotoChat(event) {
+async function enviarMidia(event) {
     const arquivo = event.target.files[0];
+    if (!arquivo) return;
+
     const meuEmail = localStorage.getItem("usuarioLogado");
+    const nomeArquivo = `${Date.now()}_${arquivo.name}`;
 
-    if (!arquivo || !meuEmail || !destinatarioAtual) return;
+    // 1. Faz o upload para o Storage do Supabase (ex: bucket "midias")
+    const { data, error } = await _supabase.storage
+        .from("midias") 
+        .upload(nomeArquivo, arquivo);
 
-    // Gera um nome único para o arquivo
-    const fileExt = arquivo.name.split('.').pop();
-    const fileName = `chat_${meuEmail.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.${fileExt}`;
-
-    // 1. Faz o upload da imagem para o Supabase Storage
-    const { data: uploadData, error: uploadError } = await _supabase
-        .storage
-        .from('avatars') // Ou o nome do seu bucket de imagens
-        .upload(fileName, arquivo, {
-            cacheControl: '3600',
-            upsert: true
-        });
-
-    if (uploadError) {
-        alert("Erro ao enviar a foto: " + uploadError.message);
+    if (error) {
+        console.error("Erro no upload:", error.message);
+        alert("Erro ao enviar arquivo.");
         return;
     }
 
-    // 2. Pega a URL pública da imagem gerada
-    const { data: publicUrlData } = _supabase
-        .storage
-        .from('avatars')
-        .getPublicUrl(fileName);
+    // 2. Pega a URL pública do arquivo enviado
+    const { data: urlData } = _supabase.storage
+        .from("midias")
+        .getPublicUrl(nomeArquivo);
 
-    const urlFotoPublica = publicUrlData.publicUrl;
+    const urlPublica = urlData.publicUrl;
+    
+    // Verifica se é vídeo pelo tipo do arquivo
+    const ehVideo = arquivo.type.startsWith("video/");
+    
+    // Opcional: Você pode salvar uma marcação no texto ou usar uma coluna separada, 
+    // por exemplo, salvando um JSON ou identificador, ou simplesmente mandando a URL.
+    // Vamos enviar a URL e formatar na hora de exibir.
+    const textoMensagem = `[MIDIA_${ehVideo ? 'VIDEO' : 'IMAGEM'}]: ${urlPublica}`;
 
-    // 3. Envia uma mensagem para a tabela contendo a tag de imagem ou a URL
-    const { error: msgError } = await _supabase
-        .from("mensagens")
-        .insert([{
-            remetente_email: meuEmail,
-            destinatario_email: destinatarioAtual,
-            texto: `[FOTO]:${urlFotoPublica}` // Marcador para identificar que é uma imagem
-        }]);
+    // 3. Salva a mensagem no banco de dados (tabela mensagens)
+    const dadosMensagem = {
+        texto: textoMensagem,
+        remetente_email: meuEmail,
+        grupo_id: window.grupoAtualId ? window.grupoAtualId : null,
+        destinatario_email: window.grupoAtualId ? null : destinatarioAtual
+    };
 
-    if (msgError) {
-        console.error("Erro ao salvar mensagem da foto:", msgError.message);
-        alert("Erro ao enviar a imagem no chat.");
+    await _supabase.from("mensagens").insert([dadosMensagem]);
+
+    // Recarrega o chat
+    if (window.grupoAtualId) {
+        carregarMensagensGrupo(window.grupoAtualId);
+    } else {
+        carregarMensagens();
+    }
+}
+async function enviarFotoChat(event) {
+    const arquivo = event.target.files[0];
+    if (!arquivo) return;
+
+    const meuEmail = localStorage.getItem("usuarioLogado");
+    const nomeArquivo = `${Date.now()}_${arquivo.name}`;
+
+    // Faz o upload para o Supabase Storage (certifique-se de que o bucket aceita vídeos)
+    const { data, error } = await _supabase.storage
+        .from("midias") // ou o nome do seu bucket
+        .upload(nomeArquivo, arquivo);
+
+    if (error) {
+        console.error("Erro no upload:", error.message);
+        alert("Erro ao enviar arquivo.");
+        return;
     }
 
-    // Limpa o input para permitir enviar a mesma foto novamente se precisar
+    const { data: urlData } = _supabase.storage
+        .from("midias")
+        .getPublicUrl(nomeArquivo);
+
+    const urlPublica = urlData.publicUrl;
+    
+    // VERIFICA SE É VÍDEO OU IMAGEM E DEFINE O PREFIXO CORRETO
+    const ehVideo = arquivo.type.startsWith("video/");
+    const prefixo = ehVideo ? "[VIDEO]:" : "[FOTO]:";
+    const textoMensagem = `${prefixo} ${urlPublica}`;
+
+    const dadosMensagem = {
+        texto: textoMensagem,
+        remetente_email: meuEmail,
+        grupo_id: window.grupoAtualId ? window.grupoAtualId : null,
+        destinatario_email: window.grupoAtualId ? null : destinatarioAtual
+    };
+
+    await _supabase.from("mensagens").insert([dadosMensagem]);
+
+    // Limpa o input para permitir novos envios
     event.target.value = "";
+
+    // Recarrega o chat
+    if (window.grupoAtualId) {
+        carregarMensagensGrupo(window.grupoAtualId);
+    } else if (typeof carregarMensagens === 'function') {
+        carregarMensagens();
+    }
 }
 
 
