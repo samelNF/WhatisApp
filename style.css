@@ -998,3 +998,8 @@ input:checked + .slider:before {
     height: 30px;
     width: 30px;
 }
+.fotoAnexar {
+    background-color: transparent;
+    height: 30px;
+    width: 30px;
+}
