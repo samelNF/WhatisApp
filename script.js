@@ -1282,22 +1282,20 @@ function fecharPainelDadosContato() {
 
 
 function acionarTrocaFundo() {
-    const inputFundo = document.getElementById('input-fundo-chat');
-    if (inputFundo) inputFundo.click();
-}
-
 async function alterarFundoChat(event) {
     const arquivo = event.target.files[0];
     const meuEmail = localStorage.getItem("usuarioLogado");
 
     if (!arquivo || !meuEmail || !destinatarioAtual) return;
 
+    // Gera um nome único para o arquivo no storage
     const fileExt = arquivo.name.split('.').pop();
-    const fileName = `fundo_${Date.now()}.${fileExt}`;
+    const fileName = `fundo_${meuEmail.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.${fileExt}`;
 
+    // 1. Faz o upload da imagem para o bucket do Supabase
     const { data: uploadData, error: uploadError } = await _supabase
         .storage
-        .from('avatars') // Você pode usar o mesmo bucket ou criar um para fundos
+        .from('avatars') // Certifique-se de que o bucket existe
         .upload(fileName, arquivo, {
             cacheControl: '3600',
             upsert: true
@@ -1308,6 +1306,7 @@ async function alterarFundoChat(event) {
         return;
     }
 
+    // 2. Obtém a URL pública da imagem gerada no Supabase
     const { data: publicUrlData } = _supabase
         .storage
         .from('avatars')
@@ -1315,11 +1314,32 @@ async function alterarFundoChat(event) {
 
     const urlFundoPublica = publicUrlData.publicUrl;
 
-    // Salva a preferência do fundo na tabela de contatos ou mensagens, ou atualiza a interface diretamente
-    aplicarFundoNaTela(urlFundoPublica);
+    // 3. Salva essa URL no banco de dados (ex: na tabela usuarios ou numa tabela de preferências)
+    // Nota: Se preferir salvar por chat, certifique-se que sua tabela suporta, ou salve na tabela 'usuarios' como exemplo:
+    const { error: updateError } = await _supabase
+        .from("usuarios")
+        .update({ fundo_chat_url: urlFundoPublica }) // Certifique-se de ter essa coluna na sua tabela ou salve onde preferir
+        .eq("email", meuEmail);
+
+    if (updateError) {
+        console.error("Erro ao salvar URL no banco:", updateError.message);
+    }
+
+    // 4. Aplica visualmente na tela de chat atual
+    const containerMensagens = document.getElementById("chat-mensagens");
+    if (containerMensagens) {
+        containerMensagens.style.backgroundImage = `url('${urlFundoPublica}')`;
+        containerMensagens.style.backgroundSize = 'cover';
+        containerMensagens.style.backgroundPosition = 'center';
+    }
+
+    // Salva também no cache local para carregamento instantâneo futuro
+    localStorage.setItem(`fundo_chat_${meuEmail}_${destinatarioAtual}`, urlFundoPublica);
+
     fecharPainelDadosContato();
-    alert("Fundo do chat alterado com sucesso!");
+    alert("Fundo alterado e salvo com sucesso!");
 }
+
 
 function aplicarFundoNaTela(urlImagem) {
     const chatMensagens = document.getElementById('chat-mensagens');
