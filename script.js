@@ -659,15 +659,76 @@ function renderizarBalao(texto, ehMinha, dataCriacao) {
     balao.classList.add(ehMinha ? "balao-enviada" : "balao-recebida");
 
     const horaFormatada = formatarHora(dataCriacao || new Date());
+    
+    let conteudoHtml = "";
+
+    // Verifica se a mensagem enviada é uma imagem
+    if (texto && texto.startsWith("[FOTO]:")) {
+        const urlImagem = texto.replace("[FOTO]:", "");
+        conteudoHtml = `<img src="${urlImagem}" style="max-width: 200px; border-radius: 8px; display: block; cursor: pointer;" onclick="window.open('${urlImagem}', '_blank')">`;
+    } else {
+        conteudoHtml = `<span>${texto}</span>`;
+    }
 
     balao.innerHTML = `
-        <span>${texto}</span>
+        ${conteudoHtml}
         <span class="balao-hora">${horaFormatada}</span>
     `;
 
     container.appendChild(balao);
     container.scrollTop = container.scrollHeight;
 }
+
+async function enviarFotoChat(event) {
+    const arquivo = event.target.files[0];
+    const meuEmail = localStorage.getItem("usuarioLogado");
+
+    if (!arquivo || !meuEmail || !destinatarioAtual) return;
+
+    // Gera um nome único para o arquivo
+    const fileExt = arquivo.name.split('.').pop();
+    const fileName = `chat_${meuEmail.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.${fileExt}`;
+
+    // 1. Faz o upload da imagem para o Supabase Storage
+    const { data: uploadData, error: uploadError } = await _supabase
+        .storage
+        .from('avatars') // Ou o nome do seu bucket de imagens
+        .upload(fileName, arquivo, {
+            cacheControl: '3600',
+            upsert: true
+        });
+
+    if (uploadError) {
+        alert("Erro ao enviar a foto: " + uploadError.message);
+        return;
+    }
+
+    // 2. Pega a URL pública da imagem gerada
+    const { data: publicUrlData } = _supabase
+        .storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+    const urlFotoPublica = publicUrlData.publicUrl;
+
+    // 3. Envia uma mensagem para a tabela contendo a tag de imagem ou a URL
+    const { error: msgError } = await _supabase
+        .from("mensagens")
+        .insert([{
+            remetente_email: meuEmail,
+            destinatario_email: destinatarioAtual,
+            texto: `[FOTO]:${urlFotoPublica}` // Marcador para identificar que é uma imagem
+        }]);
+
+    if (msgError) {
+        console.error("Erro ao salvar mensagem da foto:", msgError.message);
+        alert("Erro ao enviar a imagem no chat.");
+    }
+
+    // Limpa o input para permitir enviar a mesma foto novamente se precisar
+    event.target.value = "";
+}
+
 
 async function carregarMensagens() {
     const meuEmail = localStorage.getItem("usuarioLogado");
