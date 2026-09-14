@@ -994,6 +994,7 @@ input:checked + .slider:before {
   display: none !important;
 }
 .clip {
-        filter: brightness(0) invert(1);
-        flex: 1;
-    }
+    filter: brightness(0) invert(1);
+    height: 30px;
+    width: 30px;
+}
