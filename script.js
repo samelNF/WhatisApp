@@ -582,31 +582,28 @@ async function adicionarNovoContato(nomeUsuarioAdicionar) {
 }
 
 async function pedirEmailContato() {
-    const userDestino = prompt("Digite o usuário de quem deseja conversar:");
+    const userDestino = prompt("Digite o nome de usuário de quem deseja conversar:");
 
     if (!userDestino) return;
 
     const meuUser = localStorage.getItem("nomeUsuario");
 
-    // Evita enviar solicitação para si mesmo
     if (userDestino.trim().toLowerCase() === meuUser.trim().toLowerCase()) {
         alert("Você não pode enviar uma solicitação para si mesmo.");
         return;
     }
 
-    // 1. Verifica se o usuário de destino existe no sistema
     const { data: usuarioExiste, error: errUsuario } = await _supabase
         .from('usuarios')
         .select('usuario')
         .eq('usuario', userDestino.trim())
         .maybeSingle();
 
-    if (!usuarioExiste) {
+    if (errUsuario || !usuarioExiste) {
         alert("Usuário não encontrado!");
         return;
     }
 
-    // 2. Verifica se a solicitação já foi enviada previamente
     const { data: solicitacaoExistente } = await _supabase
         .from('solicitacoes_chat')
         .select('id, status')
@@ -615,11 +612,10 @@ async function pedirEmailContato() {
         .maybeSingle();
 
     if (solicitacaoExistente) {
-        alert(`Você já enviou uma solicitação para este usuário (Status: ${solicitacaoExistente.status}).`);
+        alert(`Você já enviou uma solicitação para este usuário.`);
         return;
     }
 
-    // 3. Insere a solicitação no banco de dados com status 'pendente'
     const { error: errInserir } = await _supabase
         .from('solicitacoes_chat')
         .insert([
