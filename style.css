@@ -995,4 +995,5 @@ input:checked + .slider:before {
 }
 .clip {
         filter: brightness(0) invert(1);
+        flex: 1;
     }
