@@ -827,7 +827,7 @@ async function renderizarBalaoGrupo(texto, ehMinha, dataCriacao, nomeRemetente, 
         if (textoCitado.startsWith("[FOTO]:")) textoCitado = "📷 Foto";
         if (textoCitado.startsWith("[VIDEO]:")) textoCitado = "🎥 Vídeo";
 
-        let corCitado = "#ff7b00";
+        let corCitado = "#888888";
         let nomeCitadoOriginal = "Respondendo a...";
 
         if (mensagemRespondida.remetente_email) {
@@ -835,17 +835,19 @@ async function renderizarBalaoGrupo(texto, ehMinha, dataCriacao, nomeRemetente, 
             
             if (emailOriginal === localStorage.getItem("usuarioLogado")) {
                 nomeCitadoOriginal = "Você";
-                corCitado = localStorage.getItem("corUsuario") || "#ff7b00";
+                corCitado = localStorage.getItem("corUsuario") || "#888888";
             } else {
-                // Tenta buscar o nome do contato localmente ou nas variáveis disponíveis
-                // (Caso você tenha uma função ou objeto global que guarda o nome dos usuários pelo e-mail)
-                const contatoSalvo = typeof obterNomeContato === 'function'
-                    ? await obterNomeContato(emailOriginal)
-                    : null;
+                const { data: usuarioOriginal } = await _supabase
+                    .from("usuarios")
+                    .select("usuario, cor")
+                    .eq("email", emailOriginal)
+                    .maybeSingle();
 
-                nomeCitadoOriginal = contatoSalvo || emailOriginal;
+                nomeCitadoOriginal = usuarioOriginal?.usuario || emailOriginal;
+                corCitado = usuarioOriginal?.cor || "#888888";
             }
         }
+
 
         htmlResposta = `
             <div class="citacao-resposta" style="border-left: 3px solid ${corCitado}; background: rgba(0,0,0,0.05); padding: 4px 8px; margin-bottom: 4px; border-radius: 4px; font-size: 12px; opacity: 0.9;">
