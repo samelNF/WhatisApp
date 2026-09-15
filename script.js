@@ -987,10 +987,29 @@ function abrirChatGrupo(idGrupo, nomeGrupo, fotoGrupo) {
     const elemNome = document.getElementById("chat-nome-usuario");
     const elemFoto = document.getElementById("chat-foto-usuario");
     const telaChat = document.getElementById("tela-chat");
+    const spanStatus = document.getElementById("chat-status-usuario");
 
     if (elemNome) elemNome.innerText = nomeGrupo;
     if (elemFoto && fotoGrupo) elemFoto.src = fotoGrupo;
-    if (telaChat) telaChat.style.display = "flex";
+    if (spanStatus) spanStatus.innerText = "Toque para ver os dados do grupo";
+    
+    // CORREÇÃO: Adiciona a classe 'ativa' igual ao chat privado para exibir a tela
+    if (telaChat) {
+        telaChat.style.display = "flex";
+        setTimeout(() => {
+            telaChat.classList.add("ativa");
+        }, 10);
+    }
+
+    // Limpa intervalo de status de contato privado anterior
+    if (intervaloChecarStatusContato) {
+        clearInterval(intervaloChecarStatusContato);
+        intervaloChecarStatusContato = null;
+    }
+
+    // Reseta o fundo do chat ao abrir o grupo
+    const containerMensagens = document.getElementById("chat-mensagens");
+    if (containerMensagens) containerMensagens.style.backgroundImage = "";
 
     // CHAMA A FUNÇÃO PARA PUXAR AS MENSAGENS DO GRUPO
     carregarMensagensGrupo(idGrupo);
@@ -1000,6 +1019,7 @@ function abrirChatGrupo(idGrupo, nomeGrupo, fotoGrupo) {
     if (chatInputBox) chatInputBox.classList.remove('hidden');
     if (chatActionBar) chatActionBar.classList.add('hidden');
 }
+
 
 async function carregarMensagensGrupo(idGrupo) {
     const meuEmail = localStorage.getItem("usuarioLogado");
