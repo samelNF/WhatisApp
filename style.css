@@ -488,6 +488,9 @@
 
 /* Container base do balão */
 .balao-msg {
+    position: relative;
+    transition: transform 0.2s ease;
+    touch-action: pan-y; /* Permite rolar a página verticalmente, mas captura o gesto horizontal */
     display: flex;
     flex-direction: column;
     max-width: 70%;
@@ -497,7 +500,49 @@
     word-break: break-word;
     box-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
+.foto-contato-pequena {
+    width: 45px;
+    height: 45px;
+    min-width: 45px;
+    min-height: 45px;
+    object-fit: cover;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.nome-contato-sel {
+    color: #ffffff;
+}
+.esq-contato-sel {
+    display: flex;
+    align-items: center;
+    padding-bottom: 2.5px;
+    padding-top: 2.5px;
+}
+/* Menu de criar grupo por cima da tela */
+.tela-grupo-overlay {
+    position: fixed;
+    z-index: 9999;
+    top: 8%;
+    left: 0;
+    width: 100%;
+    height: 92%;
+    background-color: var(--background-color, #121212);
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
 
+    animation: subirMenuGrupo 0.25s ease-out;
+}
+
+@keyframes subirMenuGrupo {
+    from {
+        transform: translateY(100%);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
 .balao-msg video {
     max-width: 220px;
     width: 100%;
@@ -1059,6 +1104,35 @@ input:checked + .slider:before {
     height: 45px;
     width: 45px;
     border: none;
+}
+
+.checkbox-membro {
+    appearance: none;
+    -webkit-appearance: none;
+
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    border: 2px solid white;
+    border-radius: 50%;
+    background: transparent;
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.checkbox-membro:checked {
+    background: #00a884;
+    border-color: #00a884;
+}
+
+.checkbox-membro:checked::after {
+    content: "✓";
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
 }
 /* ==========================================
    TELA DE DADOS DO USUÁRIO

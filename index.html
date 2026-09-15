@@ -22,7 +22,7 @@
     <link rel="manifest" href="manifest.json">
 </head>
 
-<body>
+<body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
     
     <!-- ABA 1: CONVERSAS E LISTA DE CONTATOS -->
     <div id="tela-conversas" class="aba-conteudo">
@@ -79,10 +79,10 @@
     </div>
 
     <!-- TELA SUBPÁGINA: SELECIONAR MEMBROS PARA O GRUPO (ATÉ 15) -->
-    <div id="tela-criar-grupo-membros" class="aba-conteudo" style="display: none; flex-direction: column; background-color: var(--background-color, #121212);">
+    <div id="tela-criar-grupo-membros" class="aba-conteudo tela-grupo-overlay" style="display: none; flex-direction: column;">
         <div class="topo-subpagina" style="display: flex; align-items: center; justify-content: space-between; padding: 15px;">
             <div style="display: flex; align-items: center; gap: 15px;">
-                <button onclick="voltarParaConversas()" style="background:none; border:none; color:white; font-size:24px; cursor:pointer;">←</button>
+                <button onclick="fecharMenuCriarGrupo()" style="background:none; border:none; color:white; font-size:24px; cursor:pointer;"><</button>
                 <h2 style="color: white; font-size: 18px; margin: 0;">Adicionar participantes</h2>
             </div>
             <span id="contador-selecao-grupo" style="color: #aaa; font-weight: bold;">0/15</span>
@@ -105,9 +105,9 @@
     </div>
 
     <!-- TELA SUBPÁGINA: NOME E FOTO DO GRUPO -->
-    <div id="tela-criar-grupo-detalhes" class="aba-conteudo" style="display: none; flex-direction: column; background-color: var(--background-color, #121212); padding: 15px;">
+    <div id="tela-criar-grupo-detalhes" class="aba-conteudo tela-grupo-overlay" style="display: none; flex-direction: column; padding: 15px;">
         <div class="topo-subpagina" style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
-            <button onclick="voltarParaSelecaoMembros()" style="background:none; border:none; color:white; font-size:24px; cursor:pointer;">←</button>
+            <button onclick="voltarParaSelecaoMembros()" style="background:none; border:none; color:white; font-size:24px; cursor:pointer;"><</button>
             <h2 style="color: white; font-size: 18px; margin: 0;">Novo grupo</h2>
         </div>
 
@@ -336,18 +336,27 @@
             <!-- Mensagens inseridas via JS -->
         </div>
 
-        <!-- RODAPÉ DA TELA DE CHAT -->
-        <div class="chat-footer">
+                <!-- RODAPÉ DA TELA DE CHAT -->
+        <div class="chat-footer" style="display: flex; flex-direction: column;">
+            
+            <!-- PAINEL DE RESPOSTA (NOVO) -->
+            <div id="painel-resposta" class="painel-resposta" style="display: none; background: #ffffff41; padding: 8px 12px; border-left: 4px solid #ffffff; margin-bottom: 6px; border-radius: 4px; align-items: center; justify-content: space-between;">
+                <div style="font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; flex-direction: column;">
+                    <strong id="resposta-nome-usuario" style="color: #ffffff; margin-bottom: 2px;">Respondendo a alguém</strong>
+                    <span id="resposta-texto-preview" style="color: #ffffff; font-size: 12px;">Texto da mensagem...</span>
+                </div>
+                <button type="button" onclick="cancelarResposta()" style="background: none; border: none; font-size: 18px; cursor: pointer; color: #aebac1; padding: 0 5px;">&times;</button>
+            </div>
             <!-- Barra normal de envio (visível para contatos salvos) -->
             <div id="chat-input-box" class="chat-input-box">
-                <input type="text" id="input-mensagem" placeholder="Mensagem" onkeypress="checarEnter(event)">
+                <input type="text" id="input-mensagem" onkeypress="checarEnter(event)" style="margin-bottom: 10px;">
                 <!-- Botão para disparar o seletor de arquivos -->
-                <button type="button" class="fotoAnexar" id="btn-enviar-foto" onclick="acionarSeletorFotoChat()">
+                <button type="button" class="fotoAnexar" id="btn-enviar-foto" onclick="acionarSeletorFotoChat()" style="margin-bottom: 10px;">
                     <img src="svg/clip.svg" alt="Anexar" class="clip">
                 </button>
                 <!-- Input file oculto -->
-                <input type="file" id="input-arquivo-chat" accept="image/*, video/*" style="display: none;" onchange="enviarFotoChat(event)">
-                <button id="btn-enviar" onclick="enviarMensagem()" class="btn-enviar">
+                <input type="file" id="input-arquivo-chat" accept="image/*, video/*" style="display: none;" onchange="enviarFotoChat(event)" style="margin-bottom: 10px;">
+                <button id="btn-enviar" onclick="enviarMensagem()" class="btn-enviar" style="margin-bottom: 10px;">
                     <img src="svg/paperplane.svg" alt="Enviar" style="transform: rotate(45deg);">
                 </button>
             </div>
