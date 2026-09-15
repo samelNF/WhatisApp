@@ -734,8 +734,8 @@ function renderizarBalaoGrupo(texto, ehMinha, timestamp, nomeRemetente) {
     }
 
     // --- VERIFICAÇÃO DE MÍDIA (IMAGEM OU VÍDEO) ---
-    if (texto && texto.startsWith("[MIDIA_")) {
-        const ehVideo = texto.startsWith("[MIDIA_VIDEO]");
+    if (texto && texto.startsWith("[")) {
+        const ehVideo = texto.startsWith("[VIDEO]");
         const urlArquivo = texto.split(": ")[1]; // Extrai o link após o prefixo
 
         if (ehVideo) {
@@ -815,7 +815,7 @@ async function enviarMidia(event) {
     // Opcional: Você pode salvar uma marcação no texto ou usar uma coluna separada, 
     // por exemplo, salvando um JSON ou identificador, ou simplesmente mandando a URL.
     // Vamos enviar a URL e formatar na hora de exibir.
-    const textoMensagem = `[MIDIA_${ehVideo ? 'VIDEO' : 'IMAGEM'}]: ${urlPublica}`;
+    const textoMensagem = `[${ehVideo ? 'VIDEO' : 'IMAGEM'}]: ${urlPublica}`;
 
     // 3. Salva a mensagem no banco de dados (tabela mensagens)
     const dadosMensagem = {
