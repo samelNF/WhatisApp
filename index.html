@@ -82,7 +82,11 @@
     <div id="tela-criar-grupo-membros" class="aba-conteudo tela-grupo-overlay" style="display: none; flex-direction: column;">
         <div class="topo-subpagina" style="display: flex; align-items: center; justify-content: space-between; padding: 15px;">
             <div style="display: flex; align-items: center; gap: 15px;">
-                <button onclick="fecharMenuCriarGrupo()" style="background:none; border:none; color:white; font-size:24px; cursor:pointer;"><</button>
+                <button onclick="fecharMenuCriarGrupo()" class="cinza" style="display: flex; justify-content: center; align-items: center;">
+                    <svg xmlns="http://w3.org" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6 6 18M6 6l12 12"/>
+                    </svg>
+                </button>
                 <h2 style="color: white; font-size: 18px; margin: 0;">Adicionar participantes</h2>
             </div>
             <span id="contador-selecao-grupo" style="color: #aaa; font-weight: bold;">0/15</span>
@@ -99,15 +103,21 @@
         </div>
 
         <!-- Botão verde flutuante inferior direito para avançar -->
-        <button id="btn-avancar-grupo" class="btn-verde-flutuante hidden" onclick="irParaDetalhesGrupo()" style="position: fixed; bottom: 25px; right: 25px; width: 56px; height: 56px; border-radius: 50%; background-color: #00a884; color: white; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;">
-            &gt;
+        <button id="btn-avancar-grupo" class="verde hidden" onclick="irParaDetalhesGrupo()" style="position: fixed; bottom: 25px; right: 25px; width: 56px; height: 56px; border-radius: 50%; background-color: #00a884; color: white; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;">
+            <svg xmlns="http://w3.org" width="34" height="34" style="transform: rotate(175deg);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
         </button>
     </div>
 
     <!-- TELA SUBPÁGINA: NOME E FOTO DO GRUPO -->
     <div id="tela-criar-grupo-detalhes" class="aba-conteudo tela-grupo-overlay" style="display: none; flex-direction: column; padding: 15px;">
         <div class="topo-subpagina" style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
-            <button onclick="voltarParaSelecaoMembros()" style="background:none; border:none; color:white; font-size:24px; cursor:pointer;"><</button>
+            <button onclick="voltarParaSelecaoMembros()" class="cinza" style="display: flex; justify-content: center; align-items: center;">
+                <svg xmlns="http://w3.org" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </button>
             <h2 style="color: white; font-size: 18px; margin: 0;">Novo grupo</h2>
         </div>
 
