@@ -11,7 +11,7 @@ window.abrirPainelDadosContato = function () {
     const nomeHeader = document.getElementById('chat-nome-usuario');
     const fotoHeader = document.getElementById('chat-foto-usuario');
     const nome = nomeHeader ? nomeHeader.textContent.trim() : 'Nome';
-    const foto = fotoHeader ? nomeHeader && fotoHeader.src : 'svg/icon.svg';
+    const foto = fotoHeader ? fotoHeader.src : 'svg/icon.svg';
 
     const conteudo = painel.querySelector('.modal-content');
     if (!conteudo) return;
