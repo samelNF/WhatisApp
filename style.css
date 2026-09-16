@@ -1,1271 +1,171 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-    header div h1 {
-        color: white;
-        font-size: 33px;
-        font-family: sans-serif;
-    }
-    .quadrado-criar {
-        width: 190px;
-        height: 195px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        background-color: #5f5f5f;
-        position: fixed;
-    }
-    .conversa {
-        width: 100%;
-        height: 100%;
-        display: flex;
-        padding-top: 24px;
-        cursor: default;
-    }
-    body {
-        background-color: #0A0A0A;
-    }
-    .topo {
-        display: flex;
-        justify-content: space-between;
-        flex-direction: row;
-        width: 95%;
-        height: 55px;
-        background-color: #0A0A0AB3;
-        top: 0px;
-        position: fixed;
-        padding-top: 5px;
-    }
-    .camera {
-        filter: brightness(0) invert(1);
-        transform: rotateY(180deg);
-    }
-    .plusi {
-        width: 85%;
-        height: 85%;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        padding-left: 2.5px;
-    }
-    .cinza {
-        color: white;
-        border-radius: 100px;
-        font-size: 20px;
-        width: 45px;
-        height: 45px;
-        background-color: #292929;
-        border: none;
-        outline: none;
-        cursor: pointer;
-    }
-    .pesquisa {
-        display: flex;
-        justify-items: center;
-        align-items: center;
-        width: 100%;
-        height: 45px;
-        background-color: #222222;
-        border-radius: 2000px;
-    }
-    .pesquisa input {
-        background: transparent;
-        border: none;
-        outline: none;
-        color: #FAFAFA;
-        font-size: 19px;
-        flex: 1;
-    }
-    .pesquisa img {
-        width: 20px;
-        height: 20px;
-        filter: brightness(100%) invert(1);
-        padding-left: 10px;
-    }
-    .ultrabaixo {
-        display: flex;
-        justify-content: center;
-        flex-direction: row;
-    }
-    .baixo {
-        display: flex;
-        justify-content: center;
-        align-items: space-between;
-        flex-direction: row;
-        width: 66%;
-        height: 67px;
-        background-color: #FAFAFA40;
-        border-radius: 1000px;
-        position: fixed;
-        padding-top: 3px;
-        bottom: 22px;
-    }
-    .tu {
-        width: 48.5%;
-        height: 63.5px;
-        border: none;
-        background-color: transparent;
-        color: #FAFAFA;
-        display: flex;
-        align-items: center;
-        flex-direction: column;
-        justify-content: center;
-        font-size: 12px;
-    }
-    .chat-bt {
-        width: 48.5%;
-        height: 63.5px;
-        border: none;
-        background-color: transparent;
-        color: #FAFAFA;
-        display: flex;
-        align-items: center;
-        flex-direction: column;
-        justify-content: center;
-        font-size: 12px;
-    }
-    .vose {
-        width: 45px;
-        height: 45px;
-        object-fit: cover;
-        border-radius: 50%;
-    }
-    .vose[src$=".svg"] {
-        filter: brightness(0) invert(1);
-        border-radius: 0;
-    }
-    .chat {
-        width: 60%;
-        height: 60%;
-        object-fit: contain;
-        filter: brightness(0) invert(1);
-    }
-    /* Estilo base dos botões da barra inferior */
-.chat-bt, .tu {
-    position: relative;
-    cursor: pointer;
-    transition: background-color 0.2s ease, opacity 0.2s ease;
-    opacity: 1;
-    background-color: transparent;
-    border: none;
-    border-radius: 1000px;
-}
+@import url('./style-base.css');
 
-/* Estado ativo (botão selecionado) */
-.chat-bt.ativo, .tu.ativo {
-    opacity: 100%;
-    background-color: #121212;
-    border-radius: 1000px;
-    border: none;
-    color: white;
-}
-
-/* Indicador (tracinho laranja) em baixo do botão ativo */
-.chat-bt.ativo::after, .tu.ativo::after {
-    content: '';
-    position: absolute;
-    bottom: 4px;
-    width: 30px;
-    height: 3px;
-    background-color: transparent;
-    border-radius: 10000px;
-    color: white;
-}
-    .verde {
-        color: #0A0A0A;
-        border-radius: 100px;
-        font-size: 30px;
-        width: 45px;
-        height: 45px;
-        background-color: #ff7b00;
-        border: none;
-        outline: none;
-        right: 0;
-        cursor: pointer;
-    }
-    .contatos ul {
-        list-style-type: none;
-        margin: 0;
-        padding: 0;
-        color: #FAFAFA;
-        font-family: sans-serif;
-    }
-    .criar-conta {
-        position: fixed;
-        inset: 0;
-        background-color: #0A0A0A;
-        transform: translateX(0%);
-        transition: transform 2.0s ease-in-out;
-        display: flex;
-        flex-direction: column;
-        justify-content: up;
-        padding-top: 50px;
-        align-items: center;
-    }
-    #criar-conta.esquerda {
-        transform: translateX(-300%);
-    }
-    .criar-conta h1 {
-        color: #FAFAFA;
-        font-family: sans-serif;
-    }
-    .grande {
-        width: 200px;
-        height: 30px;
-        background-color: #ff7b00;
-        color: #000000;
-        border: none;
-        outline: none;
-        border-radius: 100px;
-        font-size: 15px;
-        margin-top: 3px;
-        cursor: pointer;
-    }
-    .criar-conta input {
-        width: 200px;
-        height: 30px;
-        background-color: #1A1A1A;
-        border: none;
-        outline: none;
-        border-radius: 10px;
-        margin-top: 2px;
-        font-size: 15px;
-        color: #FAFAFA;
-    }
-    .campo-senha {
-        display: flex;
-        align-items: center;
-        width: 217px;
-        height: 30px;
-        border-radius: 10px;
-        margin-top: 5px;
-        margin-bottom: 5px;
-    }
-    .campo-senha input {
-        flex: 1;
-        width: 200px;
-        margin-right: 5px;
-    }
-    .campo-senha button{
-        color: #FAFAFA;
-        width: 15px;
-        height: 15px;
-        cursor: pointer;
-        filter: brightness(0) invert(1);
-        background-color: transparent;
-        border: none;
-        outline: none;
-    }
-    .logo {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-    .nome {
-        font-family: sans-serif;
-        font-size: 25px;
-        color: #FAFAFA;
-        padding: 10%;   
-    }
-    .inicio {
-        position: fixed;
-        inset: 0;
-        background-color: #0A0A0A;
-        transform: translateX(0%);
-        transition: transform 2.0s ease-in-out;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }
-    #inicio.esquerda {
-        transform: translateX(-300%);
-    }
-    .usuario {
-        display: none;
-    }
-    .coisinha {
-        width: 70%;
-        height: 70%;
-        object-fit: contain;
-    }
-    .bondia {
-        color: #FAFAFA;
-        font-family: sans-serif;
-        font-size: 20px;
-        text-align: center;
-        padding-bottom: 70px;
-    }
-    .trem {
-        padding-top: 70px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-    }
-    .trem label {
-        color: #FAFAFA;
-        font-family: sans-serif;
-        font-size: 10px;
-        text-align: center;
-    }
-    .trem button {
-        width: 200px;
-        height: 30px;
-        background-color: #ff7b00;
-        border: none;
-        outline: none;
-        border-radius: 100px;
-        font-size: 15px;
-        margin-top: 3px;
-        cursor: pointer;
-        color: #000000;
-    }
-.autenticacao-box, .senhor-usuario {
-    position: fixed;
-    inset: 0;
-    background-color: #0A0A0A;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    z-index: 999;
-}
-
-.autenticacao-box h1, .senhor-usuario h1 {
-    color: #FAFAFA;
-    font-family: sans-serif;
-    margin-bottom: 15px;
-}
-
-.autenticacao-box input, .input-usuario-etapa2 {
-    width: 200px;
-    height: 30px;
-    background-color: #1A1A1A;
-    border: none;
-    outline: none;
-    border-radius: 10000px;
-    margin-top: 5px;
-    font-size: 15px;
-    color: #FAFAFA;
-    padding-left: 10px;
-}
-
-.troca-tela {
-    color: #888;
-    font-family: sans-serif;
-    font-size: 13px;
-    margin-top: 15px;
-}
-
-.troca-tela span {
-    color: #ff7b00;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-.btn-concluir-usuario {
-    width: 200px;
-    height: 30px;
-    background-color: #ff7b00;
-    color: #000000;
-    border: none;
-    outline: none;
-    border-radius: 100px;
-    font-size: 15px;
-    margin-top: 15px;
-    cursor: pointer;
-}
-/* CONTAINER E FOTO DE PERFIL REDONDA */
-.avatar-container {
-    position: relative;
-    width: 100px;
-    height: 100px;
-    margin-bottom: 20px;
-}
-
-.avatar-preview {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    object-fit: cover;
-    background-color: #292929;
-    border: 2px solid #ff7b00;
-}
-
-.avatar-upload-btn {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    width: 32px;
-    height: 32px;
-    background-color: #fdfbf8;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-}
-.avatar-upload-btn img {
-    width: 16px;
-    height: 16px;
-}
-/* JANELA DE CHAT */
-.tela-chat {
-    position: fixed;
-    inset: 0;
-    background-color: #0A0A0A;
-    display: flex;
-    flex-direction: column;
-    z-index: 1000;
-}
-/* Container ou Tela de Chat */
-#tela-chat {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: #0A0A0A; /* Ou a cor de fundo do seu chat */
-    z-index: 1000;
-    
-    /* Começa escondida para a direita */
-    transform: translateX(100%);
-    
-    /* Animação suave de 0.3 segundos */
-    transition: transform 0.3s ease-in-out;
-}
-
-/* Classe que ativa a tela (traz para o centro) */
-#tela-chat.ativa {
-    transform: translateX(0);
-}
-.chat-header {
-    height: 60px;
-    background-color: #ffffff11;
-    display: flex;
-    align-items: center;
-    padding: 0 10px;
-    border: none;
-}
-.btn-voltar {
-    background: transparent;
-    border: none;
-    color: #fdfbf8;
-    font-size: 32px;
-    cursor: pointer;
-    padding-right: 10px;
-}
-.chat-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    object-fit: cover;
-    margin-right: 10px;
-}
-.chat-info-usuario h2 {
-    color: #fdfbf8;
-    font-size: 16px;
-    margin: 0;
-    font-family: sans-serif;
-    cursor: default;
-}
-.status-online {
-    color: #b5b0ad;
-    font-size: 12px;
-    font-family: sans-serif;
-    cursor: default;
-}
-/* ÁREA DE BALÕES DE MENSAGEM */
-.chat-mensagens {
-    flex: 1;
-    padding: 15px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-/* Hora dentro do balão de mensagem */
-
-/* Container base do balão */
-.balao-msg {
-    position: relative;
-    transition: transform 0.2s ease;
-    touch-action: pan-y; /* Permite rolar a página verticalmente, mas captura o gesto horizontal */
-    display: flex;
-    flex-direction: column;
-    max-width: 70%;
-    padding: 10px 14px;
-    border-radius: 12px;
-    margin-bottom: 8px;
-    word-break: break-word;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-}
-.foto-contato-pequena {
-    width: 45px;
-    height: 45px;
-    min-width: 45px;
-    min-height: 45px;
-    object-fit: cover;
-    border-radius: 50%;
-    flex-shrink: 0;
-}
-.nome-contato-sel {
-    color: #ffffff;
-}
-.esq-contato-sel {
-    display: flex;
-    align-items: center;
-    padding-bottom: 2.5px;
-    padding-top: 2.5px;
-}
-/* Menu de criar grupo por cima da tela */
-.tela-grupo-overlay {
-    position: fixed;
-    z-index: 9999;
-    top: 8%;
-    left: 0;
-    width: 100%;
-    height: 92%;
-    background-color: var(--background-color, #121212);
-    border-radius: 18px 18px 0 0;
-    box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.5);
-    overflow: hidden;
-
-    animation: subirMenuGrupo 0.25s ease-out;
-}
-
-@keyframes subirMenuGrupo {
-    from {
-        transform: translateY(100%);
-    }
-
-    to {
-        transform: translateY(0);
-    }
-}
-.balao-msg video {
-    max-width: 220px;
-    width: 100%;
-    height: auto;
-    border-radius: 8px;
-    outline: none;
-    background: #000;
-}
-/* Suas mensagens (Enviadas) - Fundo cinza escuro/chumbo ou mude para #ff7b00 se preferir laranja */
-.balao-enviada {
-    align-self: flex-end;
-    background-color: #2b2b2b !important; 
-    color: #ffffff !important;
-    border-bottom-right-radius: 4px;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-/* Mensagens dos outros (Recebidas) - Fundo um pouco mais claro para destacar */
-.balao-recebida {
-    align-self: flex-start;
-    background-color: #1f1f1f !important; 
-    color: #ffffff !important;
-    border-bottom-left-radius: 4px;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-/* Formatação do texto do horário */
-.balao-hora {
-    font-size: 10px;
-    color: rgba(255, 255, 255, 0.5);
-    align-self: flex-end;
-    margin-top: 4px;
-    margin-left: 10px;
-}
-
-/* Ajuste na lista de contatos para alinhar nome, mensagem e hora */
-.info-contato-topo {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.hora-contato {
-    font-size: 11px;
-    color: #888;
-    font-family: sans-serif;
-}
-
-/* INPUT DE MENSAGEM */
-.chat-input-box {
-    padding: 10px;
-    background-color: #121212;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-.chat-input-box input {
-    flex: 1;
-    height: 40px;
-    background-color: #5353535b;
-    border: none;
-    outline: none;
-    border-radius: 20px;
-    padding: 0 15px;
-    color: #FAFAFA;
-    font-size: 15px;
-}
-.btn-enviar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: #fdfbf8;
-    border: none;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    padding-right: 10px;
-}
-.btn-enviar img {
-    width: 20px;
-    height: 20px;
-}
-/* LISTA DE CONTATOS / CONVERSAS */
-.contatos ul {
-    list-style: none;
-    margin: 15px 0 0 0;
-    padding: 0;
-}
-
-.item-contato {
-    display: flex;
-    align-items: center;
-    padding: 12px 10px;
-    border-bottom: 1px solid #1A1A1A;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-}
-
-.item-contato:active {
-    background-color: #1A1A1A;
-}
-
-.foto-contato {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    object-fit: cover;
-    margin-right: 15px;
-    background-color: #292929;
-}
-
-.info-contato {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-}
-
-.nome-contato {
-    color: #FAFAFA;
-    font-size: 20px;
-    font-weight: 500;
-    font-family: sans-serif;
-    padding-bottom: 18px;
-}
-
-.ultima-msg {
-    color: #888;
-    font-size: 16px;
-    font-family: sans-serif;
-    margin-top: 2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 200px;
-    padding-bottom: 10px;
-}
-/* Container Geral da Aba Você */
-#tela-voce {
-    display: flex;
-    flex-direction: column;
-    padding: 16px;
-    height: 100%;
-    overflow-y: auto;
+/* ==========================================
+   PAINEL DE DADOS DO CONTATO
+   ========================================== */
+#painel-dados-contato {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
     box-sizing: border-box;
-}
-
-.topo-aba h2 {
-    color: #e9edef;
-    margin-bottom: 20px;
-    font-size: 22px;
-    font-family: sans-serif;
-}
-
-/* Card do Perfil */
-.perfil-card {
-    display: flex;
-    align-items: center;
-    background-color: #111b21;
-    padding: 16px;
-    border-radius: 12px;
-    margin-bottom: 24px;
-    gap: 16px;
-}
-
-.foto-container {
-    position: relative;
-    width: 68px;
-    height: 68px;
-}
-
-.foto-perfil-grande {
-    width: 68px;
-    height: 68px;
-    border-radius: 50%;
-    object-fit: cover;
-}
-
-.btn-editar-foto {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    background-color: #ff7b00;
-    color: white;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    cursor: pointer;
-    font-family: sans-serif;
-}
-
-.info-usuario-voce h3 {
-    margin: 0;
-    color: #e9edef;
-    font-size: 18px;
-    font-family: sans-serif;
-}
-
-.info-usuario-voce p {
-    margin: 4px 0 0 0;
-    color: #8696a0;
-    font-size: 14px;
-    font-family: sans-serif;
-}
-
-/* Seção de Configurações */
-.secao-configuracoes h4 {
-    color: #8696a0;
-    font-size: 13px;
-    text-transform: uppercase;
-    margin-bottom: 12px;
-    font-family: sans-serif;
-}
-
-.item-config {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 14px 0;
-    border-bottom: 1px solid #222d34;
-    cursor: pointer;
-}
-
-.info-config {
-    display: flex;
-    flex-direction: column;
-}
-
-.titulo-config {
-    color: #e9edef;
-    font-size: 15px;
-    font-family: sans-serif;
-}
-
-.subtitulo-config {
-    color: #8696a0;
-    font-size: 12px;
-    margin-top: 2px;
-    font-family: sans-serif;
-}
-
-.seta-opcao {
-    color: #8696a0;
-    font-size: 20px;
-    font-family: sans-serif;
-}
-
-/* Switch (Chave de Ativar/Desativar) */
-.switch {
-    position: relative;
-    display: inline-block;
-    width: 44px;
-    height: 24px;
-}
-
-.switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background-color: #3b4a54;
-    transition: .3s;
-    border-radius: 24px;
-}
-
-.slider:before {
-    position: absolute;
-    content: "";
-    height: 18px;
-    width: 18px;
-    left: 3px;
-    bottom: 3px;
-    background-color: white;
-    transition: .3s;
-    border-radius: 50%;
-}
-
-input:checked + .slider {
-    background-color: #ff7b00;
-}
-
-input:checked + .slider:before {
-    transform: translateX(20px);
-}
-
-/* Botão Sair */
-.secao-sair {
-    margin-top: 32px;
-    text-align: center;
-}
-
-.btn-deslogar {
-    width: 100%;
-    padding: 12px;
-    background-color: transparent;
-    border: 1px solid #ea868f;
-    color: #ea868f;
-    border-radius: 8px;
-    font-size: 15px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: 0.2s;
-}
-
-.btn-deslogar:hover {
-    background-color: rgba(234, 134, 143, 0.1);
-}
-/* ==========================================
-   1. MENU DROPDOWN (3 PONTOS) & BADGES
-   ========================================== */
-.dropdown-container {
-  position: relative;
-  display: inline-block;
-}
-
-.badge {
-  position: absolute;
-  top: -2px;
-  right: -2px;
-  background-color: #e74c3c;
-  color: #fff;
-  font-size: 11px;
-  font-weight: bold;
-  padding: 2px 6px;
-  border-radius: 50%;
-}
-
-.dropdown-menu {
-  position: absolute;
-  left: 10px;
-  right: 0;
-  top: 100%;
-  margin-top: 8px;
-  width: 200px;
-  background-color: #292929;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
-  font-family: sans-serif;
-}
-
-.dropdown-menu ul {
-  list-style: none;
-  margin: 0;
-  padding: 6px 0;
-}
-
-.dropdown-menu li {
-  padding: 10px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  font-size: 13px;
-  color: white;
-  transition: background-color 0.2s;
-}
-
-.dropdown-menu li:hover {
-  background-color: rgba(255, 255, 255, 0.42);
-}
-
-.count-tag {
-  background-color: #25d366;
-  color: #fff;
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 12px;
-}
-
-/* ==========================================
-   2. MODAL DE SOLICITAÇÕES
-   ========================================== */
-.menu-chat-header {
-    height: 60px;
-    width: 100%;
-    background-color: transparent;
-    display: flex;
-    padding: 0 10px;
-    border: none;
-    color: #FAFAFA;
-}
-.menu-chat-header h3{
-    display: flex;
-    align-content: center;
-    justify-content: center;
-    padding-left: 27%;
-}
-.menu-chat {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: #0A0A0A;
-  display: flex;
-  align-content: center;
-  flex-direction: column;
-  z-index: 2000;
-  font-family: sans-serif;
-}
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-  font-family: sans-serif;
-}
-
-.modal-content {
-  background-color: rgba(255, 255, 255, 0.42);
-  width: 90%;
-  max-width: 420px;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-  font-family: sans-serif;
-}
-
-.modal-header {
-  padding: 16px;
-  background-color: #ff7b00;
-  color: #ffffff;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-family: sans-serif;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 16px;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  color: #fff;
-  font-size: 22px;
-  cursor: pointer;
-}
-
-.modal-body {
-  padding: 16px;
-  max-height: 350px;
-  overflow-y: auto;
-}
-
-.solicitacoes-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.solicitacao-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 0;
-  border-bottom: 100000px solid #eee;
-  font-family: sans-serif;
-}
-
-.solicitacao-item:last-child {
-  border-bottom: none;
-}
-
-.solicitacao-item .user-info p {
-  margin: 4px 0 0 0;
-  font-size: 12px;
-  color: #666;
-  font-family: sans-serif;
-}
-
-.btn-abrir-pedido {
-  background-color: #128c7e;
-  color: #fff;
-  border: none;
-  padding: 6px 14px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-family: sans-serif;
-}
-
-/* ==========================================
-   3. BARRA DE AÇÃO (ACEITAR / IGNORAR)
-   ========================================== */
-.chat-action-bar {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background-color: #f0f2f5;
-  padding: 12px 16px;
-  border-top: 1px solid #ddd;
-  text-align: center;
-}
-
-.warning-text {
-  font-size: 13px;
-  color: #555;
-  margin-bottom: 10px;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 12px;
-  width: 100%;
-  justify-content: center;
-}
-
-.action-buttons button {
-  border: none;
-  padding: 8px 20px;
-  border-radius: 20px;
-  font-weight: bold;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-}
-
-.btn-danger {
-  background-color: #ea4335;
-  color: #fff;
-}
-
-.btn-success {
-  background-color: #25d366;
-  color: #fff;
-}
-
-/* Classe utilitária para esconder elementos */
-.hidden {
-  display: none !important;
-}
-.clip {
-    filter: brightness(0) invert(1);
-    height: 45px;
-    width: 45px;
-}
-.fotoAnexar {
-    background-color: transparent;
-    height: 45px;
-    width: 45px;
-    border: none;
-}
-
-.checkbox-membro {
-    appearance: none;
-    -webkit-appearance: none;
-
-    width: 22px;
-    height: 22px;
-    min-width: 22px;
-    border: 2px solid white;
-    border-radius: 50%;
-    background: transparent;
-    cursor: pointer;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.checkbox-membro:checked {
-    background: #00a884;
-    border-color: #00a884;
-}
-
-.checkbox-membro:checked::after {
-    content: "✓";
-    color: white;
-    font-size: 14px;
-    font-weight: bold;
-}
-/* ==========================================
-   TELA DE DADOS DO USUÁRIO
-   ========================================== */
-
-.painel-dados-usuario {
-    position: fixed;
-    inset: 0;
-    background-color: #0A0A0A;
-    z-index: 3000;
     display: none;
     flex-direction: column;
-    font-family: sans-serif;
+    align-items: stretch;
+    justify-content: flex-start;
+    background: #0A0A0A !important;
+    color: #FAFAFA;
+    z-index: 3000;
+    overflow-y: auto;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.dados-usuario-header {
-    height: 60px;
-    width: 100%;
-    display: flex;
-    align-items: center;
+#painel-dados-contato .menu-chat-header {
     position: relative;
-}
-
-.dados-usuario-header h3 {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    margin: 0;
-    color: #FAFAFA;
-    font-size: 21px;
-    white-space: nowrap;
-}
-
-.btn-voltar-dados {
-    width: 50px;
-    height: 50px;
-    margin-left: 15px;
-    border: none;
-    border-radius: 50%;
-    background-color: #292929;
-    color: #FAFAFA;
-    font-size: 42px;
-    line-height: 40px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-}
-
-.dados-usuario-conteudo {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     width: 100%;
-    padding-top: 35px;
-}
-
-.dados-foto-grande {
-    width: 225px;
-    height: 225px;
-    border-radius: 50%;
-    object-fit: cover;
-    background-color: #292929;
-}
-
-.dados-usuario-conteudo h2 {
-    color: #FAFAFA;
-    font-size: 42px;
-    margin: 25px 0 55px 0;
-    font-weight: 700;
-}
-
-.dados-opcoes {
-    width: 92%;
-    max-width: 680px;
-    display: flex;
-    flex-direction: column;
-    background-color: #171717;
-    border-radius: 25px;
-    overflow: hidden;
-}
-
-.dados-opcao {
+    height: 72px;
     min-height: 72px;
     display: flex;
     align-items: center;
-    padding: 0 22px;
-    border-bottom: 1px solid #292929;
+    justify-content: center;
+    padding: 0;
+    box-sizing: border-box;
+    background: transparent;
+}
+
+#painel-dados-contato .menu-chat-header h3 {
+    margin: 0;
+    padding: 0;
+    color: #FAFAFA;
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1;
+    text-align: center;
+}
+
+#painel-dados-contato .menu-chat-header .close-btn {
+    position: absolute;
+    left: 15px;
+    top: 15px;
+    width: 42px;
+    height: 42px;
+    margin: 0;
+    padding: 0 0 5px 0;
+    border: none;
+    border-radius: 50%;
+    background: #292929;
+    color: #FAFAFA;
+    font-family: Arial, sans-serif;
+    font-size: 34px;
+    font-weight: 300;
+    line-height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
 }
 
-.dados-opcao:last-child {
-    border-bottom: none;
-}
-
-.dados-opcao:active {
-    background-color: #222222;
-}
-
-.dados-opcao-icone {
-    width: 42px;
-    font-size: 23px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.dados-opcao-texto {
+#painel-dados-contato .modal-content {
+    width: 100%;
+    max-width: none;
+    min-height: 0;
+    padding: 42px 15px 110px;
+    margin: 0;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    flex: 1;
-    margin-left: 12px;
+    align-items: center;
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
 }
 
-.dados-opcao-texto span {
+#painel-dados-contato #painel-foto-contato {
+    width: 112px;
+    height: 112px;
+    min-width: 112px;
+    min-height: 112px;
+    margin: 0 0 25px 0;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #40368b;
+    padding: 25px;
+    box-sizing: border-box;
+}
+
+#painel-dados-contato #painel-nome-contato {
+    width: 100%;
+    margin: 0 0 72px 0;
     color: #FAFAFA;
-    font-size: 16px;
+    font-size: 38px;
+    line-height: 1.05;
+    font-weight: 700;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.dados-opcao-texto small {
-    color: #888;
-    font-size: 13px;
-    margin-top: 4px;
+#painel-dados-contato .modal-body {
+    width: 100%;
+    max-width: 690px;
+    padding: 0 !important;
+    margin: 0;
+    max-height: none;
+    overflow: visible;
+    box-sizing: border-box;
 }
 
-.dados-seta {
-    color: #777;
-    font-size: 32px;
-    font-weight: 300;
+#painel-dados-contato #btn-tema-conversa {
+    width: 100%;
+    min-height: 58px;
+    margin: 0;
+    padding: 8px 16px;
+    box-sizing: border-box;
+    border-radius: 32px;
+    background: #191919;
+    color: #FAFAFA;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    text-align: left;
+    font-family: inherit;
+    font-size: 17px;
+    line-height: 22px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
 }
 
-.seta-perfil {
-    color: #777;
-    font-size: 30px;
+#painel-dados-contato #btn-tema-conversa .tema-icone {
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+}
+
+#painel-dados-contato #btn-tema-conversa .tema-texto {
+    flex: 1;
+}
+
+#painel-dados-contato #btn-tema-conversa .tema-seta {
     margin-left: auto;
+    color: #777;
+    font-size: 34px;
+    font-weight: 300;
+    line-height: 1;
+}
+
+@media (max-width: 500px) {
+    #painel-dados-contato .modal-content {
+        padding-top: 38px;
+    }
+
+    #painel-dados-contato #painel-nome-contato {
+        margin-bottom: 72px;
+        font-size: 36px;
+    }
 }
