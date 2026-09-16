@@ -50,3 +50,36 @@ window.fecharPainelDadosContato = window.fecharPainelDadosContato || function ()
     const painel = document.getElementById('painel-dados-contato');
     if (painel) painel.style.display = 'none';
 };
+
+// O script-base já pode ter ligado o botão de aceitar antes
+// das funções novas de solicitação serem instaladas. Recria
+// somente esse botão para garantir que ele use a função atual.
+(function garantirBotaoAceitarAtualizado() {
+    let tentativas = 0;
+
+    const verificar = setInterval(() => {
+        tentativas++;
+
+        const botao = document.getElementById('btn-aceitar-solicitacao');
+        if (!botao) {
+            if (tentativas >= 50) clearInterval(verificar);
+            return;
+        }
+
+        if (botao.dataset.fluxoNovoSolicitacao === 'true') {
+            clearInterval(verificar);
+            return;
+        }
+
+        const novoBotao = botao.cloneNode(true);
+        novoBotao.dataset.fluxoNovoSolicitacao = 'true';
+        novoBotao.addEventListener('click', () => {
+            if (typeof window.aceitarSolicitacaoAtual === 'function') {
+                window.aceitarSolicitacaoAtual();
+            }
+        });
+
+        botao.parentNode.replaceChild(novoBotao, botao);
+        clearInterval(verificar);
+    }, 100);
+})();
