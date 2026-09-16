@@ -51,9 +51,9 @@
         // Verifica se o destinatário já salvou o remetente como contato.
         // Se não tiver, cria uma solicitação depois que a mensagem for enviada.
         window.verificarSolicitacaoPrimeiraMensagem = async function () {
-            const meuEmail = localStorage.getItem("usuarioLogado");
-            const meuUsuario = localStorage.getItem("nomeUsuario");
-            const emailDestino = destinatarioAtual;
+            const meuEmail = (localStorage.getItem("usuarioLogado") || "").trim();
+            const meuUsuario = (localStorage.getItem("nomeUsuario") || "").trim();
+            const emailDestino = (destinatarioAtual || "").trim();
 
             if (!meuEmail || !meuUsuario || !emailDestino || window.grupoAtualId) {
                 return;
@@ -86,13 +86,18 @@
             if (contatoExistente) return;
 
             // Evita criar várias solicitações para a mesma conversa.
-            const { data: solicitacaoExistente } = await _supabase
+            const { data: solicitacaoExistente, error: erroBuscaSolicitacao } = await _supabase
                 .from("solicitacoes_chat")
                 .select("id, status")
                 .eq("remetente_email", meuEmail)
                 .eq("destinatario_email", emailDestino)
                 .eq("status", "pendente")
                 .maybeSingle();
+
+            if (erroBuscaSolicitacao) {
+                console.error("Erro ao verificar solicitação existente:", erroBuscaSolicitacao);
+                return;
+            }
 
             if (solicitacaoExistente) return;
 
@@ -121,7 +126,7 @@
             const texto = inputMsg ? inputMsg.value.trim() : "";
             const meuEmail = localStorage.getItem("usuarioLogado");
 
-            if (!texto) return;
+            if (!texto || !meuEmail || !destinatarioAtual && !window.grupoAtualId) return;
 
             const dadosMensagem = {
                 texto: texto,
@@ -151,6 +156,16 @@
                 carregarMensagensGrupo(window.grupoAtualId);
             } else if (typeof carregarMensagens === 'function') {
                 carregarMensagens();
+            }
+        };
+
+        // O HTML usa checarEnter(), e a função original chama a versão
+        // lexical de enviarMensagem do script-base. Redirecionamos para
+        // a versão nova para o Enter também criar a solicitação.
+        window.checarEnter = function (event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                window.enviarMensagem();
             }
         };
 
@@ -225,7 +240,7 @@
         // SOLICITAÇÕES
         // ==========================================
         window.carregarSolicitacoes = async function () {
-            const meuEmail = localStorage.getItem("usuarioLogado");
+            const meuEmail = (localStorage.getItem("usuarioLogado") || "").trim();
             if (!meuEmail || !_supabase) return;
 
             const badgeSolicitacoes = document.getElementById('badge-solicitacoes');
@@ -267,7 +282,6 @@
                 li.className = 'solicitacao-item';
 
                 let nomeRemetente = solicitacao.remetente_email;
-                let fotoRemetente = 'svg/icon.svg';
 
                 const { data: usuarioRemetente } = await _supabase
                     .from('usuarios')
@@ -277,7 +291,6 @@
 
                 if (usuarioRemetente) {
                     nomeRemetente = usuarioRemetente.usuario || nomeRemetente;
-                    fotoRemetente = usuarioRemetente.foto_url || fotoRemetente;
                 }
 
                 li.innerHTML = `
@@ -289,12 +302,31 @@
                 `;
 
                 li.querySelector('.btn-abrir-pedido').addEventListener('click', () => {
-                    abrirChatSolicitacao(solicitacao);
+                    window.abrirChatSolicitacao(solicitacao);
                 });
 
                 listaSolicitacoes.appendChild(li);
             }
         };
+
+        // O listener original do script-base chama a função lexical
+        // carregarSolicitacoes(), então só sobrescrever window não basta.
+        // Recriamos o listener do botão para usar a função nova.
+        const btnAbrirSolicitacoes = document.getElementById('btn-abrir-solicitacoes');
+        if (btnAbrirSolicitacoes && !btnAbrirSolicitacoes.dataset.fluxoNovoSolicitacao) {
+            const novoBotaoSolicitacoes = btnAbrirSolicitacoes.cloneNode(true);
+            novoBotaoSolicitacoes.dataset.fluxoNovoSolicitacao = 'true';
+            novoBotaoSolicitacoes.addEventListener('click', () => {
+                const dropdownMenu = document.getElementById('dropdown-menu');
+                const modalSolicitacoes = document.getElementById('modal-solicitacoes');
+
+                if (dropdownMenu) dropdownMenu.classList.add('hidden');
+                if (modalSolicitacoes) modalSolicitacoes.classList.remove('hidden');
+
+                window.carregarSolicitacoes();
+            });
+            btnAbrirSolicitacoes.parentNode.replaceChild(novoBotaoSolicitacoes, btnAbrirSolicitacoes);
+        }
 
         window.abrirChatSolicitacao = async function (solicitacao) {
             solicitacaoAtual = solicitacao;
@@ -395,7 +427,7 @@
             await carregarMensagens();
 
             solicitacaoAtual = null;
-            carregarSolicitacoes();
+            window.carregarSolicitacoes();
             carregarListaContatos();
         };
 
