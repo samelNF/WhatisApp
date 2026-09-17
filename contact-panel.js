@@ -69,3 +69,11 @@ window.fecharPainelDadosContato = window.fecharPainelDadosContato || function ()
     script.async = false;
     document.head.appendChild(script);
 })();
+
+// Popup visual de adicionar contato.
+(function carregarPopupNovoContato() {
+    const script = document.createElement('script');
+    script.src = './novo-contato.js?v=1';
+    script.async = false;
+    document.head.appendChild(script);
+})();
