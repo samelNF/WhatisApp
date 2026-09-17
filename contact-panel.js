@@ -72,8 +72,14 @@ window.fecharPainelDadosContato = window.fecharPainelDadosContato || function ()
 
 // Popup visual de adicionar contato.
 (function carregarPopupNovoContato() {
+    // O script-base usa uma declaração global const (_supabase),
+    // então criamos também uma referência em window para os módulos extras.
+    try {
+        if (typeof _supabase !== 'undefined') window._supabase = _supabase;
+    } catch (e) {}
+
     const script = document.createElement('script');
-    script.src = './novo-contato.js?v=1';
+    script.src = './novo-contato.js?v=2';
     script.async = false;
     document.head.appendChild(script);
 })();
