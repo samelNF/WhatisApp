@@ -1796,3 +1796,46 @@ body {
         right: 13px;
     }
 }
+
+
+/* ==========================================
+   AVATAR COLORIDO SEM FOTO
+   ========================================== */
+/* O fundo vem da coluna usuarios.cor via JS.
+   O SVG branco translúcido fica centralizado sobre essa cor. */
+.avatar-sem-foto {
+    box-sizing: border-box !important;
+    padding: 21% !important;
+    object-fit: contain !important;
+    object-position: center !important;
+    border-radius: 50% !important;
+}
+
+/* Quando existe foto real, ela ocupa o círculo inteiro. */
+.foto-contato:not(.avatar-sem-foto),
+.foto-contato-pequena:not(.avatar-sem-foto),
+.chat-avatar:not(.avatar-sem-foto),
+.foto-perfil-grande:not(.avatar-sem-foto),
+.dados-foto-grande:not(.avatar-sem-foto),
+.vose:not(.avatar-sem-foto),
+#novo-contato-foto:not(.avatar-sem-foto),
+#painel-foto-contato:not(.avatar-sem-foto) {
+    padding: 0 !important;
+    background-color: transparent !important;
+    object-fit: cover !important;
+}
+
+/* Corrige regras antigas que tiravam o círculo dos SVGs na barra inferior. */
+.vose.avatar-sem-foto,
+.vose[src$="user-placeholder.svg"] {
+    border-radius: 50% !important;
+    filter: none !important;
+}
+
+/* O painel antigo tinha padding fixo no avatar; agora só o placeholder recebe padding. */
+#painel-dados-contato #painel-foto-contato.avatar-sem-foto {
+    padding: 24% !important;
+}
+#painel-dados-contato #painel-foto-contato:not(.avatar-sem-foto) {
+    padding: 0 !important;
+}
