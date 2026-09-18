@@ -209,6 +209,44 @@ function proximo() {
     }
 }
 
+function aplicarSessaoCacheNoRuntime(sessao) {
+    if (!sessao?.email) return false;
+
+    window.sessaoOfflineAtiva = {
+        email: sessao.email,
+        usuario: sessao.usuario || "",
+        foto_url: sessao.foto_url || "",
+        cor: sessao.cor || "#3a3a3c"
+    };
+
+    // Compatibilidade com o restante do código antigo.
+    // A origem persistente agora pode ser o IndexedDB; o localStorage só é
+    // reidratado durante esta execução para evitar reescrever o app inteiro.
+    localStorage.setItem("usuarioLogado", sessao.email);
+
+    if (sessao.usuario) localStorage.setItem("nomeUsuario", sessao.usuario);
+    else localStorage.removeItem("nomeUsuario");
+
+    if (sessao.foto_url) localStorage.setItem("fotoUsuario", sessao.foto_url);
+    else localStorage.removeItem("fotoUsuario");
+
+    if (sessao.cor) localStorage.setItem("corUsuario", sessao.cor);
+    else localStorage.removeItem("corUsuario");
+
+    return true;
+}
+
+async function salvarSessaoNoCache(usuario) {
+    if (!usuario?.email || !window.WhatisCache?.salvarSessaoLocal) return;
+
+    await window.WhatisCache.salvarSessaoLocal({
+        email: usuario.email,
+        usuario: usuario.usuario || "",
+        foto_url: usuario.foto_url || "",
+        cor: usuario.cor || "#3a3a3c"
+    });
+}
+
 async function mostrarAppPrincipal() {
     esconderTelasAutenticacao();
 
@@ -218,10 +256,17 @@ async function mostrarAppPrincipal() {
     if (telaConversas) telaConversas.style.display = "block";
     if (barraNavegacao) barraNavegacao.style.display = "flex";
 
+    // Primeiro mostra o que existe localmente; se houver rede, a função
+    // sincroniza e atualiza a lista sem bloquear a abertura do app.
     await carregarListaContatos();
-    carregarSolicitacoes();
-    inscreverRealtime();
-    iniciarMonitoramentoPresenca();
+
+    if (navigator.onLine) {
+        try { carregarSolicitacoes(); } catch (e) {}
+        try { inscreverRealtime(); } catch (e) {}
+        try { iniciarMonitoramentoPresenca(); } catch (e) {}
+    } else {
+        console.log("📦 WhatisApp aberto em modo offline.");
+    }
 }
 
 function alternarAba(aba, botaoClicado) {
@@ -258,71 +303,132 @@ function alternarAba(aba, botaoClicado) {
 // PERSISTÊNCIA DE SESSÃO
 // ==========================================
 async function verificarSessao() {
-    const introducaoVista = localStorage.getItem("introducaoVista");
-    const emailSalvo = localStorage.getItem("usuarioLogado");
+    const cache = window.WhatisCache || null;
 
-    if (!introducaoVista) {
+    let sessaoCache = null;
+    if (cache?.obterSessaoLocal) {
+        try {
+            sessaoCache = await cache.obterSessaoLocal();
+        } catch (e) {
+            console.warn("Não foi possível ler a sessão offline:", e);
+        }
+    }
+
+    let emailSalvo = localStorage.getItem("usuarioLogado");
+
+    // Se o navegador limpou o localStorage, mas o IndexedDB ainda tem a sessão,
+    // restaura a conta e entra direto no histórico salvo.
+    if (!emailSalvo && sessaoCache?.email) {
+        aplicarSessaoCacheNoRuntime(sessaoCache);
+        emailSalvo = sessaoCache.email;
+    }
+
+    const introducaoVista =
+        localStorage.getItem("introducaoVista") ||
+        (sessaoCache?.email ? "true" : null);
+
+    if (!introducaoVista && !emailSalvo) {
         esconderTelasAutenticacao();
 
         const telaInicio = document.getElementById("inicio");
+        if (telaInicio) telaInicio.style.display = "flex";
+        return;
+    }
 
-        if (telaInicio) {
-            telaInicio.style.display = "flex";
+    if (!emailSalvo) {
+        console.log("Nenhuma sessão local encontrada.");
+        mostrarTela('login');
+        return;
+    }
+
+    // Se há sessão em cache, abre o aplicativo AGORA, sem esperar internet.
+    if (sessaoCache?.email) {
+        aplicarSessaoCacheNoRuntime(sessaoCache);
+        atualizarFotoAbaVoce();
+        await mostrarAppPrincipal();
+    }
+
+    // Sem internet: o cache é suficiente para leitura do histórico.
+    if (!navigator.onLine || !_supabase) {
+        if (!sessaoCache?.email) {
+            console.log("Sem internet e sem sessão offline disponível.");
+            mostrarTela('login');
+        }
+        return;
+    }
+
+    let usuario = null;
+    let erroVerificacao = null;
+
+    try {
+        const resposta = await _supabase
+            .from("usuarios")
+            .select("*")
+            .eq("email", emailSalvo)
+            .maybeSingle();
+
+        usuario = resposta.data || null;
+        erroVerificacao = resposta.error || null;
+    } catch (erro) {
+        erroVerificacao = erro;
+    }
+
+    // Falha de rede/servidor não derruba mais uma sessão local válida.
+    if (erroVerificacao) {
+        console.warn("Não foi possível validar a sessão online. Mantendo cache local.", erroVerificacao);
+
+        if (!sessaoCache?.email) {
+            mostrarTela('login');
         }
 
         return;
     }
 
-    if (!emailSalvo) {
-        console.log("Nenhum usuário conectado.");
-        mostrarTela('login');
-        return;
-    }
-
-    const { data: usuario, error } = await _supabase
-        .from("usuarios")
-        .select("*")
-        .eq("email", emailSalvo)
-        .maybeSingle();
-
-    if (error || !usuario) {
-        console.log("Sessão inválida ou expirada.");
+    // Resposta online válida dizendo que a conta não existe mais.
+    if (!usuario) {
+        console.log("Sessão online inválida.");
 
         localStorage.removeItem("usuarioLogado");
+        localStorage.removeItem("nomeUsuario");
+        localStorage.removeItem("fotoUsuario");
+        localStorage.removeItem("corUsuario");
+
+        if (cache?.limparSessaoLocal) {
+            await cache.limparSessaoLocal();
+        }
 
         mostrarTela('login');
-
         return;
     }
 
     console.log("Sessão ativa para:", usuario.email);
 
-    if (usuario.foto_url) {
-        localStorage.setItem("fotoUsuario", usuario.foto_url);
-    } else {
-        localStorage.removeItem("fotoUsuario");
-    }
+    aplicarSessaoCacheNoRuntime({
+        email: usuario.email,
+        usuario: usuario.usuario || "",
+        foto_url: usuario.foto_url || "",
+        cor: usuario.cor || "#3a3a3c"
+    });
 
-    if (usuario.cor) {
-        localStorage.setItem("corUsuario", usuario.cor);
-    } else {
-        localStorage.removeItem("corUsuario");
-    }
-
-    if (usuario.usuario) {
-        localStorage.setItem("nomeUsuario", usuario.usuario);
-    }
-
+    await salvarSessaoNoCache(usuario);
     atualizarFotoAbaVoce();
 
-    mostrarAppPrincipal();
+    // Se ainda não tínhamos cache, esta é a primeira abertura autenticada.
+    if (!sessaoCache?.email) {
+        await mostrarAppPrincipal();
+    } else {
+        // Já abriu instantaneamente pelo cache; só sincroniza em segundo plano.
+        carregarListaContatos();
+        try { inscreverRealtime(); } catch (e) {}
+        try { iniciarMonitoramentoPresenca(); } catch (e) {}
+    }
 }
 
-function deslogar() {
+async function deslogar() {
     pararMonitoramentoPresenca();
 
     if (escutaRealtime) {
-        _supabase.removeChannel(escutaRealtime);
+        try { _supabase.removeChannel(escutaRealtime); } catch (e) {}
         escutaRealtime = null;
     }
 
@@ -330,6 +436,12 @@ function deslogar() {
         clearTimeout(timeoutReconexaoRealtime);
         timeoutReconexaoRealtime = null;
     }
+
+    if (window.WhatisCache?.limparSessaoLocal) {
+        await window.WhatisCache.limparSessaoLocal();
+    }
+
+    window.sessaoOfflineAtiva = null;
 
     localStorage.removeItem("usuarioLogado");
     localStorage.removeItem("nomeUsuario");
@@ -507,6 +619,14 @@ async function salvarUsuarioSegundaEtapa() {
     }
 
     sessionStorage.removeItem("emailCadastro");
+
+    await salvarSessaoNoCache({
+        email: emailCadastrado,
+        usuario: usuarioInput,
+        foto_url: urlFotoPublica || "",
+        cor: corFinal
+    });
+
     atualizarFotoAbaVoce();
     mostrarAppPrincipal();
 }
@@ -551,6 +671,8 @@ async function conectarConta() {
         } else {
             localStorage.removeItem("corUsuario");
         }
+
+        await salvarSessaoNoCache(conta);
 
         atualizarFotoAbaVoce();
         mostrarAppPrincipal();
