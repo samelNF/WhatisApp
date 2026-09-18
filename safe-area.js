@@ -62,81 +62,6 @@
         }, { passive: false });
     }
 
-    function bloquearOverscrollDeBordaIOS() {
-        const ehIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
-        if (!ehIOS || root.dataset.iosOverscrollBloqueado === 'true') return;
-
-        root.dataset.iosOverscrollBloqueado = 'true';
-
-        const seletorRolavel = [
-            '#tela-chat .chat-mensagens',
-            '#tela-conversas',
-            '#tela-voce',
-            '#painel-dados-contato .painel-contato-body',
-            '#painel-dados-grupo .grupo-panel-conteudo',
-            '#painel-dados-grupo .grupo-candidatos-lista',
-            '#painel-dados-usuario .dados-usuario-conteudo',
-            '.modal-body'
-        ].join(',');
-
-        const seletorTopoFixo = [
-            '#tela-chat .chat-header',
-            '#tela-conversas .topo-conversas',
-            '.dados-usuario-header',
-            '#painel-dados-contato .painel-contato-header',
-            '#painel-dados-grupo .grupo-dados-topo',
-            '#painel-dados-grupo .grupo-add-header'
-        ].join(',');
-
-        let toqueInicialY = 0;
-
-        document.addEventListener('touchstart', (event) => {
-            if (event.touches.length !== 1) return;
-            toqueInicialY = event.touches[0].clientY;
-        }, { passive: true, capture: true });
-
-        document.addEventListener('touchmove', (event) => {
-            if (event.touches.length !== 1) return;
-
-            const alvo = event.target;
-            if (!(alvo instanceof Element)) return;
-
-            const yAtual = event.touches[0].clientY;
-            const deltaY = yAtual - toqueInicialY;
-
-            // Headers/topos fixos não participam do gesto de arrastar a página.
-            // O gesto do sistema (Central de Controle etc.) continua sendo do iOS,
-            // mas o conteúdo do WhatisApp não acompanha o dedo.
-            if (alvo.closest(seletorTopoFixo)) {
-                event.preventDefault();
-                return;
-            }
-
-            const rolavel = alvo.closest(seletorRolavel);
-
-            // Fora de uma área de scroll real, não existe motivo para mover o documento.
-            if (!rolavel) {
-                if (!alvo.closest('input, textarea, select, [contenteditable="true"]')) {
-                    event.preventDefault();
-                }
-                return;
-            }
-
-            const noTopo = rolavel.scrollTop <= 0;
-            const noFim =
-                Math.ceil(rolavel.scrollTop + rolavel.clientHeight) >=
-                rolavel.scrollHeight;
-
-            // Mata somente o "rubber band" das extremidades.
-            // O scroll normal no meio do conteúdo continua livre.
-            if ((noTopo && deltaY > 0) || (noFim && deltaY < 0)) {
-                event.preventDefault();
-            }
-        }, { passive: false, capture: true });
-    }
-
     function atualizarAlturaViewport() {
         const vv = window.visualViewport;
         const layoutHeight = Math.max(
@@ -326,7 +251,6 @@
     setTimeout(solicitarAtualizacao, 800);
 
     bloquearArrastoNativoIOS();
-    bloquearOverscrollDeBordaIOS();
 
     window.atualizarSafeArea = atualizarSafeArea;
     window.atualizarAlturaViewport = atualizarAlturaViewport;
