@@ -173,6 +173,47 @@
         });
     }
 
+    async function atualizarMensagensPorIds(conversa, ids, campos) {
+        const db = await abrirBanco();
+        if (!db || !conversa || !Array.isArray(ids) || !ids.length || !campos) return;
+
+        const chaves = ids.map(id => chaveMensagem(conversa, { id }));
+
+        await new Promise((resolve, reject) => {
+            const tx = db.transaction(STORE_MENSAGENS, 'readwrite');
+            const store = tx.objectStore(STORE_MENSAGENS);
+            let pendentes = chaves.length;
+
+            chaves.forEach(chave => {
+                const req = store.get(chave);
+
+                req.onsuccess = () => {
+                    const atual = req.result;
+
+                    if (atual) {
+                        store.put({
+                            ...atual,
+                            ...campos,
+                            _cacheId: atual._cacheId,
+                            _conversa: atual._conversa,
+                            _salvoEm: Date.now()
+                        });
+                    }
+
+                    pendentes--;
+                };
+
+                req.onerror = () => {
+                    pendentes--;
+                };
+            });
+
+            tx.oncomplete = resolve;
+            tx.onerror = () => reject(tx.error);
+            tx.onabort = () => reject(tx.error);
+        }).catch(erro => console.warn('[Cache] Erro atualizando mensagens:', erro));
+    }
+
     async function ultimaMensagem(conversa) {
         const lista = await listarMensagens(conversa);
         return lista.length ? lista[lista.length - 1] : null;
@@ -315,6 +356,7 @@
         listarMensagens,
         ultimaMensagem,
         mensagemPorId,
+        atualizarMensagensPorIds,
         cachearMidiasDasMensagens,
         salvarSessaoLocal,
         obterSessaoLocal,
