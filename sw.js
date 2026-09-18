@@ -111,7 +111,23 @@ async function exibirNotificacao(data = {}) {
 
 self.addEventListener('push', event => {
     const data = normalizarPayloadPush(event);
-    event.waitUntil(exibirNotificacao(data));
+
+    event.waitUntil((async () => {
+        // Se o WhatisApp já está visível, o Realtime da própria página cuida da mensagem.
+        // Isso evita notificação duplicada. Em segundo plano/fechado, o SW exibe normalmente.
+        const janelas = await clients.matchAll({
+            type: 'window',
+            includeUncontrolled: true
+        });
+
+        const algumaVisivel = janelas.some(
+            client => client.visibilityState === 'visible'
+        );
+
+        if (algumaVisivel) return;
+
+        await exibirNotificacao(data);
+    })());
 });
 
 // Permite que a página peça ao SW para exibir uma notificação.
