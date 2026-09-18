@@ -58,8 +58,15 @@ async function alternarNotificacoes(checkbox) {
         if (permissao === "granted") {
             localStorage.setItem("notificacoes", "true");
 
+            let sistemaAtivado = false;
+
             if (typeof window.ativarSistemaNotificacoes === "function") {
-                await window.ativarSistemaNotificacoes();
+                sistemaAtivado = await window.ativarSistemaNotificacoes();
+            }
+
+            // Confirmação real: se isto aparecer, permissão + Service Worker estão OK.
+            if (sistemaAtivado && typeof window.testarNotificacaoWhatisApp === "function") {
+                await window.testarNotificacaoWhatisApp();
             }
 
             console.log("🔔 Notificações ativadas.");
@@ -1546,6 +1553,13 @@ function inscreverRealtime() {
             },
             async (payload) => {
                 const novaMsg = payload.new;
+
+                // O canal principal já recebe INSERTs corretamente.
+                // Entrega a mensagem também ao sistema de notificações.
+                if (typeof window.processarNotificacaoMensagem === "function") {
+                    window.processarNotificacaoMensagem(novaMsg);
+                }
+
                 carregarListaContatos(); // Atualiza a lista lateral com a última mensagem
 
                 // Se o chat aberto for um grupo e a mensagem for desse grupo
