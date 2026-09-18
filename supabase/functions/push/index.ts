@@ -47,6 +47,7 @@ function textoNotificacao(texto?: string | null) {
   if (texto.startsWith("[FOTO]:") || texto.startsWith("[IMAGEM]:")) return "📷 Foto";
   if (texto.startsWith("[VIDEO]:")) return "🎥 Vídeo";
   if (texto.startsWith("[AUDIO]:")) return "🎤 Áudio";
+  if (texto.startsWith("[CHAMADA]")) return "📞 Ligação de voz";
 
   const limpo = texto.trim();
   return limpo.length > 140 ? limpo.slice(0, 137) + "..." : limpo;
@@ -348,13 +349,25 @@ Deno.serve(async (req) => {
       config.vapid_private_key,
     );
 
+    const ehChamada =
+      mensagem.tipo === "chamada" ||
+      mensagem.texto === "[CHAMADA]";
+
+    const urlDestino =
+      ehChamada && mensagem.chamada_id
+        ? "/WhatisApp/?call=" + encodeURIComponent(String(mensagem.chamada_id))
+        : "/WhatisApp/";
+
     const payload = JSON.stringify({
       title: titulo,
       body: corpo,
-      tag: "mensagem-" + String(messageId),
+      tag: (ehChamada ? "chamada-" : "mensagem-") + String(messageId),
       data: {
-        url: "/WhatisApp/",
-        tipo: mensagem.grupo_id ? "grupo" : "privado",
+        url: urlDestino,
+        tipo: ehChamada
+          ? "chamada"
+          : (mensagem.grupo_id ? "grupo" : "privado"),
+        chamada_id: ehChamada ? (mensagem.chamada_id || null) : null,
         grupo_id: mensagem.grupo_id || null,
         remetente_email: mensagem.remetente_email || null,
         mensagem_id: mensagem.id,
