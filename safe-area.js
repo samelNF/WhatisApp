@@ -9,6 +9,36 @@
     let agendado = false;
 
 
+    function elementoEstaAberto(el) {
+        if (!el) return false;
+
+        const estilo = getComputedStyle(el);
+        if (estilo.display === 'none' || estilo.visibility === 'hidden') return false;
+        if (Number(estilo.opacity) === 0) return false;
+
+        const rect = el.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
+    }
+
+    function atualizarEstadoTopoHome() {
+        const body = document.body;
+        if (!body) return;
+
+        const subtelas = [
+            document.getElementById('tela-chat'),
+            document.getElementById('painel-dados-contato'),
+            document.getElementById('painel-dados-grupo'),
+            document.getElementById('painel-dados-usuario'),
+            document.getElementById('tela-criar-grupo-membros'),
+            document.getElementById('tela-criar-grupo-detalhes'),
+            document.getElementById('modal-novo-contato'),
+            document.getElementById('modal-solicitacoes')
+        ];
+
+        const temSubtelaAberta = subtelas.some(elementoEstaAberto);
+        body.classList.toggle('subtela-aberta', temSubtelaAberta);
+    }
+
     function atualizarAlturaViewport() {
         const vv = window.visualViewport;
 
@@ -94,6 +124,7 @@
     function atualizarSafeArea() {
         agendado = false;
         atualizarAlturaViewport();
+        atualizarEstadoTopoHome();
 
         const alvo = elementoComFundoNoTopo();
         const bodyStyle = getComputedStyle(document.body);
@@ -175,4 +206,5 @@
 
     window.atualizarSafeArea = atualizarSafeArea;
     window.atualizarAlturaViewport = atualizarAlturaViewport;
+    window.atualizarEstadoTopoHome = atualizarEstadoTopoHome;
 })();
