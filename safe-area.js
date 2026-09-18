@@ -139,16 +139,37 @@
 
     function atualizarAlturaViewport() {
         const vv = window.visualViewport;
+        const layoutHeight = Math.max(
+            window.innerHeight || 0,
+            document.documentElement.clientHeight || 0
+        );
 
-        // Usa somente a ALTURA visível. Não somamos offsetTop:
-        // no iOS esse valor muda durante gestos vindos da borda/status bar e
-        // fazia o topo fixo do chat "viajar" junto com a UI do sistema.
-        let altura = vv && vv.height ? vv.height : window.innerHeight;
+        const ativo = document.activeElement;
+        const campoFocado = !!ativo?.matches?.(
+            'input, textarea, select, [contenteditable="true"]'
+        );
 
-        if (!Number.isFinite(altura) || altura <= 0) {
-            altura = document.documentElement.clientHeight || screen.height;
+        const tecladoAberto =
+            !!vv &&
+            campoFocado &&
+            Number.isFinite(vv.height) &&
+            layoutHeight - vv.height > 120;
+
+        // Fora do teclado usamos o layout viewport inteiro.
+        // visualViewport.height no iOS pode ficar menor por causa da UI do sistema
+        // e era exatamente isso que deixava uma faixa preta embaixo do chat.
+        let altura = layoutHeight;
+
+        // Quando o teclado está realmente aberto, aí sim usamos a área visível.
+        if (tecladoAberto) {
+            altura = vv.height + Math.max(0, vv.offsetTop || 0);
         }
 
+        if (!Number.isFinite(altura) || altura <= 0) {
+            altura = screen.height || 1;
+        }
+
+        root.classList.toggle('teclado-aberto', tecladoAberto);
         root.style.setProperty('--app-viewport-height', Math.round(altura) + 'px');
     }
 
@@ -294,6 +315,11 @@
     }
     window.addEventListener('pageshow', solicitarAtualizacao, { passive: true });
     document.addEventListener('visibilitychange', solicitarAtualizacao);
+    document.addEventListener('focusin', solicitarAtualizacao, { passive: true });
+    document.addEventListener('focusout', () => {
+        setTimeout(solicitarAtualizacao, 60);
+        setTimeout(solicitarAtualizacao, 220);
+    }, { passive: true });
 
     setTimeout(solicitarAtualizacao, 50);
     setTimeout(solicitarAtualizacao, 250);
