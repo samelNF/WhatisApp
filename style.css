@@ -3676,3 +3676,12 @@ body:not(.subtela-aberta) {
 #tela-conversas .item-contato {
     touch-action: pan-y !important;
 }
+
+
+/* ==========================================
+   APP PRINCIPAL - CHROME SOMENTE LOGADO
+   ========================================== */
+body:not(.app-principal-ativa) #tela-conversas,
+body:not(.app-principal-ativa) .ultrabaixo {
+    display: none !important;
+}
