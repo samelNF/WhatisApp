@@ -1290,9 +1290,13 @@ function abrirChatGrupo(idGrupo, nomeGrupo, fotoGrupo) {
         intervaloChecarStatusContato = null;
     }
 
-    // Reseta o fundo do chat ao abrir o grupo
-    const containerMensagens = document.getElementById("chat-mensagens");
-    if (containerMensagens) containerMensagens.style.backgroundImage = "";
+    // Carrega o fundo específico deste grupo, se existir.
+    if (typeof window.carregarFundoGrupoSalvo === 'function') {
+        window.carregarFundoGrupoSalvo(idGrupo);
+    } else {
+        const containerMensagens = document.getElementById("chat-mensagens");
+        if (containerMensagens) containerMensagens.style.backgroundImage = "";
+    }
 
     // CHAMA A FUNÇÃO PARA PUXAR AS MENSAGENS DO GRUPO
     carregarMensagensGrupo(idGrupo);
