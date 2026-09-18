@@ -4,7 +4,7 @@
 // Este arquivo complementa o script principal sem substituir
 // nem carregar novamente a lógica existente do aplicativo.
 
-window.abrirPainelDadosContato = function () {
+window.abrirPainelDadosContato = async function () {
     if (window.grupoAtualId && typeof window.abrirPainelDadosGrupo === 'function') {
         window.abrirPainelDadosGrupo();
         return;
@@ -12,20 +12,61 @@ window.abrirPainelDadosContato = function () {
 
     const painel = document.getElementById('painel-dados-contato');
     if (!painel) return;
+
     const nomeHeader = document.getElementById('chat-nome-usuario');
     const fotoHeader = document.getElementById('chat-foto-usuario');
-    const nome = nomeHeader ? nomeHeader.textContent.trim() : 'Nome';
+    const nomePainel = document.getElementById('painel-nome-contato');
+    const subtitulo = document.getElementById('painel-subtitulo-contato');
+    const fotoPainel = document.getElementById('painel-foto-contato');
+
+    const nomeAtual = nomeHeader?.textContent?.trim() || 'Contato';
     const temFoto = fotoHeader?.dataset.temFoto === 'true';
-    const foto = temFoto && fotoHeader ? fotoHeader.src : '';
-    const cor = fotoHeader?.dataset.avatarCor || '#3a3a3c';
-    const conteudo = painel.querySelector('.modal-content');
-    if (!conteudo) return;
-    let fotoPainel = conteudo.querySelector('#painel-foto-contato');
-    if (!fotoPainel) {
-        fotoPainel = conteudo.querySelector('img');
-        if (fotoPainel) fotoPainel.id = 'painel-foto-contato';
+    const fotoAtual = temFoto && fotoHeader ? fotoHeader.src : '';
+    const corAtual = fotoHeader?.dataset.avatarCor || '#3a3a3c';
+
+    let emailContato = '';
+    try {
+        emailContato = (
+            window.destinatarioAtual ||
+            (typeof destinatarioAtual !== 'undefined' ? destinatarioAtual : '') ||
+            ''
+        ).trim();
+    } catch (e) {}
+
+    let dadosContato = null;
+    try {
+        const supabase = window._supabase || (typeof _supabase !== 'undefined' ? _supabase : null);
+        if (supabase && emailContato) {
+            const { data } = await supabase
+                .from('usuarios')
+                .select('usuario, email, foto_url, cor')
+                .eq('email', emailContato)
+                .maybeSingle();
+
+            dadosContato = data || null;
+        }
+    } catch (e) {
+        console.warn('[Contato] Não foi possível atualizar os dados do painel:', e);
     }
+
+    if (nomePainel) {
+        nomePainel.textContent = dadosContato?.usuario || nomeAtual || 'Contato';
+    }
+
+    if (subtitulo) {
+        if (dadosContato?.usuario) {
+            subtitulo.textContent = '@' + dadosContato.usuario;
+        } else if (emailContato) {
+            subtitulo.textContent = emailContato;
+        } else {
+            subtitulo.textContent = '';
+        }
+    }
+
     if (fotoPainel) {
+        const foto = dadosContato?.foto_url || fotoAtual || '';
+        const cor = dadosContato?.cor || corAtual;
+
         if (typeof window.aplicarAvatarUsuario === 'function') {
             window.aplicarAvatarUsuario(fotoPainel, foto, cor);
         } else {
@@ -33,25 +74,39 @@ window.abrirPainelDadosContato = function () {
             fotoPainel.style.backgroundColor = foto ? 'transparent' : cor;
         }
     }
-    let nomePainel = conteudo.querySelector('#painel-nome-contato');
-    if (!nomePainel) {
-        nomePainel = document.createElement('h2');
-        nomePainel.id = 'painel-nome-contato';
-        conteudo.insertBefore(nomePainel, conteudo.querySelector('.modal-body'));
-    }
-    nomePainel.textContent = nome || 'Nome';
-    const tema = document.getElementById('btn-tema-conversa');
-    if (tema && !tema.dataset.formatado) {
-        tema.innerHTML = '<span class="tema-icone">🎨</span><span class="tema-texto">Tema da conversa</span><span class="tema-seta">›</span>';
-        tema.dataset.formatado = 'true';
-    }
+
     painel.classList.remove('hidden');
     painel.style.display = 'flex';
+
+    if (typeof window.atualizarSafeArea === 'function') {
+        requestAnimationFrame(() => window.atualizarSafeArea());
+    }
 };
 
-window.fecharPainelDadosContato = window.fecharPainelDadosContato || function () {
+window.fecharPainelDadosContato = function () {
     const painel = document.getElementById('painel-dados-contato');
-    if (painel) painel.style.display = 'none';
+    if (!painel) return;
+
+    painel.classList.add('hidden');
+    painel.style.display = 'none';
+
+    if (typeof window.atualizarSafeArea === 'function') {
+        requestAnimationFrame(() => window.atualizarSafeArea());
+    }
+};
+
+// Esses três botões já fazem parte do layout. A lógica real de chamadas/edição
+// pode ser ligada depois sem precisar redesenhar a tela novamente.
+window.editarContatoAtual = window.editarContatoAtual || function () {
+    console.log('[Contato] Editar contato ainda não implementado.');
+};
+
+window.iniciarLigacaoContato = window.iniciarLigacaoContato || function () {
+    console.log('[Contato] Ligação de voz ainda não implementada.');
+};
+
+window.iniciarVideoContato = window.iniciarVideoContato || function () {
+    console.log('[Contato] Chamada de vídeo ainda não implementada.');
 };
 
 (function garantirBotaoAceitarAtualizado() {
