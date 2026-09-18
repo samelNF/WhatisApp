@@ -136,78 +136,69 @@
 
     <!-- ABA 2: VOCÊ / PERFIL E CONFIGURAÇÕES -->
     <div id="tela-voce" class="aba-conteudo" style="display: none;">
-        <div class="topo-aba">
-            <h2>Você</h2>
+        <div class="voce-perfil-hero"
+             onclick="abrirDadosUsuario()"
+             role="button"
+             tabindex="0"
+             aria-label="Abrir dados do usuário"
+             onkeydown="if(event.key === 'Enter' || event.key === ' '){ event.preventDefault(); abrirDadosUsuario(); }">
+            <div class="voce-foto-hero">
+                <img id="voce-foto-perfil" src="svg/icon.svg" class="foto-perfil-grande" alt="Foto do perfil">
+            </div>
+            <h2 id="voce-nome-usuario">Carregando...</h2>
+            <p id="voce-email-usuario">@usuario</p>
         </div>
 
-        <div class="perfil-card" onclick="abrirDadosUsuario()">
-            <div class="foto-container">
-                <img id="voce-foto-perfil" src="svg/icon.svg" class="foto-perfil-grande">
-            </div>
-
-            <div class="info-usuario-voce">
-                <h3 id="voce-nome-usuario">Carregando...</h3>
-                <p id="voce-email-usuario">email@exemplo.com</p>
-            </div>
-
-            <span class="seta-perfil">›</span>
-        </div>
         <!-- TELA DE DADOS DO USUÁRIO -->
         <div id="painel-dados-usuario" class="painel-dados-usuario">
-        
             <div class="dados-usuario-header">
                 <button onclick="fecharDadosUsuario()" class="btn-voltar-dados">‹</button>
                 <h3>Dados do usuário</h3>
             </div>
-        
+
             <div class="dados-usuario-conteudo">
-        
                 <img
                     id="dados-foto-usuario"
                     src="svg/icon.svg"
                     class="dados-foto-grande"
                 >
-        
+
                 <h2 id="dados-nome-usuario">Nome</h2>
-        
+
                 <div class="dados-opcoes">
-        
                     <div class="dados-opcao" onclick="abrirAlterarNome()">
                         <div class="dados-opcao-icone">✏️</div>
-        
+
                         <div class="dados-opcao-texto">
                             <span>Nome de usuário</span>
                             <small id="dados-usuario-atual">Nome</small>
                         </div>
-        
+
                         <span class="dados-seta">›</span>
                     </div>
-        
+
                     <div class="dados-opcao" onclick="acionarAlterarFotoUsuario()">
                         <div class="dados-opcao-icone">📷</div>
-        
+
                         <div class="dados-opcao-texto">
                             <span>Foto de perfil</span>
                             <small>Alterar sua foto</small>
                         </div>
-        
+
                         <span class="dados-seta">›</span>
                     </div>
-        
+
                     <div class="dados-opcao">
                         <div class="dados-opcao-icone">📧</div>
-        
+
                         <div class="dados-opcao-texto">
                             <span>Email</span>
                             <small id="dados-email-usuario">email@exemplo.com</small>
                         </div>
                     </div>
-        
                 </div>
-        
             </div>
-        
-            <!-- Input escondido da foto -->
+
             <input
                 type="file"
                 id="input-foto-dados-usuario"
@@ -215,44 +206,82 @@
                 onchange="alterarFotoDadosUsuario(event)"
                 style="display:none;"
             >
-        
         </div>
-        <div class="secao-configuracoes">
-            <h4>Configurações</h4>
 
-            <div class="item-config">
-                <div class="info-config">
-                    <span class="titulo-config">Notificações</span>
-                    <span class="subtitulo-config">Exibir alertas de novas mensagens</span>
-                </div>
-                <label class="switch">
+        <div class="voce-config-card">
+            <button class="voce-config-row" type="button" onclick="abrirDadosUsuario()">
+                <span class="voce-config-icon">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="12" cy="8" r="3.2"></circle>
+                        <path d="M5.8 19c.6-3.5 2.8-5.4 6.2-5.4s5.6 1.9 6.2 5.4"></path>
+                    </svg>
+                </span>
+                <span class="voce-config-texto">
+                    <strong>Conta</strong>
+                    <small>Perfil e dados da conta</small>
+                </span>
+                <span class="voce-config-seta">›</span>
+            </button>
+
+            <button class="voce-config-row" type="button" onclick="abrirPrivacidade()">
+                <span class="voce-config-icon">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="6" y="10" width="12" height="10" rx="2"></rect>
+                        <path d="M8.7 10V7.5a3.3 3.3 0 0 1 6.6 0V10"></path>
+                    </svg>
+                </span>
+                <span class="voce-config-texto">
+                    <strong>Privacidade</strong>
+                    <small>Visto por último e confirmações</small>
+                </span>
+                <span class="voce-config-seta">›</span>
+            </button>
+
+            <div class="voce-config-row">
+                <span class="voce-config-icon">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M6.5 9a5.5 5.5 0 0 1 11 0c0 6 2.5 6 2.5 7.5H4C4 15 6.5 15 6.5 9Z"></path>
+                        <path d="M10 19a2.2 2.2 0 0 0 4 0"></path>
+                    </svg>
+                </span>
+                <span class="voce-config-texto">
+                    <strong>Notificações</strong>
+                    <small>Alertas de novas mensagens</small>
+                </span>
+                <label class="switch voce-config-switch" onclick="event.stopPropagation()">
                     <input type="checkbox" id="check-notificacoes" onchange="alternarNotificacoes(this)">
                     <span class="slider round"></span>
                 </label>
             </div>
 
-            <div class="item-config">
-                <div class="info-config">
-                    <span class="titulo-config">Tema Escuro</span>
-                    <span class="subtitulo-config">Alternar entre modo claro e escuro</span>
-                </div>
-                <label class="switch">
+            <div class="voce-config-row">
+                <span class="voce-config-icon">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 3a9 9 0 1 0 9 9c0-.7-.1-1.4-.2-2.1A6.5 6.5 0 0 1 12 3Z"></path>
+                    </svg>
+                </span>
+                <span class="voce-config-texto">
+                    <strong>Aparência</strong>
+                    <small>Tema do aplicativo</small>
+                </span>
+                <label class="switch voce-config-switch" onclick="event.stopPropagation()">
                     <input type="checkbox" id="check-tema-escuro" onchange="alternarTema()">
                     <span class="slider round"></span>
                 </label>
             </div>
-
-            <div class="item-config" onclick="abrirPrivacidade()">
-                <div class="info-config">
-                    <span class="titulo-config">Privacidade</span>
-                    <span class="subtitulo-config">Visto por último e confirmações</span>
-                </div>
-                <span class="seta-opcao">›</span>
-            </div>
         </div>
 
-        <div class="secao-sair">
-            <button class="btn-deslogar" onclick="deslogar()">Sair da Conta</button>
+        <div class="voce-sair-card">
+            <button type="button" class="voce-sair-btn" onclick="deslogar()">
+                <span class="voce-config-icon">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M10 5H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4"></path>
+                        <path d="M14 8l4 4-4 4"></path>
+                        <path d="M8 12h10"></path>
+                    </svg>
+                </span>
+                <span>Sair da conta</span>
+            </button>
         </div>
     </div>
 
