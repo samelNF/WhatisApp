@@ -15,6 +15,7 @@
     <script src="script.js" defer></script>
     <script src="chat-visual.js" defer></script>
     <script src="safe-area.js" defer></script>
+    <script src="group-panel.js" defer></script>
     
     <!-- Configurações iOS -->
     <meta name="theme-color" content="#050505">
@@ -378,7 +379,7 @@
                 </svg>
             </button>
 
-            <div class="chat-identidade" onclick="abrirPainelDadosContato()">
+            <div class="chat-identidade" onclick="abrirPainelDadosChat()">
                 <img id="chat-foto-usuario" src="svg/user-placeholder.svg" class="chat-avatar" alt="Foto do contato">
                 <div class="chat-info-usuario">
                     <h2 id="chat-nome-usuario">Contato</h2>
@@ -486,12 +487,65 @@
             <h3>Dados do contato</h3>
         </div>
         <div class="modal-content">
-            <img  id="chat-foto-usuario" src="svg/user-placeholder.svg" class="chat-avatar">
+            <img id="painel-foto-contato" src="svg/user-placeholder.svg" class="chat-avatar">
             <div class="modal-body" style="padding: 20px;">
                 <p style="margin-bottom: 15px; cursor: pointer;" id="btn-tema-conversa" onclick="acionarTrocaFundo()">🎨 Tema da conversa</p>
                 <!-- Input oculto para selecionar a foto de fundo do chat -->
                 <input type="file" id="input-fundo-chat" accept="image/*" style="display: none;" onchange="alterarFundoChat(event)">
             </div>
+        </div>
+    </div>
+
+    <!-- PAINEL SEPARADO DE DADOS DO GRUPO -->
+    <div id="painel-dados-grupo" class="menu-chat hidden" style="display: none;">
+        <div class="grupo-panel-header">
+            <button type="button" class="close-btn" onclick="fecharPainelDadosGrupo()" aria-label="Fechar">&times;</button>
+            <h3>Dados do grupo</h3>
+        </div>
+
+        <div class="grupo-panel-conteudo">
+            <div class="grupo-perfil-resumo">
+                <img id="grupo-info-foto" src="svg/user-placeholder.svg" class="grupo-info-foto" alt="Foto do grupo">
+                <h2 id="grupo-info-nome">Grupo</h2>
+                <p id="grupo-info-criador">Grupo</p>
+            </div>
+
+            <div class="grupo-opcoes-card">
+                <button type="button" class="grupo-opcao-row" onclick="acionarTrocaFundoGrupo()">
+                    <span class="grupo-opcao-icone">🎨</span>
+                    <span class="grupo-opcao-texto">
+                        <strong>Tema da conversa</strong>
+                        <small>Alterar o fundo deste grupo</small>
+                    </span>
+                    <span class="grupo-opcao-seta">›</span>
+                </button>
+            </div>
+
+            <section class="grupo-membros-secao">
+                <div class="grupo-membros-topo">
+                    <div>
+                        <h3>Participantes</h3>
+                        <span><b id="grupo-membros-contador">0</b> no grupo</span>
+                    </div>
+
+                    <button id="btn-grupo-adicionar-membro" type="button" class="grupo-btn-adicionar" onclick="abrirAdicionarMembroGrupo()">
+                        <span>+</span>
+                        Adicionar
+                    </button>
+                </div>
+
+                <div id="grupo-membros-lista" class="grupo-membros-lista"></div>
+            </section>
+
+            <input type="file" id="input-fundo-grupo" accept="image/*" style="display:none;" onchange="alterarFundoGrupo(event)">
+        </div>
+
+        <div id="grupo-adicionar-membros-overlay" class="grupo-add-overlay hidden">
+            <div class="grupo-add-header">
+                <button type="button" class="close-btn" onclick="fecharAdicionarMembroGrupo()" aria-label="Voltar">‹</button>
+                <h3>Adicionar participantes</h3>
+            </div>
+            <div id="grupo-candidatos-lista" class="grupo-membros-lista grupo-candidatos-lista"></div>
         </div>
     </div>
 
