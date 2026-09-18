@@ -62,18 +62,88 @@
         }, { passive: false });
     }
 
+    function bloquearOverscrollDeBordaIOS() {
+        const ehIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+        if (!ehIOS || root.dataset.iosOverscrollBloqueado === 'true') return;
+
+        root.dataset.iosOverscrollBloqueado = 'true';
+
+        const seletorRolavel = [
+            '#tela-chat .chat-mensagens',
+            '#tela-conversas',
+            '#tela-voce',
+            '#painel-dados-contato .painel-contato-body',
+            '#painel-dados-grupo .grupo-panel-conteudo',
+            '#painel-dados-grupo .grupo-candidatos-lista',
+            '#painel-dados-usuario .dados-usuario-conteudo',
+            '.modal-body'
+        ].join(',');
+
+        const seletorTopoFixo = [
+            '#tela-chat .chat-header',
+            '#tela-conversas .topo-conversas',
+            '.dados-usuario-header',
+            '#painel-dados-contato .painel-contato-header',
+            '#painel-dados-grupo .grupo-dados-topo',
+            '#painel-dados-grupo .grupo-add-header'
+        ].join(',');
+
+        let toqueInicialY = 0;
+
+        document.addEventListener('touchstart', (event) => {
+            if (event.touches.length !== 1) return;
+            toqueInicialY = event.touches[0].clientY;
+        }, { passive: true, capture: true });
+
+        document.addEventListener('touchmove', (event) => {
+            if (event.touches.length !== 1) return;
+
+            const alvo = event.target;
+            if (!(alvo instanceof Element)) return;
+
+            const yAtual = event.touches[0].clientY;
+            const deltaY = yAtual - toqueInicialY;
+
+            // Headers/topos fixos não participam do gesto de arrastar a página.
+            // O gesto do sistema (Central de Controle etc.) continua sendo do iOS,
+            // mas o conteúdo do WhatisApp não acompanha o dedo.
+            if (alvo.closest(seletorTopoFixo)) {
+                event.preventDefault();
+                return;
+            }
+
+            const rolavel = alvo.closest(seletorRolavel);
+
+            // Fora de uma área de scroll real, não existe motivo para mover o documento.
+            if (!rolavel) {
+                if (!alvo.closest('input, textarea, select, [contenteditable="true"]')) {
+                    event.preventDefault();
+                }
+                return;
+            }
+
+            const noTopo = rolavel.scrollTop <= 0;
+            const noFim =
+                Math.ceil(rolavel.scrollTop + rolavel.clientHeight) >=
+                rolavel.scrollHeight;
+
+            // Mata somente o "rubber band" das extremidades.
+            // O scroll normal no meio do conteúdo continua livre.
+            if ((noTopo && deltaY > 0) || (noFim && deltaY < 0)) {
+                event.preventDefault();
+            }
+        }, { passive: false, capture: true });
+    }
+
     function atualizarAlturaViewport() {
         const vv = window.visualViewport;
 
-        // Em iOS/PWA VisualViewport costuma ser a medida mais confiável.
-        // innerHeight fica como fallback para navegadores sem essa API.
+        // Usa somente a ALTURA visível. Não somamos offsetTop:
+        // no iOS esse valor muda durante gestos vindos da borda/status bar e
+        // fazia o topo fixo do chat "viajar" junto com a UI do sistema.
         let altura = vv && vv.height ? vv.height : window.innerHeight;
-
-        // Em alguns estados do Safari/PWA o viewport visual começa abaixo de y=0.
-        // Somar offsetTop evita uma faixa vazia quando a UI do sistema muda de estado.
-        if (vv && Number.isFinite(vv.offsetTop) && vv.offsetTop > 0) {
-            altura += vv.offsetTop;
-        }
 
         if (!Number.isFinite(altura) || altura <= 0) {
             altura = document.documentElement.clientHeight || screen.height;
@@ -217,8 +287,10 @@
     window.addEventListener('orientationchange', solicitarAtualizacao, { passive: true });
 
     if (window.visualViewport) {
+        // Resize continua útil para teclado/orientação.
+        // "scroll" do VisualViewport foi removido de propósito:
+        // no iOS ele dispara durante gestos da borda e bagunçava o topo fixo.
         window.visualViewport.addEventListener('resize', solicitarAtualizacao, { passive: true });
-        window.visualViewport.addEventListener('scroll', solicitarAtualizacao, { passive: true });
     }
     window.addEventListener('pageshow', solicitarAtualizacao, { passive: true });
     document.addEventListener('visibilitychange', solicitarAtualizacao);
@@ -228,6 +300,7 @@
     setTimeout(solicitarAtualizacao, 800);
 
     bloquearArrastoNativoIOS();
+    bloquearOverscrollDeBordaIOS();
 
     window.atualizarSafeArea = atualizarSafeArea;
     window.atualizarAlturaViewport = atualizarAlturaViewport;
