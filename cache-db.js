@@ -6,8 +6,10 @@
 
 (function () {
     const DB_NAME = 'WhatisAppLocal';
-    const DB_VERSION = 1;
+    const DB_VERSION = 2;
     const STORE_MENSAGENS = 'mensagens';
+    const STORE_ESTADO = 'estado';
+    const STORE_CONVERSAS = 'conversas';
     const MAX_MENSAGENS_POR_CONVERSA = 500;
     const CACHE_MIDIAS = 'whatisapp-midias-v1';
 
@@ -30,6 +32,18 @@
 
                     store.createIndex('_conversa', '_conversa', { unique: false });
                     store.createIndex('_conversaData', ['_conversa', 'created_at'], { unique: false });
+                }
+
+                if (!db.objectStoreNames.contains(STORE_ESTADO)) {
+                    db.createObjectStore(STORE_ESTADO, {
+                        keyPath: 'chave'
+                    });
+                }
+
+                if (!db.objectStoreNames.contains(STORE_CONVERSAS)) {
+                    db.createObjectStore(STORE_CONVERSAS, {
+                        keyPath: 'conta'
+                    });
                 }
             };
 
@@ -212,6 +226,88 @@
         }
     }
 
+    async function salvarSessaoLocal(sessao) {
+        const db = await abrirBanco();
+        if (!db || !sessao?.email) return false;
+
+        const registro = {
+            chave: 'sessao-ativa',
+            email: String(sessao.email).trim(),
+            usuario: sessao.usuario || '',
+            foto_url: sessao.foto_url || '',
+            cor: sessao.cor || '#3a3a3c',
+            atualizadoEm: Date.now()
+        };
+
+        return new Promise((resolve) => {
+            const tx = db.transaction(STORE_ESTADO, 'readwrite');
+            tx.objectStore(STORE_ESTADO).put(registro);
+            tx.oncomplete = () => resolve(true);
+            tx.onerror = () => resolve(false);
+            tx.onabort = () => resolve(false);
+        });
+    }
+
+    async function obterSessaoLocal() {
+        const db = await abrirBanco();
+        if (!db) return null;
+
+        return new Promise((resolve) => {
+            const tx = db.transaction(STORE_ESTADO, 'readonly');
+            const req = tx.objectStore(STORE_ESTADO).get('sessao-ativa');
+            req.onsuccess = () => resolve(req.result || null);
+            req.onerror = () => resolve(null);
+        });
+    }
+
+    async function limparSessaoLocal() {
+        const db = await abrirBanco();
+        if (!db) return;
+
+        await new Promise((resolve) => {
+            const tx = db.transaction(STORE_ESTADO, 'readwrite');
+            tx.objectStore(STORE_ESTADO).delete('sessao-ativa');
+            tx.oncomplete = resolve;
+            tx.onerror = resolve;
+            tx.onabort = resolve;
+        });
+    }
+
+    async function salvarListaConversas(emailConta, lista) {
+        const db = await abrirBanco();
+        const conta = String(emailConta || '').trim().toLowerCase();
+
+        if (!db || !conta || !Array.isArray(lista)) return false;
+
+        const registro = {
+            conta,
+            lista,
+            atualizadoEm: Date.now()
+        };
+
+        return new Promise((resolve) => {
+            const tx = db.transaction(STORE_CONVERSAS, 'readwrite');
+            tx.objectStore(STORE_CONVERSAS).put(registro);
+            tx.oncomplete = () => resolve(true);
+            tx.onerror = () => resolve(false);
+            tx.onabort = () => resolve(false);
+        });
+    }
+
+    async function obterListaConversas(emailConta) {
+        const db = await abrirBanco();
+        const conta = String(emailConta || '').trim().toLowerCase();
+
+        if (!db || !conta) return [];
+
+        return new Promise((resolve) => {
+            const tx = db.transaction(STORE_CONVERSAS, 'readonly');
+            const req = tx.objectStore(STORE_CONVERSAS).get(conta);
+            req.onsuccess = () => resolve(req.result?.lista || []);
+            req.onerror = () => resolve([]);
+        });
+    }
+
     window.WhatisCache = {
         conversaPrivada,
         conversaGrupo,
@@ -220,6 +316,11 @@
         ultimaMensagem,
         mensagemPorId,
         cachearMidiasDasMensagens,
+        salvarSessaoLocal,
+        obterSessaoLocal,
+        limparSessaoLocal,
+        salvarListaConversas,
+        obterListaConversas,
 
         async limparConversa(conversa) {
             const db = await abrirBanco();
