@@ -1172,3 +1172,504 @@ input:checked + .slider {
         min-width: 58px;
     }
 }
+
+
+/* ==========================================
+   TELA DE CONVERSA - REFERÊNCIA IOS
+   Sem o aviso amarelo de criptografia.
+   ========================================== */
+#tela-chat {
+    background: #0b0b0c !important;
+    overflow: hidden;
+}
+
+#tela-chat .chat-header {
+    flex: 0 0 auto;
+    min-height: 86px;
+    height: auto;
+    box-sizing: border-box;
+    padding:
+        max(env(safe-area-inset-top), 8px)
+        14px
+        10px !important;
+    gap: 10px;
+    background:
+        linear-gradient(180deg,
+            rgba(42,42,43,.97),
+            rgba(35,35,36,.96)) !important;
+    border: 0 !important;
+    border-bottom: 1px solid rgba(255,255,255,.055) !important;
+    box-shadow:
+        0 8px 24px rgba(0,0,0,.18),
+        inset 0 1px 0 rgba(255,255,255,.035) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(170%) !important;
+    backdrop-filter: blur(28px) saturate(170%) !important;
+}
+
+#tela-chat .chat-header-voltar {
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #f7f7f7 !important;
+    background:
+        linear-gradient(145deg,
+            rgba(255,255,255,.18),
+            rgba(255,255,255,.07)) !important;
+    border: 1px solid rgba(255,255,255,.14) !important;
+    box-shadow:
+        0 9px 24px rgba(0,0,0,.28),
+        inset 0 1px 0 rgba(255,255,255,.17) !important;
+}
+
+#tela-chat .chat-header-voltar svg {
+    width: 29px;
+    height: 29px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+#tela-chat .chat-identidade {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+#tela-chat .chat-avatar {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    margin: 0;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #4b2330;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.04);
+}
+
+#tela-chat .chat-info-usuario {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+#tela-chat .chat-info-usuario h2 {
+    max-width: 100%;
+    margin: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: #f7f7f7;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 19px;
+    line-height: 23px;
+    font-weight: 650;
+}
+
+#tela-chat .status-online {
+    min-height: 15px;
+    margin-top: 1px;
+    color: #a3a3a8;
+    font-size: 11px;
+    line-height: 14px;
+}
+
+#tela-chat .chat-call-group {
+    flex: 0 0 auto;
+    height: 50px;
+    padding: 0 7px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background:
+        linear-gradient(145deg,
+            rgba(255,255,255,.18),
+            rgba(255,255,255,.075) 60%,
+            rgba(255,255,255,.045)) !important;
+    border: 1px solid rgba(255,255,255,.16);
+    box-shadow:
+        0 9px 26px rgba(0,0,0,.25),
+        inset 0 1px 0 rgba(255,255,255,.18),
+        inset 0 -1px 0 rgba(255,255,255,.025);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    backdrop-filter: blur(24px) saturate(180%);
+}
+
+#tela-chat .chat-call-btn {
+    width: 42px;
+    height: 42px;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 50% !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #f7f7f7 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+
+#tela-chat .chat-call-btn svg {
+    width: 27px;
+    height: 27px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+#tela-chat .chat-conteudo {
+    min-height: 0;
+    flex: 1;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background: #0b0b0c;
+    overflow: hidden;
+}
+
+#tela-chat .chat-dia-chip {
+    position: absolute;
+    z-index: 4;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 82px;
+    height: 34px;
+    padding: 0 18px;
+    box-sizing: border-box;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #f3f3f3;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 15px;
+    font-weight: 650;
+    background:
+        linear-gradient(145deg,
+            rgba(255,255,255,.075),
+            rgba(255,255,255,.035));
+    border: 1px solid rgba(255,255,255,.045);
+    box-shadow: 0 6px 18px rgba(0,0,0,.18);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    backdrop-filter: blur(18px) saturate(150%);
+    pointer-events: none;
+}
+
+#tela-chat .chat-mensagens {
+    min-height: 0;
+    flex: 1;
+    padding: 66px 12px 16px !important;
+    gap: 6px;
+    background-color: transparent;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+#tela-chat .balao-msg {
+    max-width: 78%;
+    border-radius: 18px;
+    padding: 9px 12px;
+    margin-bottom: 4px;
+    box-shadow: 0 3px 10px rgba(0,0,0,.16);
+}
+
+#tela-chat .balao-enviada {
+    border-bottom-right-radius: 5px !important;
+}
+
+#tela-chat .balao-recebida {
+    border-bottom-left-radius: 5px !important;
+}
+
+#tela-chat .chat-footer {
+    flex: 0 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 10px max(env(safe-area-inset-bottom), 12px);
+    display: flex;
+    flex-direction: column;
+    background:
+        linear-gradient(180deg,
+            rgba(39,39,40,.96),
+            rgba(34,34,35,.98)) !important;
+    border-top: 1px solid rgba(255,255,255,.055);
+    box-shadow: 0 -8px 24px rgba(0,0,0,.16);
+    -webkit-backdrop-filter: blur(28px) saturate(170%);
+    backdrop-filter: blur(28px) saturate(170%);
+}
+
+#tela-chat .chat-input-box {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 !important;
+    gap: 9px;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+
+#tela-chat .chat-footer-icon {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #f4f4f4 !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+
+#tela-chat .chat-footer-icon svg {
+    width: 29px;
+    height: 29px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+#tela-chat .chat-anexar-btn svg {
+    width: 31px;
+    height: 31px;
+    stroke-width: 1.65;
+}
+
+#tela-chat .chat-campo-pill {
+    min-width: 0;
+    flex: 1;
+    height: 44px;
+    padding: 0 5px 0 14px;
+    box-sizing: border-box;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    background:
+        linear-gradient(145deg,
+            rgba(255,255,255,.13),
+            rgba(255,255,255,.075)) !important;
+    border: 1px solid rgba(255,255,255,.105);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.065),
+        0 5px 18px rgba(0,0,0,.10);
+}
+
+#tela-chat .chat-campo-pill:focus-within {
+    border-color: rgba(255,255,255,.17);
+}
+
+#tela-chat .chat-campo-pill #input-mensagem {
+    min-width: 0;
+    flex: 1;
+    width: auto;
+    height: 100%;
+    margin: 0 !important;
+    padding: 0 7px 0 0;
+    border: 0 !important;
+    outline: 0;
+    border-radius: 0;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #f4f4f4;
+    font-size: 16px;
+}
+
+#tela-chat .chat-sticker-btn {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 50% !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #f2f2f2 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+
+#tela-chat .chat-sticker-btn svg {
+    width: 25px;
+    height: 25px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+#tela-chat .chat-mic-btn {
+    background: #f7f7f7 !important;
+    color: #0b0b0c !important;
+    box-shadow:
+        0 5px 14px rgba(0,0,0,.20),
+        inset 0 1px 0 rgba(255,255,255,.85) !important;
+}
+
+#tela-chat .chat-mic-btn svg {
+    width: 25px;
+    height: 25px;
+    stroke-width: 2;
+}
+
+#tela-chat .chat-send-btn {
+    display: none;
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    background:
+        radial-gradient(circle at 30% 18%,
+            rgba(255,225,190,.58),
+            rgba(255,151,54,.78) 35%,
+            rgba(255,123,0,.82) 70%,
+            rgba(170,67,0,.72)) !important;
+    border: 1px solid rgba(255,193,126,.46) !important;
+    box-shadow:
+        0 7px 18px rgba(255,123,0,.20),
+        inset 0 1px 0 rgba(255,255,255,.32) !important;
+}
+
+#tela-chat .chat-send-btn img {
+    width: 20px;
+    height: 20px;
+    margin-left: -2px;
+    filter: brightness(0) invert(1);
+    transform: rotate(45deg);
+}
+
+#tela-chat .painel-resposta {
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0 0 7px;
+    padding: 8px 10px;
+    border-radius: 14px;
+    border-left: 3px solid #ff7b00;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background:
+        linear-gradient(145deg,
+            rgba(255,255,255,.12),
+            rgba(255,255,255,.055));
+    color: #fff;
+}
+
+#tela-chat .painel-resposta-conteudo {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+#tela-chat .painel-resposta-conteudo strong {
+    margin-bottom: 2px;
+    color: #ff9d44;
+    font-size: 13px;
+}
+
+#tela-chat .painel-resposta-conteudo span {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: #bdbdc2;
+    font-size: 12px;
+}
+
+#tela-chat .painel-resposta-fechar {
+    width: 32px;
+    height: 32px;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 50% !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #bdbdc2 !important;
+    font-size: 23px;
+}
+
+@media (max-width: 420px) {
+    #tela-chat .chat-header {
+        padding-left: 9px !important;
+        padding-right: 9px !important;
+        gap: 7px;
+    }
+
+    #tela-chat .chat-header-voltar {
+        width: 46px;
+        height: 46px;
+        min-width: 46px;
+    }
+
+    #tela-chat .chat-avatar {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+    }
+
+    #tela-chat .chat-info-usuario h2 {
+        font-size: 17px;
+    }
+
+    #tela-chat .chat-call-group {
+        height: 46px;
+        padding-inline: 4px;
+    }
+
+    #tela-chat .chat-call-btn {
+        width: 38px;
+        height: 38px;
+    }
+
+    #tela-chat .chat-call-btn svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    #tela-chat .chat-input-box {
+        gap: 5px;
+    }
+
+    #tela-chat .chat-footer-icon,
+    #tela-chat .chat-send-btn {
+        width: 40px !important;
+        height: 40px !important;
+        min-width: 40px;
+    }
+
+    #tela-chat .chat-campo-pill {
+        height: 40px;
+    }
+
+    #tela-chat .chat-footer-icon svg {
+        width: 26px;
+        height: 26px;
+    }
+}
