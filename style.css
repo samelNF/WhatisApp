@@ -2377,3 +2377,414 @@ body {
         max-height: var(--app-viewport-height, 100dvh) !important;
     }
 }
+
+
+/* ==========================================
+   PAINEL DE DADOS DO GRUPO
+   ========================================== */
+#painel-dados-grupo {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: var(--app-viewport-height, 100dvh) !important;
+    min-height: var(--app-viewport-height, 100dvh) !important;
+    display: none;
+    flex-direction: column;
+    background: #0a0a0a !important;
+    color: #fafafa;
+    z-index: 3200;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+#painel-dados-grupo .grupo-panel-header,
+#painel-dados-grupo .grupo-add-header {
+    position: relative;
+    flex: 0 0 auto;
+    width: 100%;
+    min-height: calc(64px + env(safe-area-inset-top, 0px));
+    padding:
+        max(env(safe-area-inset-top), 10px)
+        16px
+        10px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    box-sizing: border-box;
+    background:
+        linear-gradient(180deg,
+            rgba(35,35,36,.96),
+            rgba(25,25,26,.90)) !important;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    box-shadow:
+        0 8px 26px rgba(0,0,0,.22),
+        inset 0 -1px 0 rgba(255,255,255,.025);
+    -webkit-backdrop-filter: blur(28px) saturate(175%);
+    backdrop-filter: blur(28px) saturate(175%);
+}
+
+#painel-dados-grupo .grupo-panel-header h3,
+#painel-dados-grupo .grupo-add-header h3 {
+    margin: 0 0 11px;
+    color: #fafafa;
+    font-size: 20px;
+    line-height: 1;
+    font-weight: 650;
+}
+
+#painel-dados-grupo .grupo-panel-header .close-btn,
+#painel-dados-grupo .grupo-add-header .close-btn {
+    position: absolute;
+    left: 15px;
+    bottom: 8px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fafafa !important;
+    font-size: 31px;
+    line-height: 1;
+}
+
+#painel-dados-grupo .grupo-panel-conteudo {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 26px 16px max(28px, env(safe-area-inset-bottom));
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+#painel-dados-grupo .grupo-perfil-resumo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 0 28px;
+}
+
+#painel-dados-grupo .grupo-info-foto {
+    width: 118px;
+    height: 118px;
+    min-width: 118px;
+    min-height: 118px;
+    max-width: 118px;
+    max-height: 118px;
+    margin: 0 0 17px;
+    padding: 0 !important;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #3a3a3c;
+}
+
+#painel-dados-grupo .grupo-info-foto.avatar-sem-foto {
+    width: 118px !important;
+    height: 118px !important;
+    min-width: 118px !important;
+    min-height: 118px !important;
+    max-width: 118px !important;
+    max-height: 118px !important;
+    padding: 29px !important;
+    object-fit: contain !important;
+}
+
+#painel-dados-grupo #grupo-info-nome {
+    max-width: 100%;
+    margin: 0;
+    color: #fafafa;
+    font-size: 34px;
+    line-height: 1.08;
+    font-weight: 700;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#painel-dados-grupo #grupo-info-criador {
+    max-width: 100%;
+    margin: 7px 0 0;
+    color: #85858a;
+    font-size: 14px;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#painel-dados-grupo .grupo-opcoes-card,
+#painel-dados-grupo .grupo-membros-secao {
+    width: 100%;
+    max-width: 690px;
+    margin: 0 auto 22px;
+    overflow: hidden;
+    border-radius: 26px;
+    background:
+        linear-gradient(145deg,
+            rgba(255,255,255,.115),
+            rgba(255,255,255,.052) 58%,
+            rgba(255,255,255,.035)) !important;
+    border: 1px solid rgba(255,255,255,.12);
+    box-shadow:
+        0 14px 36px rgba(0,0,0,.24),
+        inset 0 1px 0 rgba(255,255,255,.12);
+    -webkit-backdrop-filter: blur(24px) saturate(175%);
+    backdrop-filter: blur(24px) saturate(175%);
+}
+
+#painel-dados-grupo .grupo-opcao-row {
+    width: 100%;
+    min-height: 68px;
+    padding: 10px 16px !important;
+    border: 0 !important;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    text-align: left;
+    color: #fafafa !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+#painel-dados-grupo .grupo-opcao-icone {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    background: rgba(255,123,0,.14);
+    font-size: 21px;
+}
+
+#painel-dados-grupo .grupo-opcao-texto {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+#painel-dados-grupo .grupo-opcao-texto strong {
+    color: #fafafa;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+#painel-dados-grupo .grupo-opcao-texto small {
+    color: #85858a;
+    font-size: 12px;
+}
+
+#painel-dados-grupo .grupo-opcao-seta {
+    color: #777;
+    font-size: 32px;
+    line-height: 1;
+}
+
+#painel-dados-grupo .grupo-membros-secao {
+    padding: 0 0 4px;
+}
+
+#painel-dados-grupo .grupo-membros-topo {
+    min-height: 72px;
+    padding: 14px 15px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+#painel-dados-grupo .grupo-membros-topo h3 {
+    margin: 0;
+    color: #fafafa;
+    font-size: 18px;
+    font-weight: 650;
+}
+
+#painel-dados-grupo .grupo-membros-topo span {
+    display: block;
+    margin-top: 3px;
+    color: #818187;
+    font-size: 12px;
+}
+
+#painel-dados-grupo .grupo-btn-adicionar {
+    min-height: 38px;
+    padding: 0 13px !important;
+    border-radius: 999px !important;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #ffb66f !important;
+    background:
+        linear-gradient(145deg,
+            rgba(255,153,61,.18),
+            rgba(255,123,0,.08)) !important;
+    border-color: rgba(255,153,61,.24) !important;
+    font-size: 13px;
+    font-weight: 650;
+}
+
+#painel-dados-grupo .grupo-btn-adicionar > span {
+    margin: 0;
+    color: #ff9a3c;
+    font-size: 21px;
+    line-height: 1;
+}
+
+#painel-dados-grupo .grupo-membros-lista {
+    display: flex;
+    flex-direction: column;
+}
+
+#painel-dados-grupo .grupo-membro-item {
+    position: relative;
+    min-height: 70px;
+    padding: 9px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+#painel-dados-grupo .grupo-membro-item:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    left: 80px;
+    right: 14px;
+    bottom: 0;
+    height: 1px;
+    background: rgba(255,255,255,.07);
+}
+
+#painel-dados-grupo .grupo-membro-avatar {
+    width: 52px !important;
+    height: 52px !important;
+    min-width: 52px !important;
+    min-height: 52px !important;
+    max-width: 52px !important;
+    max-height: 52px !important;
+    flex: 0 0 52px;
+    padding: 0 !important;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+#painel-dados-grupo .grupo-membro-avatar.avatar-sem-foto {
+    width: 52px !important;
+    height: 52px !important;
+    min-width: 52px !important;
+    min-height: 52px !important;
+    max-width: 52px !important;
+    max-height: 52px !important;
+    padding: 13px !important;
+    object-fit: contain !important;
+}
+
+#painel-dados-grupo .grupo-membro-info {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+#painel-dados-grupo .grupo-membro-info strong {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: #f7f7f7;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+#painel-dados-grupo .grupo-membro-info small {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: #818187;
+    font-size: 12px;
+}
+
+#painel-dados-grupo .grupo-remover-membro,
+#painel-dados-grupo .grupo-adicionar-um {
+    flex: 0 0 auto;
+    min-height: 34px;
+    padding: 0 11px !important;
+    border-radius: 999px !important;
+    font-size: 12px;
+    font-weight: 650;
+}
+
+#painel-dados-grupo .grupo-remover-membro {
+    color: #ff7770 !important;
+    background: rgba(255,74,66,.09) !important;
+    border-color: rgba(255,103,95,.18) !important;
+}
+
+#painel-dados-grupo .grupo-adicionar-um {
+    color: #ffb66f !important;
+    background: rgba(255,123,0,.10) !important;
+    border-color: rgba(255,153,61,.20) !important;
+}
+
+#painel-dados-grupo .grupo-membros-vazio {
+    padding: 24px 18px;
+    color: #818187;
+    font-size: 13px;
+    text-align: center;
+}
+
+#painel-dados-grupo .grupo-add-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    background: #0a0a0a;
+}
+
+#painel-dados-grupo .grupo-add-overlay.hidden {
+    display: none !important;
+}
+
+#painel-dados-grupo .grupo-candidatos-lista {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 10px 12px max(20px, env(safe-area-inset-bottom));
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 430px) {
+    #painel-dados-grupo .grupo-panel-conteudo {
+        padding-left: 13px;
+        padding-right: 13px;
+    }
+
+    #painel-dados-grupo #grupo-info-nome {
+        font-size: 30px;
+    }
+
+    #painel-dados-grupo .grupo-info-foto {
+        width: 106px;
+        height: 106px;
+        min-width: 106px;
+        min-height: 106px;
+        max-width: 106px;
+        max-height: 106px;
+    }
+
+    #painel-dados-grupo .grupo-info-foto.avatar-sem-foto {
+        width: 106px !important;
+        height: 106px !important;
+        min-width: 106px !important;
+        min-height: 106px !important;
+        max-width: 106px !important;
+        max-height: 106px !important;
+        padding: 26px !important;
+    }
+}
