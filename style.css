@@ -2205,3 +2205,51 @@ body {
         min-width: min(280px, 78vw);
     }
 }
+
+
+/* ==========================================
+   SAFE AREA DINAMICA IOS
+   ========================================== */
+/* Essa camada ocupa somente a área da status bar do iPhone.
+   O JS copia o fundo do elemento que estiver visualmente no topo da tela. */
+body::before {
+    content: "";
+    position: fixed;
+    z-index: 999999;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: env(safe-area-inset-top, 0px);
+    pointer-events: none;
+    background-color: var(--safe-area-bg-color, #050505);
+    background-image: var(--safe-area-bg-image, none);
+    background-size: cover;
+    background-position: center top;
+    -webkit-backdrop-filter: var(--safe-area-backdrop, none);
+    backdrop-filter: var(--safe-area-backdrop, none);
+}
+
+/* Elementos de topo devem começar em y=0; o conteúdo interno respeita a safe area. */
+#tela-conversas .topo-conversas,
+#tela-chat .chat-header,
+.dados-usuario-header,
+#painel-dados-contato .menu-chat-header {
+    top: 0;
+}
+
+/* Evita que o conteúdo dos headers fique embaixo da hora/ilha dinâmica. */
+#tela-chat .chat-header,
+.dados-usuario-header,
+#painel-dados-contato .menu-chat-header {
+    padding-top: max(env(safe-area-inset-top), 0px);
+}
+
+/* A altura mínima cresce junto com a safe area sem criar faixa do body aparecendo. */
+#tela-chat .chat-header {
+    min-height: calc(76px + env(safe-area-inset-top, 0px));
+}
+
+.dados-usuario-header,
+#painel-dados-contato .menu-chat-header {
+    min-height: calc(60px + env(safe-area-inset-top, 0px));
+}
