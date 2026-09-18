@@ -255,6 +255,7 @@
         if (!texto) return 'Nova mensagem';
         if (texto.startsWith('[FOTO]:')) return '📷 Foto';
         if (texto.startsWith('[VIDEO]:')) return '🎥 Vídeo';
+        if (texto.startsWith('[AUDIO]:')) return '🎤 Áudio';
 
         const limpo = texto.trim();
         return limpo.length > 140 ? limpo.slice(0, 137) + '...' : limpo;
