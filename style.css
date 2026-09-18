@@ -1839,3 +1839,47 @@ body {
 #painel-dados-contato #painel-foto-contato:not(.avatar-sem-foto) {
     padding: 0 !important;
 }
+
+
+/* ==========================================
+   AJUSTE TAMANHO DO PLACEHOLDER
+   ========================================== */
+/* O SVG de usuário ocupa quase todo o viewBox, então precisa de mais respiro
+   dentro do círculo pra não parecer uma foto gigante. */
+.avatar-sem-foto {
+    object-fit: contain !important;
+    object-position: center !important;
+    padding: 29% !important;
+}
+
+/* Lista de conversas / contatos */
+.foto-contato.avatar-sem-foto {
+    padding: 27% !important;
+}
+
+/* Avatar pequeno do topo do chat */
+.chat-avatar.avatar-sem-foto {
+    padding: 28% !important;
+}
+
+/* Seleção de membros */
+.foto-contato-pequena.avatar-sem-foto {
+    padding: 28% !important;
+}
+
+/* Aba Você e barra inferior */
+.foto-perfil-grande.avatar-sem-foto,
+.dados-foto-grande.avatar-sem-foto,
+.vose.avatar-sem-foto {
+    padding: 29% !important;
+}
+
+/* Popup de novo contato */
+#novo-contato-foto.avatar-sem-foto {
+    padding: 29% !important;
+}
+
+/* Painel de dados do contato */
+#painel-dados-contato #painel-foto-contato.avatar-sem-foto {
+    padding: 29% !important;
+}
