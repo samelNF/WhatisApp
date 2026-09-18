@@ -13,6 +13,7 @@
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="script.js" defer></script>
+    <script src="chat-visual.js" defer></script>
     
     <!-- Configurações iOS -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -369,42 +370,96 @@
     <!-- JANELA DE CHAT -->
     <section id="tela-chat" class="tela-chat" style="display: none; cursor:pointer;">
         <div class="chat-header">
-            <button class="btn-voltar" onclick="fecharChat()" style="cursor:pointer">‹</button>
-            <img  style="cursor:pointer" id="chat-foto-usuario" src="svg/icon.svg" class="chat-avatar" onclick="abrirPainelDadosContato()">
-            <div  style="cursor:pointer" class="chat-info-usuario" onclick="abrirPainelDadosContato()">
-                <h2  style="cursor:pointer" id="chat-nome-usuario">Contato</h2>
-                <span id="chat-status-usuario" style="cursor:pointer" class="status-online"></span>
-            </div>
-            <div style="height: 60px; width: 30%; border: none; background-color: transparents;" onclick="abrirPainelDadosContato()"></div>
-        </div>
+            <button class="btn-voltar chat-header-voltar" onclick="fecharChat()" aria-label="Voltar">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M15.5 4.5 8 12l7.5 7.5"></path>
+                </svg>
+            </button>
 
-        <div id="chat-mensagens" class="chat-mensagens">
-            <!-- Mensagens inseridas via JS -->
-        </div>
-
-                <!-- RODAPÉ DA TELA DE CHAT -->
-        <div class="chat-footer" style="display: flex; flex-direction: column;">
-            
-            <!-- PAINEL DE RESPOSTA (NOVO) -->
-            <div id="painel-resposta" class="painel-resposta" style="display: none; background: #ffffff41; padding: 8px 12px; border-left: 4px solid #ffffff; margin-bottom: 6px; border-radius: 4px; align-items: center; justify-content: space-between;">
-                <div style="font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; flex-direction: column;">
-                    <strong id="resposta-nome-usuario" style="color: #ffffff; margin-bottom: 2px;">Respondendo a alguém</strong>
-                    <span id="resposta-texto-preview" style="color: #ffffff; font-size: 12px;">Texto da mensagem...</span>
+            <div class="chat-identidade" onclick="abrirPainelDadosContato()">
+                <img id="chat-foto-usuario" src="svg/icon.svg" class="chat-avatar" alt="Foto do contato">
+                <div class="chat-info-usuario">
+                    <h2 id="chat-nome-usuario">Contato</h2>
+                    <span id="chat-status-usuario" class="status-online"></span>
                 </div>
-                <button type="button" onclick="cancelarResposta()" style="background: none; border: none; font-size: 18px; cursor: pointer; color: #aebac1; padding: 0 5px;">&times;</button>
             </div>
-            <!-- Barra normal de envio (visível para contatos salvos) -->
+
+            <div class="chat-call-group" aria-label="Ações de chamada">
+                <button type="button" class="chat-call-btn" title="Chamada de vídeo" aria-label="Chamada de vídeo">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="3" y="6" width="12" height="12" rx="2"></rect>
+                        <path d="m15 10 5-3v10l-5-3z"></path>
+                    </svg>
+                </button>
+                <button type="button" class="chat-call-btn" title="Ligação" aria-label="Ligação">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M6.6 3.8 9 8.2 6.9 9.8c1.4 3 3.3 4.9 6.3 6.3l1.6-2.1 4.4 2.4c.6.3.9 1 .7 1.7-.5 1.7-2.1 2.9-3.9 2.9C9.3 21 3 14.7 3 7.1c0-1.8 1.2-3.4 2.9-3.9.7-.2 1.4.1 1.7.6Z"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="chat-conteudo">
+            <div class="chat-dia-chip">Hoje</div>
+
+            <div id="chat-mensagens" class="chat-mensagens">
+                <!-- Mensagens inseridas via JS -->
+            </div>
+        </div>
+
+        <!-- RODAPÉ DA TELA DE CHAT -->
+        <div class="chat-footer">
+            <div id="painel-resposta" class="painel-resposta" style="display: none;">
+                <div class="painel-resposta-conteudo">
+                    <strong id="resposta-nome-usuario">Respondendo a alguém</strong>
+                    <span id="resposta-texto-preview">Texto da mensagem...</span>
+                </div>
+                <button type="button" class="painel-resposta-fechar" onclick="cancelarResposta()" aria-label="Cancelar resposta">&times;</button>
+            </div>
+
+            <!-- Barra normal de envio -->
             <div id="chat-input-box" class="chat-input-box">
-                <input type="text" id="input-mensagem" onkeypress="checarEnter(event)" style="margin-bottom: 10px;">
-                <!-- Botão para disparar o seletor de arquivos -->
-                <button type="button" class="fotoAnexar" id="btn-enviar-foto" onclick="acionarSeletorFotoChat()" style="margin-bottom: 10px;">
-                    <img src="svg/clip.svg" alt="Anexar" class="clip">
+                <button type="button" class="chat-footer-icon chat-anexar-btn" onclick="acionarSeletorFotoChat()" aria-label="Adicionar anexo" title="Adicionar">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 4v16M4 12h16"></path>
+                    </svg>
                 </button>
-                <!-- Input file oculto -->
-                <input type="file" id="input-arquivo-chat" accept="image/*, video/*" style="display: none;" onchange="enviarFotoChat(event)" style="margin-bottom: 10px;">
-                <button id="btn-enviar" onclick="enviarMensagem()" class="btn-enviar" style="margin-bottom: 10px;">
-                    <img src="svg/paperplane.svg" alt="Enviar" style="transform: rotate(45deg);">
+
+                <div class="chat-campo-pill">
+                    <input
+                        type="text"
+                        id="input-mensagem"
+                        onkeypress="checarEnter(event)"
+                        autocomplete="off"
+                        aria-label="Mensagem"
+                    >
+                    <button type="button" class="chat-sticker-btn" aria-label="Figurinha" title="Figurinha">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M5 4h9a5 5 0 0 1 5 5v5l-5 5H9a4 4 0 0 1-4-4Z"></path>
+                            <path d="M14 19v-3a2 2 0 0 1 2-2h3"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <button type="button" class="chat-footer-icon chat-camera-btn" onclick="acionarSeletorFotoChat()" aria-label="Câmera" title="Câmera">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 7.5h3l1.5-2h7l1.5 2h3a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9.5a2 2 0 0 1 2-2Z"></path>
+                        <circle cx="12" cy="13" r="4"></circle>
+                    </svg>
                 </button>
+
+                <button type="button" id="btn-audio-visual" class="chat-footer-icon chat-mic-btn" aria-label="Áudio" title="Áudio">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="9" y="3" width="6" height="11" rx="3"></rect>
+                        <path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"></path>
+                    </svg>
+                </button>
+
+                <button id="btn-enviar" onclick="enviarMensagem()" class="btn-enviar chat-send-btn" aria-label="Enviar mensagem" title="Enviar">
+                    <img src="svg/paperplane.svg" alt="">
+                </button>
+
+                <input type="file" id="input-arquivo-chat" accept="image/*, video/*" style="display: none;" onchange="enviarFotoChat(event)">
             </div>
 
             <!-- Barra de decisão (visível APENAS para solicitações pendentes) -->
