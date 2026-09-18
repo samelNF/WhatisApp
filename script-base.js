@@ -783,6 +783,12 @@ async function renderizarBalao(texto, ehMinha, dataCriacao, idMensagem, mensagem
     balao.classList.add("balao-msg");
     balao.classList.add(ehMinha ? "balao-enviada" : "balao-recebida");
 
+    const temResposta = !!(mensagemRespondida && mensagemRespondida.texto);
+    const temMidia = !!(texto && (texto.startsWith("[FOTO]:") || texto.startsWith("[VIDEO]:")));
+
+    if (temResposta) balao.classList.add("balao-com-resposta");
+    if (temMidia) balao.classList.add("balao-com-midia");
+
     const horaFormatada = formatarHora(dataCriacao || new Date());
 
     let conteudoHtml = "";
@@ -869,6 +875,12 @@ async function renderizarBalaoGrupo(texto, ehMinha, dataCriacao, nomeRemetente, 
     const balao = document.createElement("div");
     balao.classList.add("balao-msg");
     balao.classList.add(ehMinha ? "balao-enviada" : "balao-recebida");
+
+    const temResposta = !!(mensagemRespondida && mensagemRespondida.texto);
+    const temMidia = !!(texto && (texto.startsWith("[FOTO]:") || texto.startsWith("[VIDEO]:")));
+
+    if (temResposta) balao.classList.add("balao-com-resposta");
+    if (temMidia) balao.classList.add("balao-com-midia");
 
     const horaFormatada = formatarHora(dataCriacao || new Date());
 
