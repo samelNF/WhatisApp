@@ -1542,26 +1542,23 @@ async function marcarMensagensComoVisualizadas(emailContato, chaveConversa) {
     const meuEmail = (localStorage.getItem("usuarioLogado") || "").trim();
     const telaChat = document.getElementById("tela-chat");
 
-    if (!meuEmail || !emailContato || !_supabase) return;
+    if (!meuEmail || !emailContato) return;
     if (document.visibilityState !== "visible") return;
     if (!telaChat?.classList.contains("ativa")) return;
 
-    const { data, error } = await _supabase
-        .from("mensagens")
-        .update({ visualizada: true })
-        .eq("remetente_email", emailContato)
-        .eq("destinatario_email", meuEmail)
-        .is("grupo_id", null)
-        .eq("visualizada", false)
-        .select("*");
-
-    if (error) {
-        console.warn("Erro ao marcar mensagens como visualizadas:", error.message);
+    if (typeof window.marcarMensagensVistasServidor !== "function") {
+        console.warn("Sistema de visualização ainda não está disponível.");
         return;
     }
 
-    if (data?.length && window.WhatisCache) {
-        await window.WhatisCache.salvarMensagens(chaveConversa, data);
+    const resultado = await window.marcarMensagensVistasServidor(emailContato);
+
+    if (!resultado?.ok) return;
+
+    const atualizadas = resultado.mensagens || [];
+
+    if (atualizadas.length && window.WhatisCache) {
+        await window.WhatisCache.salvarMensagens(chaveConversa, atualizadas);
     }
 }
 
