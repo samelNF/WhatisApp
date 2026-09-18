@@ -567,7 +567,7 @@
             console.warn('[Web Push] Notificações locais funcionam, mas o push com o app fechado ainda não foi registrado.');
         }
 
-        return true;
+        return criarPushSeNecessario ? webPushRegistrado : true;
     };
 
     window.desativarSistemaNotificacoes = async function () {
