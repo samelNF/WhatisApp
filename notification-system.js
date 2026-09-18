@@ -17,7 +17,7 @@
     const cacheGrupos = new Map();
 
     // Web Push real: necessário para o Service Worker acordar com o app fechado.
-    const VAPID_PUBLIC_KEY = 'BEq_MCifRw6zyWD8uURMdtoo1iUJ0-OQgeIxkuWOnaEIakLWQ2NNTTMCXLV-DPj8Na5qYpOOGZTu8Vf7Qswm-Is';
+    const VAPID_PUBLIC_KEY = 'BMI4uCzdRkfPdRe4Yjq8lyKWhFsviVz7voWfUpswGoSziOHzWv-NTy7hjTVr89zXL7yPBCwXXRSRoLavokcfjYo';
     const PUSH_FUNCTION_URL = 'https://qlvorxobvnjoovqxnfhp.supabase.co/functions/v1/push';
 
     function supabaseAtual() {
@@ -65,6 +65,48 @@
         }
     }
 
+    window.criarSessaoPush = async function (email, senhaHash) {
+        if (!email || !senhaHash) return false;
+
+        const resultado = await chamarPushServidor({
+            action: 'session',
+            email,
+            senha_hash: senhaHash
+        });
+
+        if (!resultado?.ok || !resultado?.token) {
+            console.warn('[Web Push] Não foi possível criar a sessão Push.');
+            return false;
+        }
+
+        localStorage.setItem('pushSessionToken', resultado.token);
+        return true;
+    };
+
+    function tokenSessaoPush() {
+        return localStorage.getItem('pushSessionToken') || '';
+    }
+
+    function assinaturaUsaChaveAtual(assinatura) {
+        try {
+            const atual = assinatura?.options?.applicationServerKey;
+            if (!atual) return false;
+
+            const bytesAtual = new Uint8Array(atual);
+            const bytesEsperados = base64UrlParaUint8Array(VAPID_PUBLIC_KEY);
+
+            if (bytesAtual.length !== bytesEsperados.length) return false;
+
+            for (let i = 0; i < bytesAtual.length; i++) {
+                if (bytesAtual[i] !== bytesEsperados[i]) return false;
+            }
+
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
     async function obterAssinaturaPush() {
         const reg = await garantirServiceWorker();
         if (!reg?.pushManager) return null;
@@ -79,7 +121,12 @@
 
     async function registrarWebPushReal(criarSeNecessario = false) {
         const email = meuEmailAtual();
-        if (!email) return false;
+        const sessaoPush = tokenSessaoPush();
+
+        if (!email || !sessaoPush) {
+            console.warn('[Web Push] Sessão Push ainda não foi criada.');
+            return false;
+        }
 
         const reg = await garantirServiceWorker();
         if (!reg?.pushManager) {
@@ -91,6 +138,15 @@
 
         try {
             assinatura = await reg.pushManager.getSubscription();
+
+            // A chave VAPID foi rotacionada ao ativar o backend real.
+            // Uma assinatura feita com a chave antiga não pode receber os novos pushes.
+            if (assinatura && !assinaturaUsaChaveAtual(assinatura)) {
+                if (!criarSeNecessario) return false;
+
+                try { await assinatura.unsubscribe(); } catch (e) {}
+                assinatura = null;
+            }
 
             if (!assinatura && criarSeNecessario) {
                 assinatura = await reg.pushManager.subscribe({
@@ -107,7 +163,7 @@
 
         const resultado = await chamarPushServidor({
             action: 'register',
-            email,
+            session_token: sessaoPush,
             subscription: assinatura.toJSON()
         });
 
@@ -121,32 +177,23 @@
     }
 
     async function removerWebPushReal() {
-        const email = meuEmailAtual();
         const assinatura = await obterAssinaturaPush();
+        const sessaoPush = tokenSessaoPush();
 
         if (!assinatura) return;
 
-        await chamarPushServidor({
-            action: 'unregister',
-            email,
-            endpoint: assinatura.endpoint
-        });
+        if (sessaoPush) {
+            await chamarPushServidor({
+                action: 'unregister',
+                session_token: sessaoPush,
+                endpoint: assinatura.endpoint
+            });
+        }
 
         try {
             await assinatura.unsubscribe();
         } catch (e) {}
     }
-
-    window.enviarPushMensagemServidor = async function (messageId) {
-        if (!messageId || !notificacoesAtivas()) return false;
-
-        const resultado = await chamarPushServidor({
-            action: 'notify-message',
-            message_id: messageId
-        });
-
-        return !!resultado?.ok;
-    };
 
     function notificacoesAtivas() {
         return localStorage.getItem('notificacoes') !== 'false';
@@ -533,6 +580,10 @@
         }
 
         localStorage.removeItem('badgeNotificacoes');
+    };
+
+    window.limparSessaoPushLocal = function () {
+        localStorage.removeItem('pushSessionToken');
     };
 
     window.testarNotificacaoWhatisApp = async function () {
