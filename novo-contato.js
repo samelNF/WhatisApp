@@ -231,7 +231,7 @@
                 </div>
 
                 <div class="novo-contato-avatar">
-                    <img id="novo-contato-foto" src="svg/icon.svg" alt="Foto do contato">
+                    <img id="novo-contato-foto" src="svg/user-placeholder.svg" alt="Foto do contato">
                 </div>
 
                 <div class="novo-contato-campo">
@@ -273,7 +273,7 @@
         });
     }
 
-    function atualizarEstado(validacao, status, foto, tipo, mensagem) {
+    function atualizarEstado(validacao, status, foto, tipo, mensagem, corUsuario) {
         const elValidacao = document.getElementById('novo-contato-validacao');
         const elStatus = document.getElementById('novo-contato-status');
         const elFoto = document.getElementById('novo-contato-foto');
@@ -287,7 +287,12 @@
         elStatus.className = 'novo-contato-status' + (tipo === 'ok' ? ' ok' : tipo === 'erro' ? ' erro' : '');
         elStatus.textContent = mensagem || '';
 
-        elFoto.src = foto || 'svg/icon.svg';
+        if (typeof window.aplicarAvatarUsuario === 'function') {
+            window.aplicarAvatarUsuario(elFoto, foto || '', corUsuario || '#3a3a3c');
+        } else {
+            elFoto.src = foto || 'svg/user-placeholder.svg';
+            elFoto.style.backgroundColor = foto ? 'transparent' : (corUsuario || '#3a3a3c');
+        }
 
         const valido = validacao === true;
         confirmar.disabled = !valido;
@@ -300,15 +305,15 @@
 
         const usuario = input.value.trim();
         if (!usuario) {
-            atualizarEstado(false, false, 'svg/icon.svg', 'vazio', '');
+            atualizarEstado(false, false, 'svg/user-placeholder.svg', 'vazio', '');
             return;
         }
 
-        atualizarEstado(false, false, 'svg/icon.svg', 'vazio', 'Procurando...');
+        atualizarEstado(false, false, 'svg/user-placeholder.svg', 'vazio', 'Procurando...');
 
         const { data, error } = await window._supabase
             .from('usuarios')
-            .select('usuario, foto_url, email')
+            .select('usuario, foto_url, email, cor')
             .eq('usuario', usuario)
             .maybeSingle();
 
@@ -317,20 +322,20 @@
 
         if (error) {
             console.error('[Novo contato] Erro ao verificar usuário:', error);
-            atualizarEstado(false, false, 'svg/icon.svg', 'erro', 'Não foi possível verificar essa conta');
+            atualizarEstado(false, false, 'svg/user-placeholder.svg', 'erro', 'Não foi possível verificar essa conta');
             return;
         }
 
         const meuUsuario = (localStorage.getItem('nomeUsuario') || '').trim();
         if (data && data.usuario && data.usuario.toLowerCase() === meuUsuario.toLowerCase()) {
-            atualizarEstado(false, false, 'svg/icon.svg', 'erro', 'Você não pode adicionar a si mesmo');
+            atualizarEstado(false, false, 'svg/user-placeholder.svg', 'erro', 'Você não pode adicionar a si mesmo');
             return;
         }
 
         if (data) {
-            atualizarEstado(true, true, data.foto_url || 'svg/icon.svg', 'ok', 'Essa pessoa ja tem uma conta WhatisApp');
+            atualizarEstado(true, true, data.foto_url || '', 'ok', 'Essa pessoa ja tem uma conta WhatisApp', data.cor);
         } else {
-            atualizarEstado(false, false, 'svg/icon.svg', 'erro', 'Essa pessoa não criou uma conta WhatisApp');
+            atualizarEstado(false, false, 'svg/user-placeholder.svg', 'erro', 'Essa pessoa não criou uma conta WhatisApp');
         }
     }
 
@@ -374,7 +379,7 @@
 
         const input = document.getElementById('novo-contato-usuario');
         if (input) input.value = '';
-        atualizarEstado(false, false, 'svg/icon.svg', 'vazio', '');
+        atualizarEstado(false, false, 'svg/user-placeholder.svg', 'vazio', '');
     }
 
     function abrirNovoContato() {
