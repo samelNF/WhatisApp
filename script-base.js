@@ -1505,6 +1505,12 @@ async function renderizarMensagensPrivadasDoCache(mensagens, chaveConversa, limp
         const ehMinha = (msg.remetente_email || "").trim().toLowerCase() === meuEmail;
 
         if (
+            typeof window.ehMensagemChamada === "function" &&
+            window.ehMensagemChamada(msg) &&
+            typeof window.renderizarBalaoChamada === "function"
+        ) {
+            await window.renderizarBalaoChamada(msg, ehMinha);
+        } else if (
             typeof window.ehMensagemAudio === "function" &&
             window.ehMensagemAudio(msg) &&
             typeof window.renderizarBalaoAudio === "function"
@@ -2175,16 +2181,61 @@ function inscreverRealtime() {
                 if (!msg || msg.grupo_id) return;
 
                 const remetente = (msg.remetente_email || "").trim().toLowerCase();
+                const destinatario = (msg.destinatario_email || "").trim().toLowerCase();
                 const meuEmailAtual = (meuEmail || "").trim().toLowerCase();
 
-                // Só interessa ao remetente desta mensagem.
+                // Mensagens de chamada mudam de estado (tocando, ativa, encerrada...)
+                // e precisam atualizar para os dois participantes, não só para quem enviou.
+                if (
+                    typeof window.ehMensagemChamada === "function" &&
+                    window.ehMensagemChamada(msg)
+                ) {
+                    carregarListaContatos();
+
+                    if (destinatarioAtual) {
+                        const outro = (destinatarioAtual || "").trim().toLowerCase();
+                        const pertenceAoChat =
+                            (remetente === meuEmailAtual && destinatario === outro) ||
+                            (remetente === outro && destinatario === meuEmailAtual);
+
+                        if (pertenceAoChat) {
+                            const cache = window.WhatisCache;
+                            const chave = cache
+                                ? cache.conversaPrivada(destinatarioAtual)
+                                : null;
+
+                            if (cache && chave) {
+                                await cache.salvarMensagens(chave, [msg]);
+                            }
+
+                            const existente = document.querySelector(
+                                '#chat-mensagens .balao-msg[data-message-id="' + String(msg.id) + '"]'
+                            );
+
+                            if (existente && typeof window.atualizarBalaoChamada === "function") {
+                                window.atualizarBalaoChamada(msg);
+                            } else if (
+                                typeof window.renderizarBalaoChamada === "function"
+                            ) {
+                                await window.renderizarBalaoChamada(
+                                    msg,
+                                    remetente === meuEmailAtual
+                                );
+                            }
+                        }
+                    }
+
+                    return;
+                }
+
+                // O UPDATE comum abaixo continua cuidando do sistema de "visto".
                 if (remetente !== meuEmailAtual) return;
 
                 atualizarIndicadorVisualizacao(msg.id, msg.visualizada === true);
 
                 if (
                     destinatarioAtual &&
-                    (msg.destinatario_email || "").trim().toLowerCase() ===
+                    destinatario ===
                     (destinatarioAtual || "").trim().toLowerCase() &&
                     window.WhatisCache?.salvarMensagens
                 ) {
