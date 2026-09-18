@@ -1537,8 +1537,8 @@ function carregarDadosAbaVoce() {
     const elemFoto = document.getElementById("voce-foto-perfil");
 
     if (elemNome) elemNome.innerText = usuario || "Sem nome";
-    if (elemEmail) elemEmail.innerText = email || "";
-    if (elemFoto && foto) elemFoto.src = foto;
+    if (elemEmail) elemEmail.innerText = usuario ? `@${usuario}` : "";
+    if (elemFoto) elemFoto.src = foto || "svg/icon.svg";
 
     const temaEscuro = localStorage.getItem("temaEscuro") === "true";
     const permissaoConcedida = ("Notification" in window) && Notification.permission === "granted";
@@ -1890,8 +1890,8 @@ function abrirDadosUsuario() {
         dadosUsuario.textContent = nome.textContent;
     }
 
-    if (email) {
-        dadosEmail.textContent = email.textContent;
+    if (dadosEmail) {
+        dadosEmail.textContent = localStorage.getItem("usuarioLogado") || "";
     }
 
     if (foto) {
@@ -1929,6 +1929,7 @@ function abrirAlterarNome() {
     if (!novoNome || novoNome.trim() === '') return;
 
     document.getElementById('voce-nome-usuario').textContent = novoNome.trim();
+    document.getElementById('voce-email-usuario').textContent = '@' + novoNome.trim();
     document.getElementById('dados-nome-usuario').textContent = novoNome.trim();
     document.getElementById('dados-usuario-atual').textContent = novoNome.trim();
 }
