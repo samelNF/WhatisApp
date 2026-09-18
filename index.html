@@ -26,9 +26,18 @@
     <meta name="apple-mobile-web-app-title" content="WhatisApp">
     <link rel="apple-touch-icon" href="./images/icon-192.png">
     <link rel="manifest" href="manifest.json">
+    <style>
+        /* INICIO SEM FLASH DE LOGIN */
+        body.sessao-resolvendo #inicio,
+        body.sessao-resolvendo #login,
+        body.sessao-resolvendo #criar-conta,
+        body.sessao-resolvendo #etapa-usuario {
+            visibility: hidden !important;
+        }
+    </style>
 </head>
 
-<body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+<body class="sessao-resolvendo" style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
     
     <!-- ABA 1: CONVERSAS E LISTA DE CONTATOS -->
     <div id="tela-conversas" class="aba-conteudo">
