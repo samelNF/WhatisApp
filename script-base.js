@@ -809,36 +809,6 @@ async function obterUsuarioMensagem(email) {
     return data || null;
 }
 
-function obterLarguraBalaoOriginal(idMensagem, textoMensagem) {
-    if (idMensagem !== null && idMensagem !== undefined) {
-        const original = document.querySelector(`.balao-msg[data-message-id="${idMensagem}"]`);
-        if (original) {
-            const largura = Math.round(original.getBoundingClientRect().width);
-            if (largura > 40) return largura;
-        }
-    }
-
-    // Fallback para quando o balão ainda não existe/terminou de carregar.
-    if (textoMensagem && (textoMensagem.startsWith("[FOTO]:") || textoMensagem.startsWith("[VIDEO]:"))) {
-        return Math.min(278, Math.round(window.innerWidth * 0.72));
-    }
-
-    return null;
-}
-
-function aplicarLarguraDaMensagemOriginal(elemento, idMensagem, textoMensagem) {
-    if (!elemento) return;
-
-    const largura = obterLarguraBalaoOriginal(idMensagem, textoMensagem);
-    if (!largura) {
-        elemento.style.removeProperty("--largura-mensagem-original");
-        return;
-    }
-
-    const limite = Math.round(window.innerWidth * 0.78);
-    elemento.style.setProperty("--largura-mensagem-original", Math.min(largura, limite) + "px");
-}
-
 async function renderizarBalao(texto, ehMinha, dataCriacao, idMensagem, mensagemRespondida, corRemetente) {
     const container = document.getElementById("chat-mensagens");
     if (!container) return;
@@ -911,15 +881,6 @@ async function renderizarBalao(texto, ehMinha, dataCriacao, idMensagem, mensagem
             </span>
         </div>
     `;
-
-    const citacaoNoBalao = balao.querySelector(".citacao-resposta");
-    if (citacaoNoBalao && mensagemRespondida) {
-        aplicarLarguraDaMensagemOriginal(
-            citacaoNoBalao,
-            mensagemRespondida.id,
-            mensagemRespondida.texto
-        );
-    }
 
     balao.addEventListener("dblclick", () => {
         iniciarResposta(
@@ -1018,15 +979,6 @@ async function renderizarBalaoGrupo(texto, ehMinha, dataCriacao, nomeRemetente, 
         </div>
     `;
 
-    const citacaoNoBalaoGrupo = balao.querySelector(".citacao-resposta");
-    if (citacaoNoBalaoGrupo && mensagemRespondida) {
-        aplicarLarguraDaMensagemOriginal(
-            citacaoNoBalaoGrupo,
-            mensagemRespondida.id,
-            mensagemRespondida.texto
-        );
-    }
-
     balao.addEventListener("dblclick", () => {
         iniciarResposta(
             idMensagem || null,
@@ -1074,7 +1026,6 @@ function iniciarResposta(idMensagem, nomeRemetente, textoMensagem) {
             textoEl.textContent = textoMensagem;
         }
 
-        aplicarLarguraDaMensagemOriginal(painel, idMensagem, textoMensagem);
         painel.style.display = "flex";
     }
 
@@ -1090,10 +1041,7 @@ function cancelarResposta() {
     const painel = document.getElementById("painel-resposta");
     const input = document.getElementById("input-mensagem");
 
-    if (painel) {
-        painel.style.display = "none";
-        painel.style.removeProperty("--largura-mensagem-original");
-    }
+    if (painel) painel.style.display = "none";
     if (input) input.placeholder = "";
 }
 
