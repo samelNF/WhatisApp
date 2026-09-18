@@ -3273,3 +3273,61 @@ body.subtela-aberta #tela-conversas .topo-conversas {
 .tela-grupo-overlay {
     z-index: 9999 !important;
 }
+
+
+/* ==========================================
+   IOS - SEM ARRASTAR / SEM RUBBER BAND GLOBAL
+   ========================================== */
+/* No iOS o documento inteiro podia ser "puxado" e deslocava elementos fixos.
+   Agora somente as áreas que realmente precisam rolar recebem scroll. */
+@supports (-webkit-touch-callout: none) {
+    html,
+    body {
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: var(--app-viewport-height, 100dvh) !important;
+        min-height: var(--app-viewport-height, 100dvh) !important;
+        max-height: var(--app-viewport-height, 100dvh) !important;
+        overflow: hidden !important;
+        overscroll-behavior: none !important;
+    }
+
+    /* A home continua rolando normalmente, só não arrasta o documento inteiro. */
+    #tela-conversas {
+        height: var(--app-viewport-height, 100dvh) !important;
+        max-height: var(--app-viewport-height, 100dvh) !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        overscroll-behavior-y: none !important;
+        -webkit-overflow-scrolling: auto !important;
+    }
+
+    /* Telas que já possuem rolagem própria ficam isoladas do body. */
+    #tela-voce,
+    #painel-dados-contato .painel-contato-body,
+    #painel-dados-grupo .grupo-panel-conteudo,
+    #painel-dados-grupo .grupo-candidatos-lista,
+    #painel-dados-usuario .dados-usuario-conteudo,
+    #tela-chat .chat-mensagens,
+    .modal-body {
+        overscroll-behavior-y: none !important;
+        -webkit-overflow-scrolling: auto !important;
+    }
+
+    /* Impede o iOS de "pegar" imagem, SVG, botão ou link e arrastar pela tela. */
+    img,
+    svg,
+    button,
+    a,
+    [role="button"] {
+        -webkit-user-drag: none !important;
+        -webkit-touch-callout: none !important;
+    }
+
+    img,
+    svg {
+        user-select: none !important;
+        -webkit-user-select: none !important;
+    }
+}
