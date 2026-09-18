@@ -63,15 +63,22 @@ async function alternarNotificacoes(checkbox) {
             let sistemaAtivado = false;
 
             if (typeof window.ativarSistemaNotificacoes === "function") {
-                sistemaAtivado = await window.ativarSistemaNotificacoes();
+                sistemaAtivado = await window.ativarSistemaNotificacoes(true);
             }
 
-            // Confirmação real: se isto aparecer, permissão + Service Worker estão OK.
-            if (sistemaAtivado && typeof window.testarNotificacaoWhatisApp === "function") {
+            if (!sistemaAtivado) {
+                alert("A permissão foi liberada, mas o Web Push não conseguiu registrar este aparelho. Feche e abra o app e tente ligar as notificações novamente.");
+                checkbox.checked = false;
+                localStorage.setItem("notificacoes", "false");
+                return;
+            }
+
+            // Confirmação local de permissão + Service Worker.
+            if (typeof window.testarNotificacaoWhatisApp === "function") {
                 await window.testarNotificacaoWhatisApp();
             }
 
-            console.log("🔔 Notificações ativadas.");
+            console.log("🔔 Notificações ativadas, inclusive em segundo plano.");
         } else {
             alert("A permissão para notificações foi negada nas configurações do navegador/sistema.");
             checkbox.checked = false;
