@@ -16,12 +16,137 @@
     const cacheUsuarios = new Map();
     const cacheGrupos = new Map();
 
+    // Web Push real: necessário para o Service Worker acordar com o app fechado.
+    const VAPID_PUBLIC_KEY = 'BEq_MCifRw6zyWD8uURMdtoo1iUJ0-OQgeIxkuWOnaEIakLWQ2NNTTMCXLV-DPj8Na5qYpOOGZTu8Vf7Qswm-Is';
+    const PUSH_FUNCTION_URL = 'https://qlvorxobvnjoovqxnfhp.supabase.co/functions/v1/push';
+
     function supabaseAtual() {
         try {
             if (typeof _supabase !== 'undefined' && _supabase) return _supabase;
         } catch (e) {}
         return window._supabase || null;
     }
+
+    function base64UrlParaUint8Array(base64String) {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding)
+            .replace(/-/g, '+')
+            .replace(/_/g, '/');
+
+        const raw = atob(base64);
+        const output = new Uint8Array(raw.length);
+
+        for (let i = 0; i < raw.length; i++) {
+            output[i] = raw.charCodeAt(i);
+        }
+
+        return output;
+    }
+
+    async function chamarPushServidor(payload) {
+        try {
+            const resposta = await fetch(PUSH_FUNCTION_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!resposta.ok) {
+                const texto = await resposta.text().catch(() => '');
+                throw new Error('HTTP ' + resposta.status + (texto ? ': ' + texto : ''));
+            }
+
+            return await resposta.json().catch(() => ({}));
+        } catch (erro) {
+            console.warn('[Web Push] Servidor de push indisponível:', erro);
+            return null;
+        }
+    }
+
+    async function obterAssinaturaPush() {
+        const reg = await garantirServiceWorker();
+        if (!reg?.pushManager) return null;
+
+        try {
+            return await reg.pushManager.getSubscription();
+        } catch (erro) {
+            console.warn('[Web Push] Não foi possível ler a assinatura:', erro);
+            return null;
+        }
+    }
+
+    async function registrarWebPushReal(criarSeNecessario = false) {
+        const email = meuEmailAtual();
+        if (!email) return false;
+
+        const reg = await garantirServiceWorker();
+        if (!reg?.pushManager) {
+            console.warn('[Web Push] PushManager não disponível.');
+            return false;
+        }
+
+        let assinatura = null;
+
+        try {
+            assinatura = await reg.pushManager.getSubscription();
+
+            if (!assinatura && criarSeNecessario) {
+                assinatura = await reg.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: base64UrlParaUint8Array(VAPID_PUBLIC_KEY)
+                });
+            }
+        } catch (erro) {
+            console.error('[Web Push] Falha ao criar assinatura:', erro);
+            return false;
+        }
+
+        if (!assinatura) return false;
+
+        const resultado = await chamarPushServidor({
+            action: 'register',
+            email,
+            subscription: assinatura.toJSON()
+        });
+
+        if (!resultado?.ok) {
+            console.warn('[Web Push] Assinatura existe, mas não foi salva no servidor.');
+            return false;
+        }
+
+        console.log('[Web Push] ✅ Dispositivo inscrito para push em segundo plano.');
+        return true;
+    }
+
+    async function removerWebPushReal() {
+        const email = meuEmailAtual();
+        const assinatura = await obterAssinaturaPush();
+
+        if (!assinatura) return;
+
+        await chamarPushServidor({
+            action: 'unregister',
+            email,
+            endpoint: assinatura.endpoint
+        });
+
+        try {
+            await assinatura.unsubscribe();
+        } catch (e) {}
+    }
+
+    window.enviarPushMensagemServidor = async function (messageId) {
+        if (!messageId || !notificacoesAtivas()) return false;
+
+        const resultado = await chamarPushServidor({
+            action: 'notify-message',
+            message_id: messageId
+        });
+
+        return !!resultado?.ok;
+    };
 
     function notificacoesAtivas() {
         return localStorage.getItem('notificacoes') !== 'false';
@@ -384,13 +509,24 @@
 
         localStorage.setItem('notificacoes', 'true');
         await garantirServiceWorker();
+
+        // Criar a PushSubscription precisa acontecer a partir do gesto do usuário
+        // (o clique no alternador), especialmente no iOS.
+        const webPushRegistrado = await registrarWebPushReal(true);
+
         await iniciarCanal();
+
+        if (!webPushRegistrado) {
+            console.warn('[Web Push] Notificações locais funcionam, mas o push com o app fechado ainda não foi registrado.');
+        }
+
         return true;
     };
 
     window.desativarSistemaNotificacoes = async function () {
         localStorage.setItem('notificacoes', 'false');
         await removerCanalAtual();
+        await removerWebPushReal();
 
         if ('clearAppBadge' in navigator) {
             try { await navigator.clearAppBadge(); } catch (e) {}
@@ -444,6 +580,9 @@
                 'Notification' in window &&
                 Notification.permission === 'granted'
             ) {
+                // Se já existe uma PushSubscription, renova o vínculo com o servidor.
+                // Não cria uma nova automaticamente porque iOS exige gesto do usuário.
+                registrarWebPushReal(false);
                 window.ativarSistemaNotificacoes();
             }
         }
