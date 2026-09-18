@@ -2253,3 +2253,113 @@ body::before {
 #painel-dados-contato .menu-chat-header {
     min-height: calc(60px + env(safe-area-inset-top, 0px));
 }
+
+
+/* ==========================================
+   BALAO COMPACTO PARA RESPOSTAS E MIDIAS
+   ========================================== */
+/* Evita aquele bloco cinza enorme quando o conteúdo é pequeno. */
+#tela-chat .balao-msg {
+    min-width: 0 !important;
+    width: fit-content !important;
+    max-width: min(82%, 520px);
+}
+
+/* A linha só ocupa o tamanho necessário do conteúdo + horário. */
+#tela-chat .balao-linha {
+    width: fit-content;
+    max-width: 100%;
+}
+
+#tela-chat .balao-conteudo {
+    flex: 0 1 auto !important;
+    width: fit-content;
+    max-width: 100%;
+}
+
+/* Mensagem normal curta ainda reserva só o necessário pro relógio/check. */
+#tela-chat .balao-msg:not(.balao-com-midia):not(.balao-com-resposta) .balao-linha {
+    min-width: max-content;
+}
+
+/* Resposta: o cartão citado cresce só até o texto que realmente existe. */
+#tela-chat .balao-com-resposta {
+    min-width: 0 !important;
+    width: fit-content !important;
+}
+
+#tela-chat .balao-com-resposta .citacao-resposta {
+    width: fit-content !important;
+    min-width: 0 !important;
+    max-width: min(320px, 70vw) !important;
+    align-self: flex-start;
+}
+
+#tela-chat .balao-com-resposta .citacao-nome,
+#tela-chat .balao-com-resposta .citacao-texto {
+    width: auto;
+    max-width: min(285px, 64vw);
+}
+
+/* Remove o min-width antigo que deixava respostas curtas gigantes. */
+#tela-chat .balao-msg:has(.citacao-resposta) {
+    min-width: 0 !important;
+}
+
+/* Mídia: imagem/vídeo define a largura do balão.
+   Horário/check descem pra uma linha curta embaixo e não alargam o card. */
+#tela-chat .balao-com-midia .balao-linha {
+    display: grid;
+    grid-template-columns: max-content;
+    width: fit-content;
+    max-width: 100%;
+    gap: 4px;
+}
+
+#tela-chat .balao-com-midia .balao-conteudo {
+    width: fit-content;
+    max-width: 100%;
+}
+
+#tela-chat .balao-com-midia .balao-meta {
+    justify-self: end;
+    margin-right: 1px;
+}
+
+/* Mantém a proporção natural e só limita o tamanho máximo. */
+#tela-chat .balao-com-midia .balao-midia {
+    width: auto !important;
+    max-width: min(260px, 70vw) !important;
+    min-width: 0 !important;
+}
+
+/* Vídeo sem dimensão própria recebe um tamanho razoável, mas nunca cria
+   uma faixa cinza larga à direita. */
+#tela-chat .balao-com-midia .balao-video {
+    width: min(260px, 70vw) !important;
+}
+
+/* Se resposta + mídia estiverem juntas, nenhum dos dois força um card gigante. */
+#tela-chat .balao-com-resposta.balao-com-midia {
+    width: fit-content !important;
+    max-width: min(82%, 520px);
+}
+
+#tela-chat .balao-com-resposta.balao-com-midia .citacao-resposta {
+    max-width: min(260px, 70vw) !important;
+}
+
+@media (max-width: 420px) {
+    #tela-chat .balao-com-resposta .citacao-resposta {
+        max-width: 72vw !important;
+    }
+
+    #tela-chat .balao-com-midia .balao-midia,
+    #tela-chat .balao-com-midia .balao-video {
+        max-width: 72vw !important;
+    }
+
+    #tela-chat .balao-msg:has(.citacao-resposta) {
+        min-width: 0 !important;
+    }
+}
