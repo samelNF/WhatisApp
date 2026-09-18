@@ -1103,7 +1103,7 @@ async function obterUsuarioMensagem(email) {
     return data || null;
 }
 
-async function renderizarBalao(texto, ehMinha, dataCriacao, idMensagem, mensagemRespondida, corRemetente) {
+async function renderizarBalao(texto, ehMinha, dataCriacao, idMensagem, mensagemRespondida, corRemetente, visualizada = false) {
     const container = document.getElementById("chat-mensagens");
     if (!container) return;
 
@@ -1171,7 +1171,13 @@ async function renderizarBalao(texto, ehMinha, dataCriacao, idMensagem, mensagem
             <div class="balao-conteudo">${conteudoHtml}</div>
             <span class="balao-meta">
                 <span class="balao-hora">${horaFormatada}</span>
-                ${ehMinha ? '<span class="balao-visto" aria-label="Enviada">✓</span>' : ''}
+                ${ehMinha ? `
+                    <span class="balao-visto ${visualizada ? 'visualizada' : ''}"
+                          aria-label="${visualizada ? 'Visualizada' : 'Enviada'}">
+                        <span class="balao-visto-check">✓</span>
+                        <span class="balao-visto-check">✓</span>
+                    </span>
+                ` : ''}
             </span>
         </div>
     `;
@@ -1478,8 +1484,84 @@ async function renderizarMensagensPrivadasDoCache(mensagens, chaveConversa, limp
             (msg.remetente_email || "").trim().toLowerCase() === meuEmail,
             msg.created_at,
             msg.id,
-            dadosRespondida
+            dadosRespondida,
+            null,
+            msg.visualizada === true
         );
+    }
+}
+
+function atualizarIndicadorVisualizacao(idMensagem, visualizada) {
+    if (idMensagem === null || idMensagem === undefined) return;
+
+    const balao = document.querySelector(
+        `#chat-mensagens .balao-msg[data-message-id="${String(idMensagem)}"]`
+    );
+
+    const indicador = balao?.querySelector(".balao-visto");
+    if (!indicador) return;
+
+    indicador.classList.toggle("visualizada", visualizada === true);
+    indicador.setAttribute(
+        "aria-label",
+        visualizada === true ? "Visualizada" : "Enviada"
+    );
+}
+
+async function sincronizarVisualizacoesDoChat(emailContato, chaveConversa) {
+    const meuEmail = (localStorage.getItem("usuarioLogado") || "").trim();
+    if (!meuEmail || !emailContato || !_supabase) return;
+
+    const { data, error } = await _supabase
+        .from("mensagens")
+        .select("id")
+        .eq("remetente_email", meuEmail)
+        .eq("destinatario_email", emailContato)
+        .is("grupo_id", null)
+        .eq("visualizada", true);
+
+    if (error) {
+        console.warn("Erro ao sincronizar visualizações:", error.message);
+        return;
+    }
+
+    const ids = (data || []).map(item => item.id);
+
+    ids.forEach(id => atualizarIndicadorVisualizacao(id, true));
+
+    if (ids.length && window.WhatisCache?.atualizarMensagensPorIds) {
+        await window.WhatisCache.atualizarMensagensPorIds(
+            chaveConversa,
+            ids,
+            { visualizada: true }
+        );
+    }
+}
+
+async function marcarMensagensComoVisualizadas(emailContato, chaveConversa) {
+    const meuEmail = (localStorage.getItem("usuarioLogado") || "").trim();
+    const telaChat = document.getElementById("tela-chat");
+
+    if (!meuEmail || !emailContato || !_supabase) return;
+    if (document.visibilityState !== "visible") return;
+    if (!telaChat?.classList.contains("ativa")) return;
+
+    const { data, error } = await _supabase
+        .from("mensagens")
+        .update({ visualizada: true })
+        .eq("remetente_email", emailContato)
+        .eq("destinatario_email", meuEmail)
+        .is("grupo_id", null)
+        .eq("visualizada", false)
+        .select("*");
+
+    if (error) {
+        console.warn("Erro ao marcar mensagens como visualizadas:", error.message);
+        return;
+    }
+
+    if (data?.length && window.WhatisCache) {
+        await window.WhatisCache.salvarMensagens(chaveConversa, data);
     }
 }
 
@@ -1567,6 +1649,9 @@ async function carregarMensagens() {
         const combinadas = mensagensCache.concat(apenasNovas);
         await renderizarMensagensPrivadasDoCache(combinadas, chaveConversa, false);
     }
+
+    await sincronizarVisualizacoesDoChat(emailContato, chaveConversa);
+    await marcarMensagensComoVisualizadas(emailContato, chaveConversa);
 
     container.scrollTop = container.scrollHeight;
 }
@@ -2027,6 +2112,38 @@ function inscreverRealtime() {
                         }
                         await carregarMensagens();
                     }
+                }
+            }
+        )
+        .on(
+            'postgres_changes',
+            {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'mensagens'
+            },
+            async (payload) => {
+                const msg = payload.new;
+                if (!msg || msg.grupo_id) return;
+
+                const remetente = (msg.remetente_email || "").trim().toLowerCase();
+                const meuEmailAtual = (meuEmail || "").trim().toLowerCase();
+
+                // Só interessa ao remetente desta mensagem.
+                if (remetente !== meuEmailAtual) return;
+
+                atualizarIndicadorVisualizacao(msg.id, msg.visualizada === true);
+
+                if (
+                    destinatarioAtual &&
+                    (msg.destinatario_email || "").trim().toLowerCase() ===
+                    (destinatarioAtual || "").trim().toLowerCase() &&
+                    window.WhatisCache?.salvarMensagens
+                ) {
+                    await window.WhatisCache.salvarMensagens(
+                        window.WhatisCache.conversaPrivada(destinatarioAtual),
+                        [msg]
+                    );
                 }
             }
         )
