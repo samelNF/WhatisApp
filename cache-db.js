@@ -11,7 +11,7 @@
     const STORE_ESTADO = 'estado';
     const STORE_CONVERSAS = 'conversas';
     const MAX_MENSAGENS_POR_CONVERSA = 500;
-    const CACHE_MIDIAS = 'whatisapp-midias-v1';
+    const CACHE_MIDIAS = 'whatisapp-media-v1';
 
     let dbPromise = null;
 
