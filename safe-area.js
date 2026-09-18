@@ -39,6 +39,29 @@
         body.classList.toggle('subtela-aberta', temSubtelaAberta);
     }
 
+    function bloquearArrastoNativoIOS() {
+        const ehIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+        if (!ehIOS || document.documentElement.dataset.iosArrastoBloqueado === 'true') {
+            return;
+        }
+
+        document.documentElement.dataset.iosArrastoBloqueado = 'true';
+
+        document.addEventListener('dragstart', (event) => {
+            const alvo = event.target;
+
+            if (
+                alvo?.matches?.('input, textarea, select, [contenteditable="true"]')
+            ) {
+                return;
+            }
+
+            event.preventDefault();
+        }, { passive: false });
+    }
+
     function atualizarAlturaViewport() {
         const vv = window.visualViewport;
 
@@ -203,6 +226,8 @@
     setTimeout(solicitarAtualizacao, 50);
     setTimeout(solicitarAtualizacao, 250);
     setTimeout(solicitarAtualizacao, 800);
+
+    bloquearArrastoNativoIOS();
 
     window.atualizarSafeArea = atualizarSafeArea;
     window.atualizarAlturaViewport = atualizarAlturaViewport;
