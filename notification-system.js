@@ -132,6 +132,17 @@
     function chatAtualJaMostraMensagem(msg) {
         if (document.visibilityState !== 'visible') return false;
 
+        const telaChat = document.getElementById('tela-chat');
+        if (!telaChat) return false;
+
+        const estiloChat = getComputedStyle(telaChat);
+        const chatVisivel =
+            estiloChat.display !== 'none' &&
+            estiloChat.visibility !== 'hidden' &&
+            telaChat.classList.contains('ativa');
+
+        if (!chatVisivel) return false;
+
         if (msg.grupo_id && window.grupoAtualId) {
             return String(msg.grupo_id) === String(window.grupoAtualId);
         }
@@ -237,6 +248,10 @@
             }
         });
     }
+
+    // Também pode ser chamado pelo Realtime principal do aplicativo.
+    // Assim a notificação não depende de um segundo canal separado para funcionar.
+    window.processarNotificacaoMensagem = processarMensagemRecebida;
 
     async function buscarMeusGrupos() {
         const supabase = supabaseAtual();
