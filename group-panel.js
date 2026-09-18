@@ -28,12 +28,43 @@
             img.src = fotoUrl;
             img.style.backgroundColor = 'transparent';
             img.classList.remove('avatar-sem-foto');
-        } else if (typeof window.aplicarAvatarUsuario === 'function') {
-            window.aplicarAvatarUsuario(img, '', '#3a3a3c');
         } else {
-            img.src = 'svg/user-placeholder.svg';
-            img.style.backgroundColor = '#3a3a3c';
+            img.src = 'svg/group-placeholder.svg';
+            img.style.backgroundColor = '#482133';
+            img.classList.add('avatar-sem-foto');
         }
+    }
+
+    function formatarDataCriacaoGrupo(dataIso) {
+        if (!dataIso) return '';
+
+        const data = new Date(dataIso);
+        if (Number.isNaN(data.getTime())) return '';
+
+        const agora = new Date();
+        const ontem = new Date(agora);
+        ontem.setDate(agora.getDate() - 1);
+
+        const mesmaData = (a, b) =>
+            a.getFullYear() === b.getFullYear() &&
+            a.getMonth() === b.getMonth() &&
+            a.getDate() === b.getDate();
+
+        const hora = data.toLocaleTimeString('pt-BR', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+
+        if (mesmaData(data, agora)) return 'Criado hoje à(s) ' + hora;
+        if (mesmaData(data, ontem)) return 'Criado ontem à(s) ' + hora;
+
+        const dia = data.toLocaleDateString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: data.getFullYear() === agora.getFullYear() ? undefined : 'numeric'
+        });
+
+        return 'Criado em ' + dia + ' à(s) ' + hora;
     }
 
     window.abrirPainelDadosChat = function () {
@@ -67,7 +98,7 @@
 
         const { data: grupo, error } = await supabase
             .from('grupos')
-            .select('id, nome, foto_url, criado_por')
+            .select('*')
             .eq('id', grupoId)
             .maybeSingle();
 
@@ -84,20 +115,42 @@
         const nome = document.getElementById('grupo-info-nome');
         const foto = document.getElementById('grupo-info-foto');
         const criador = document.getElementById('grupo-info-criador');
+        const dataCriacao = document.getElementById('grupo-info-data-criacao');
 
         if (nome) nome.textContent = grupo.nome || 'Grupo';
         aplicarAvatarGrupo(foto, grupo.foto_url || '');
 
+        const meuEmail = (localStorage.getItem('usuarioLogado') || '').toLowerCase();
+        const souCriador = (grupo.criado_por || '').toLowerCase() === meuEmail;
+
         if (criador) {
-            criador.textContent = grupo.criado_por
-                ? 'Criado por ' + grupo.criado_por
-                : 'Grupo';
+            if (souCriador) {
+                criador.textContent = 'Criado por você.';
+            } else if (grupo.criado_por) {
+                const { data: autor } = await supabase
+                    .from('usuarios')
+                    .select('usuario')
+                    .eq('email', grupo.criado_por)
+                    .maybeSingle();
+
+                criador.textContent = 'Criado por ' + (autor?.usuario || grupo.criado_por) + '.';
+            } else {
+                criador.textContent = '';
+            }
+        }
+
+        if (dataCriacao) {
+            dataCriacao.textContent = formatarDataCriacaoGrupo(grupo.created_at);
         }
 
         painel.classList.remove('hidden');
         painel.style.display = 'flex';
 
         await window.carregarMembrosPainelGrupo();
+
+        if (typeof window.atualizarSafeArea === 'function') {
+            requestAnimationFrame(() => window.atualizarSafeArea());
+        }
     };
 
     window.carregarMembrosPainelGrupo = async function () {
@@ -105,6 +158,8 @@
         const grupoId = window.grupoAtualId;
         const lista = document.getElementById('grupo-membros-lista');
         const contador = document.getElementById('grupo-membros-contador');
+        const contadorResumo = document.getElementById('grupo-resumo-contador');
+        const resumo = document.getElementById('grupo-info-resumo');
         const btnAdicionar = document.getElementById('btn-grupo-adicionar-membro');
         const painel = document.getElementById('painel-dados-grupo');
 
@@ -124,7 +179,25 @@
         }
 
         const membros = relacoes || [];
-        if (contador) contador.textContent = String(membros.length);
+        const totalMembros = membros.length;
+
+        if (contador) contador.textContent = String(totalMembros);
+        if (contadorResumo) contadorResumo.textContent = String(totalMembros);
+
+        if (resumo) {
+            resumo.innerHTML = 'Grupo · <span id="grupo-resumo-contador">' +
+                totalMembros +
+                '</span> ' +
+                (totalMembros === 1 ? 'membro' : 'membros');
+        }
+
+        const tituloMembros = document.querySelector('#painel-dados-grupo .grupo-membros-titulo-linha h3');
+        if (tituloMembros) {
+            tituloMembros.innerHTML = '<span id="grupo-membros-contador">' +
+                totalMembros +
+                '</span> ' +
+                (totalMembros === 1 ? 'membro' : 'membros');
+        }
 
         const emails = [...new Set(membros.map(m => m.usuario_email).filter(Boolean))];
         let usuarios = [];
@@ -165,16 +238,24 @@
                 const nome = usuario?.usuario || membro.usuario_nome || membro.usuario_email || 'Participante';
                 const ehCriador = (membro.usuario_email || '').toLowerCase() === criadoPor.toLowerCase();
 
+                const emailMembro = (membro.usuario_email || '').toLowerCase();
+                const ehEu = emailMembro === meuEmail.toLowerCase();
                 const item = document.createElement('div');
                 item.className = 'grupo-membro-item';
+                item.dataset.nome = nome.toLowerCase();
+                item.dataset.email = emailMembro;
+
+                if (souCriador && !ehCriador && !ehEu) {
+                    item.classList.add('grupo-membro-removivel');
+                    item.title = 'Toque para remover este membro';
+                }
 
                 item.innerHTML = `
                     <img class="grupo-membro-avatar" src="" alt="">
                     <div class="grupo-membro-info">
-                        <strong>${escapeHtml(nome)}</strong>
-                        <small>${ehCriador ? 'Criador do grupo' : escapeHtml(membro.usuario_email || '')}</small>
+                        <strong>${ehEu ? 'Você' : escapeHtml(nome)}</strong>
                     </div>
-                    ${souCriador && !ehCriador ? '<button type="button" class="grupo-remover-membro">Remover</button>' : ''}
+                    ${ehCriador ? '<span class="grupo-membro-admin">Admin</span>' : ''}
                 `;
 
                 const avatar = item.querySelector('.grupo-membro-avatar');
@@ -185,13 +266,9 @@
                     avatar.style.backgroundColor = usuario?.foto_url ? 'transparent' : (usuario?.cor || '#3a3a3c');
                 }
 
-                const remover = item.querySelector('.grupo-remover-membro');
-                if (remover) {
-                    remover.addEventListener('click', () => {
-                        window.removerMembroDoGrupo(
-                            membro.usuario_email,
-                            nome
-                        );
+                if (souCriador && !ehCriador && !ehEu) {
+                    item.addEventListener('click', () => {
+                        window.removerMembroDoGrupo(membro.usuario_email, nome);
                     });
                 }
 
@@ -384,6 +461,111 @@
 
         await window.carregarMembrosPainelGrupo();
     };
+
+    window.alternarMenuGrupoDados = function (event) {
+        if (event) event.stopPropagation();
+        document.getElementById('grupo-dados-menu')?.classList.toggle('hidden');
+    };
+
+    window.fecharMenuGrupoDados = function () {
+        document.getElementById('grupo-dados-menu')?.classList.add('hidden');
+    };
+
+    window.alternarPesquisaMembrosGrupo = function () {
+        const caixa = document.getElementById('grupo-pesquisa-membros');
+        const input = document.getElementById('grupo-pesquisa-input');
+        if (!caixa) return;
+
+        caixa.classList.toggle('hidden');
+
+        if (!caixa.classList.contains('hidden') && input) {
+            setTimeout(() => input.focus(), 30);
+        } else if (input) {
+            input.value = '';
+            window.filtrarMembrosGrupo('');
+        }
+    };
+
+    window.filtrarMembrosGrupo = function (termo) {
+        const busca = (termo || '').trim().toLowerCase();
+        document.querySelectorAll('#grupo-membros-lista .grupo-membro-item').forEach(item => {
+            const nome = item.dataset.nome || '';
+            const email = item.dataset.email || '';
+            item.style.display = (!busca || nome.includes(busca) || email.includes(busca)) ? 'flex' : 'none';
+        });
+    };
+
+    window.iniciarLigacaoGrupo = window.iniciarLigacaoGrupo || function () {
+        console.log('[Grupo] Ligação de voz em grupo ainda não implementada.');
+    };
+
+    window.iniciarVideoGrupo = window.iniciarVideoGrupo || function () {
+        console.log('[Grupo] Chamada de vídeo em grupo ainda não implementada.');
+    };
+
+    window.sairDoGrupoAtual = async function () {
+        const supabase = supabaseAtual();
+        const grupoId = window.grupoAtualId;
+        const painel = document.getElementById('painel-dados-grupo');
+        const meuEmail = localStorage.getItem('usuarioLogado') || '';
+
+        if (!supabase || !grupoId || !meuEmail) return;
+        if (!confirm('Sair deste grupo?')) return;
+
+        const criadoPor = (painel?.dataset.criadoPor || '').toLowerCase();
+
+        if (criadoPor === meuEmail.toLowerCase()) {
+            const { data: membros } = await supabase
+                .from('grupo_membros')
+                .select('usuario_email')
+                .eq('grupo_id', grupoId);
+
+            const proximoAdmin = (membros || []).find(
+                m => (m.usuario_email || '').toLowerCase() !== meuEmail.toLowerCase()
+            );
+
+            if (!proximoAdmin) {
+                alert('Você é o único membro do grupo. A exclusão completa do grupo ainda não foi implementada.');
+                return;
+            }
+
+            const { error: erroAdmin } = await supabase
+                .from('grupos')
+                .update({ criado_por: proximoAdmin.usuario_email })
+                .eq('id', grupoId);
+
+            if (erroAdmin) {
+                console.error('[Grupo] Erro transferindo administração:', erroAdmin);
+                alert('Não foi possível transferir a administração do grupo.');
+                return;
+            }
+        }
+
+        const { error } = await supabase
+            .from('grupo_membros')
+            .delete()
+            .eq('grupo_id', grupoId)
+            .eq('usuario_email', meuEmail);
+
+        if (error) {
+            console.error('[Grupo] Erro ao sair:', error);
+            alert('Não foi possível sair do grupo.');
+            return;
+        }
+
+        window.fecharPainelDadosGrupo();
+        if (typeof fecharChat === 'function') fecharChat();
+        if (typeof carregarListaContatos === 'function') carregarListaContatos();
+    };
+
+    document.addEventListener('click', (event) => {
+        const menu = document.getElementById('grupo-dados-menu');
+        const botao = event.target.closest?.('.grupo-mais-btn');
+
+        if (menu && !botao && !menu.contains(event.target)) {
+            menu.classList.add('hidden');
+        }
+    });
 
     window.acionarTrocaFundoGrupo = function () {
         document.getElementById('input-fundo-grupo')?.click();
