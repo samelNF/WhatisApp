@@ -405,3 +405,300 @@
         border-radius: 26px;
     }
 }
+
+
+/* ==========================================
+   LIQUID GLASS GLOBAL - iOS
+   ========================================== */
+:root {
+    --glass-bg: rgba(255, 255, 255, 0.085);
+    --glass-bg-strong: rgba(255, 255, 255, 0.13);
+    --glass-border: rgba(255, 255, 255, 0.18);
+    --glass-border-soft: rgba(255, 255, 255, 0.10);
+    --glass-highlight: rgba(255, 255, 255, 0.18);
+    --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.30),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+                    inset 0 -1px 0 rgba(255, 255, 255, 0.035);
+    --glass-blur: blur(24px) saturate(175%);
+    --glass-transition: transform .16s ease, background .18s ease,
+                        border-color .18s ease, box-shadow .18s ease;
+}
+
+/* Superfícies / molduras */
+.pesquisa,
+.baixo,
+.dropdown-menu,
+.modal-content,
+.dados-opcoes,
+#tela-voce .voce-config-card,
+#tela-voce .voce-sair-card,
+.chat-header,
+.chat-input-box,
+.chat-action-bar,
+#painel-dados-contato #btn-tema-conversa,
+#modal-novo-contato .novo-contato-card,
+#modal-novo-contato .novo-contato-campo,
+.barra-pesquisa-grupo input,
+#nome-grupo-input,
+.autenticacao-box input,
+.input-usuario-etapa2,
+.campo-senha input {
+    background:
+        linear-gradient(145deg,
+            rgba(255,255,255,.14) 0%,
+            rgba(255,255,255,.075) 38%,
+            rgba(255,255,255,.045) 100%) !important;
+    border: 1px solid var(--glass-border) !important;
+    box-shadow: var(--glass-shadow) !important;
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+}
+
+/* A barra inferior fica mais translúcida pra deixar o conteúdo "atravessar" o vidro */
+.baixo {
+    background:
+        linear-gradient(145deg,
+            rgba(255,255,255,.20),
+            rgba(255,255,255,.075) 55%,
+            rgba(255,255,255,.045)) !important;
+    border-color: rgba(255,255,255,.22) !important;
+    box-shadow:
+        0 16px 40px rgba(0,0,0,.38),
+        inset 0 1px 0 rgba(255,255,255,.24),
+        inset 0 -1px 0 rgba(255,255,255,.05) !important;
+}
+
+/* Menus e cards flutuantes */
+.dropdown-menu,
+.modal-content,
+#modal-novo-contato .novo-contato-card {
+    background:
+        radial-gradient(circle at 18% 0%,
+            rgba(255,255,255,.17),
+            rgba(255,255,255,.06) 38%,
+            rgba(25,25,25,.58) 100%) !important;
+    border-color: rgba(255,255,255,.20) !important;
+    box-shadow:
+        0 24px 60px rgba(0,0,0,.48),
+        inset 0 1px 0 rgba(255,255,255,.20),
+        inset 0 -1px 0 rgba(255,255,255,.04) !important;
+}
+
+/* Modal de novo contato: mantém o formato grande da tela e só troca o material */
+#modal-novo-contato .novo-contato-card {
+    -webkit-backdrop-filter: blur(34px) saturate(190%) !important;
+    backdrop-filter: blur(34px) saturate(190%) !important;
+}
+
+#modal-novo-contato .novo-contato-campo {
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.13),
+        0 8px 24px rgba(0,0,0,.18) !important;
+}
+
+/* Molduras de configuração agrupadas */
+.dados-opcoes,
+#tela-voce .voce-config-card,
+#tela-voce .voce-sair-card {
+    background:
+        linear-gradient(150deg,
+            rgba(255,255,255,.115),
+            rgba(255,255,255,.052) 58%,
+            rgba(255,255,255,.035)) !important;
+    border-color: rgba(255,255,255,.13) !important;
+    box-shadow:
+        0 14px 36px rgba(0,0,0,.28),
+        inset 0 1px 0 rgba(255,255,255,.13) !important;
+}
+
+/* Separadores dentro dos cards viram linhas de vidro bem discretas */
+#tela-voce .voce-config-row:not(:last-child)::after,
+.dados-opcao:not(:last-child) {
+    border-color: rgba(255,255,255,.08) !important;
+}
+#tela-voce .voce-config-row:not(:last-child)::after {
+    background: rgba(255,255,255,.09) !important;
+}
+
+/* Botões de vidro neutros */
+button,
+.btn-abrir-pedido {
+    transition: var(--glass-transition);
+    -webkit-tap-highlight-color: transparent;
+}
+
+button:not(.voce-config-row):not(.voce-sair-btn):not(.campo-senha button),
+.btn-abrir-pedido,
+#modal-novo-contato .novo-contato-canto {
+    border: 1px solid rgba(255,255,255,.19) !important;
+    background:
+        linear-gradient(145deg,
+            rgba(255,255,255,.18),
+            rgba(255,255,255,.075) 58%,
+            rgba(255,255,255,.045)) !important;
+    color: #FAFAFA;
+    box-shadow:
+        0 8px 22px rgba(0,0,0,.24),
+        inset 0 1px 0 rgba(255,255,255,.20),
+        inset 0 -1px 0 rgba(255,255,255,.035) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(180%);
+    backdrop-filter: blur(18px) saturate(180%);
+}
+
+/* Botões redondos do topo */
+.cinza,
+.verde,
+.btn-voltar-dados,
+#painel-dados-contato .close-btn,
+#modal-novo-contato .novo-contato-canto {
+    box-shadow:
+        0 8px 22px rgba(0,0,0,.30),
+        inset 0 1px 0 rgba(255,255,255,.24),
+        inset 0 -1px 0 rgba(255,255,255,.05) !important;
+}
+
+/* Botões coloridos continuam com identidade, mas passam a parecer vidro tingido */
+.verde,
+.grande,
+.btn-concluir-usuario,
+.trem button,
+.btn-concluir-grupo,
+.btn-enviar {
+    background:
+        linear-gradient(145deg,
+            rgba(255,170,82,.92),
+            rgba(255,123,0,.68) 52%,
+            rgba(185,78,0,.58)) !important;
+    border-color: rgba(255,210,160,.36) !important;
+    color: #fff !important;
+    box-shadow:
+        0 10px 26px rgba(255,123,0,.18),
+        inset 0 1px 0 rgba(255,255,255,.30),
+        inset 0 -1px 0 rgba(90,35,0,.18) !important;
+}
+
+.btn-success {
+    background:
+        linear-gradient(145deg,
+            rgba(83,224,132,.88),
+            rgba(37,211,102,.62)) !important;
+    border-color: rgba(165,255,196,.28) !important;
+}
+
+.btn-danger {
+    background:
+        linear-gradient(145deg,
+            rgba(255,111,99,.90),
+            rgba(234,67,53,.64)) !important;
+    border-color: rgba(255,180,173,.30) !important;
+}
+
+/* Botões transparentes que precisam continuar discretos */
+.btn-voltar,
+.close-btn,
+.fotoAnexar,
+.campo-senha button {
+    background:
+        linear-gradient(145deg,
+            rgba(255,255,255,.10),
+            rgba(255,255,255,.025)) !important;
+    border-color: rgba(255,255,255,.10) !important;
+}
+
+/* Itens clicáveis dentro de um grande painel de vidro não ganham outra moldura pesada */
+#tela-voce .voce-config-row,
+#tela-voce .voce-sair-btn,
+.dados-opcao {
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+#tela-voce button.voce-config-row:active,
+#tela-voce .voce-sair-btn:active,
+.dados-opcao:active,
+.dropdown-menu li:active {
+    background: rgba(255,255,255,.10) !important;
+}
+
+/* Reflexo sutil na área principal do perfil */
+#tela-voce .voce-perfil-hero {
+    border: 1px solid transparent;
+}
+#tela-voce .voce-perfil-hero:active {
+    background:
+        linear-gradient(145deg,
+            rgba(255,255,255,.11),
+            rgba(255,255,255,.035)) !important;
+    border-color: rgba(255,255,255,.10);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+}
+
+/* Inputs com profundidade de vidro */
+.autenticacao-box input:focus,
+.input-usuario-etapa2:focus,
+.pesquisa:focus-within,
+#modal-novo-contato .novo-contato-campo:focus-within,
+.barra-pesquisa-grupo input:focus,
+#nome-grupo-input:focus {
+    border-color: rgba(255,255,255,.32) !important;
+    box-shadow:
+        0 0 0 3px rgba(255,255,255,.045),
+        0 10px 28px rgba(0,0,0,.24),
+        inset 0 1px 0 rgba(255,255,255,.19) !important;
+}
+
+/* Interação "gelatinosa" sem exagerar */
+button:not(:disabled):active,
+.btn-abrir-pedido:active {
+    transform: scale(.955);
+    filter: brightness(1.08);
+}
+
+button:not(:disabled):hover,
+.btn-abrir-pedido:hover {
+    border-color: rgba(255,255,255,.28) !important;
+}
+
+/* Check/switch também recebe vidro */
+.slider {
+    background:
+        linear-gradient(145deg,
+            rgba(255,255,255,.16),
+            rgba(255,255,255,.075)) !important;
+    border: 1px solid rgba(255,255,255,.13);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.14),
+        0 6px 18px rgba(0,0,0,.18);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+}
+input:checked + .slider {
+    background:
+        linear-gradient(145deg,
+            rgba(255,167,76,.88),
+            rgba(255,123,0,.66)) !important;
+}
+.slider:before {
+    box-shadow:
+        0 2px 7px rgba(0,0,0,.28),
+        inset 0 1px 0 rgba(255,255,255,.85);
+}
+
+/* Fallback em navegadores sem backdrop-filter */
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+    .pesquisa,
+    .baixo,
+    .dropdown-menu,
+    .modal-content,
+    .dados-opcoes,
+    #tela-voce .voce-config-card,
+    #tela-voce .voce-sair-card,
+    .chat-header,
+    .chat-input-box,
+    .chat-action-bar,
+    #modal-novo-contato .novo-contato-card,
+    #modal-novo-contato .novo-contato-campo {
+        background-color: rgba(35,35,35,.94) !important;
+    }
+}
