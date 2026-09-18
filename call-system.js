@@ -501,7 +501,16 @@
     }
 
     function criarPeer() {
-        fecharPeer();
+        // Fecha somente a conexão anterior. O microfone recém-aberto precisa
+        // continuar vivo para ser adicionado ao novo RTCPeerConnection.
+        if (peer) {
+            try {
+                peer.onicecandidate = null;
+                peer.ontrack = null;
+                peer.onconnectionstatechange = null;
+                peer.close();
+            } catch (e) {}
+        }
 
         peer = new RTCPeerConnection(RTC_CONFIG);
         streamRemoto = new MediaStream();
