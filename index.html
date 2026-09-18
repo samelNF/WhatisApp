@@ -14,6 +14,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="cache-db.js" defer></script>
     <script src="audio-system.js" defer></script>
+    <script src="camera-system.js" defer></script>
     <script src="script.js" defer></script>
     <script src="chat-visual.js" defer></script>
     <script src="safe-area.js" defer></script>
@@ -467,7 +468,7 @@
                     </button>
                 </div>
 
-                <button type="button" class="chat-footer-icon chat-camera-btn" onclick="acionarSeletorFotoChat()" aria-label="Câmera" title="Câmera">
+                <button type="button" class="chat-footer-icon chat-camera-btn" onclick="abrirCameraWhatisApp()" aria-label="Câmera" title="Câmera">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M4 7.5h3l1.5-2h7l1.5 2h3a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9.5a2 2 0 0 1 2-2Z"></path>
                         <circle cx="12" cy="13" r="4"></circle>
@@ -496,6 +497,109 @@
                         <i class="fas fa-user-check"></i> Aceitar
                     </button>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CÂMERA INTEGRADA -->
+    <section id="camera-whatisapp" class="camera-whatisapp hidden" aria-label="Câmera do WhatisApp">
+        <video
+            id="camera-preview"
+            class="camera-preview"
+            autoplay
+            muted
+            playsinline
+        ></video>
+
+        <canvas id="camera-canvas" class="camera-canvas" aria-hidden="true"></canvas>
+
+        <div class="camera-topbar">
+            <button
+                type="button"
+                class="camera-circle-btn camera-close-btn"
+                onclick="fecharCameraWhatisApp()"
+                aria-label="Fechar câmera"
+            >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 6l12 12M18 6 6 18"></path>
+                </svg>
+            </button>
+
+            <span id="camera-video-timer" class="camera-video-timer hidden">0:00</span>
+
+            <button
+                type="button"
+                id="camera-flash"
+                class="camera-circle-btn camera-flash-btn indisponivel"
+                onclick="alternarFlashCameraWhatisApp()"
+                aria-label="Flash"
+                disabled
+            >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M13 2 5 14h6l-1 8 8-12h-6z"></path>
+                    <path class="camera-flash-off-line" d="M4 4l16 16"></path>
+                </svg>
+            </button>
+        </div>
+
+        <div class="camera-bottom-area">
+            <div class="camera-controls-row">
+                <button
+                    type="button"
+                    class="camera-side-btn camera-gallery-btn"
+                    onclick="abrirGaleriaCameraWhatisApp()"
+                    aria-label="Abrir galeria"
+                >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+                        <circle cx="9" cy="9" r="2"></circle>
+                        <path d="m4 17 5-5 4 4 2-2 5 5"></path>
+                    </svg>
+                </button>
+
+                <button
+                    type="button"
+                    id="camera-shutter"
+                    class="camera-shutter"
+                    onclick="acionarObturadorWhatisApp()"
+                    aria-label="Capturar"
+                >
+                    <span class="camera-shutter-inner"></span>
+                </button>
+
+                <button
+                    type="button"
+                    class="camera-side-btn camera-switch-btn"
+                    onclick="trocarCameraWhatisApp()"
+                    aria-label="Trocar câmera"
+                >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M20 7v5h-5"></path>
+                        <path d="M4 17v-5h5"></path>
+                        <path d="M6.1 9A7 7 0 0 1 18.5 6.5L20 8"></path>
+                        <path d="M17.9 15A7 7 0 0 1 5.5 17.5L4 16"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="camera-modes" role="tablist" aria-label="Modo da câmera">
+                <button
+                    type="button"
+                    data-camera-mode="video"
+                    onclick="definirModoCameraWhatisApp('video')"
+                    role="tab"
+                >
+                    VÍDEO
+                </button>
+                <button
+                    type="button"
+                    data-camera-mode="foto"
+                    class="ativo"
+                    onclick="definirModoCameraWhatisApp('foto')"
+                    role="tab"
+                >
+                    FOTO
+                </button>
             </div>
         </div>
     </section>
