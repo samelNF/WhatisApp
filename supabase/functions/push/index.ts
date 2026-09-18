@@ -10,11 +10,37 @@ const corsHeaders = {
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
-    headers: {
-      ...corsHeaders,
-      "Content-Type": "application/json",
-    },
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+
+function adminKey() {
+  const modern = Deno.env.get("SUPABASE_SECRET_KEYS");
+  if (modern) {
+    try {
+      const parsed = JSON.parse(modern);
+      if (parsed?.default) return parsed.default;
+    } catch (_) {}
+  }
+
+  return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+}
+
+function b64url(bytes: Uint8Array) {
+  let binary = "";
+  for (const b of bytes) binary += String.fromCharCode(b);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+async function sha256(text: string) {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(text),
+  );
+
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
 
 function textoNotificacao(texto?: string | null) {
   if (!texto) return "Nova mensagem";
@@ -34,73 +60,127 @@ Deno.serve(async (req) => {
     return json({ ok: false, error: "Método não permitido." }, 405);
   }
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY");
-  const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY");
-  const vapidSubject = Deno.env.get("VAPID_SUBJECT");
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+  const key = adminKey();
 
-  if (!supabaseUrl || !serviceRoleKey) {
-    return json({ ok: false, error: "Supabase não configurado na função." }, 500);
+  if (!supabaseUrl || !key) {
+    return json({ ok: false, error: "Backend Supabase indisponível." }, 500);
   }
 
-  const supabase = createClient(supabaseUrl, serviceRoleKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
+  const supabase = createClient(supabaseUrl, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  let body: any = {};
-
+  let body: any;
   try {
     body = await req.json();
-  } catch {
+  } catch (_) {
     return json({ ok: false, error: "JSON inválido." }, 400);
   }
 
-  const action = body?.action;
+  const action = String(body?.action || "");
 
-  if (action === "register") {
+  if (action === "session") {
     const email = String(body?.email || "").trim().toLowerCase();
-    const subscription = body?.subscription;
+    const senhaHash = String(body?.senha_hash || "");
 
-    if (
-      !email ||
-      !subscription?.endpoint ||
-      !subscription?.keys?.p256dh ||
-      !subscription?.keys?.auth
-    ) {
-      return json({ ok: false, error: "Assinatura incompleta." }, 400);
+    if (!email || !senhaHash) {
+      return json({ ok: false, error: "Credenciais ausentes." }, 400);
     }
 
-    const { error } = await supabase
-      .from("push_subscriptions")
-      .upsert(
-        {
-          endpoint: subscription.endpoint,
-          usuario_email: email,
-          p256dh: subscription.keys.p256dh,
-          auth: subscription.keys.auth,
-          expiration_time: subscription.expirationTime ?? null,
-          updated_at: new Date().toISOString(),
-        },
-        {
-          onConflict: "endpoint",
-        },
-      );
+    const { data: usuario, error } = await supabase
+      .from("usuarios")
+      .select("email, senha")
+      .eq("email", email)
+      .maybeSingle();
 
-    if (error) {
-      console.error("Erro registrando push:", error);
-      return json({ ok: false, error: error.message }, 500);
+    if (error || !usuario || usuario.senha !== senhaHash) {
+      return json({ ok: false, error: "Credenciais inválidas." }, 401);
     }
 
-    return json({ ok: true, registered: true });
+    const tokenBytes = new Uint8Array(32);
+    crypto.getRandomValues(tokenBytes);
+    const token = b64url(tokenBytes);
+    const tokenHash = await sha256(token);
+
+    await supabase
+      .from("push_sessions")
+      .delete()
+      .eq("usuario_email", email);
+
+    const { error: erroSessao } = await supabase
+      .from("push_sessions")
+      .insert({
+        token_hash: tokenHash,
+        usuario_email: email,
+        expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+      });
+
+    if (erroSessao) {
+      return json({ ok: false, error: erroSessao.message }, 500);
+    }
+
+    return json({ ok: true, token });
   }
 
-  if (action === "unregister") {
-    const endpoint = String(body?.endpoint || "").trim();
+  if (action === "register" || action === "unregister") {
+    const token = String(body?.session_token || "");
+    if (!token) {
+      return json({ ok: false, error: "Sessão Push ausente." }, 401);
+    }
 
+    const tokenHash = await sha256(token);
+
+    const { data: sessao, error: erroSessao } = await supabase
+      .from("push_sessions")
+      .select("usuario_email, expires_at")
+      .eq("token_hash", tokenHash)
+      .maybeSingle();
+
+    if (
+      erroSessao ||
+      !sessao ||
+      !sessao.expires_at ||
+      new Date(sessao.expires_at).getTime() <= Date.now()
+    ) {
+      return json({ ok: false, error: "Sessão Push inválida ou expirada." }, 401);
+    }
+
+    const email = String(sessao.usuario_email || "").trim().toLowerCase();
+
+    if (action === "register") {
+      const subscription = body?.subscription;
+
+      if (
+        !subscription?.endpoint ||
+        !subscription?.keys?.p256dh ||
+        !subscription?.keys?.auth
+      ) {
+        return json({ ok: false, error: "PushSubscription incompleta." }, 400);
+      }
+
+      const { error } = await supabase
+        .from("push_subscriptions")
+        .upsert(
+          {
+            endpoint: subscription.endpoint,
+            usuario_email: email,
+            p256dh: subscription.keys.p256dh,
+            auth: subscription.keys.auth,
+            expiration_time: subscription.expirationTime ?? null,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "endpoint" },
+        );
+
+      if (error) {
+        return json({ ok: false, error: error.message }, 500);
+      }
+
+      return json({ ok: true, registered: true });
+    }
+
+    const endpoint = String(body?.endpoint || "");
     if (!endpoint) {
       return json({ ok: false, error: "Endpoint ausente." }, 400);
     }
@@ -108,7 +188,8 @@ Deno.serve(async (req) => {
     const { error } = await supabase
       .from("push_subscriptions")
       .delete()
-      .eq("endpoint", endpoint);
+      .eq("endpoint", endpoint)
+      .eq("usuario_email", email);
 
     if (error) {
       return json({ ok: false, error: error.message }, 500);
@@ -118,11 +199,19 @@ Deno.serve(async (req) => {
   }
 
   if (action === "notify-message") {
-    if (!vapidPublicKey || !vapidPrivateKey || !vapidSubject) {
-      return json({
-        ok: false,
-        error: "VAPID ainda não foi configurado nos Secrets da função.",
-      }, 503);
+    const { data: config, error: erroConfig } = await supabase
+      .from("push_config")
+      .select("vapid_public_key, vapid_private_key, vapid_subject, webhook_secret")
+      .eq("id", 1)
+      .maybeSingle();
+
+    if (erroConfig || !config) {
+      return json({ ok: false, error: "Configuração Push ausente." }, 500);
+    }
+
+    const segredoRecebido = String(body?.webhook_secret || "");
+    if (!segredoRecebido || segredoRecebido !== config.webhook_secret) {
+      return json({ ok: false, error: "Não autorizado." }, 401);
     }
 
     const messageId = body?.message_id;
@@ -138,13 +227,16 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (erroMensagem || !mensagem) {
-      return json({
-        ok: false,
-        error: erroMensagem?.message || "Mensagem não encontrada.",
-      }, 404);
+      return json(
+        { ok: false, error: erroMensagem?.message || "Mensagem não encontrada." },
+        404,
+      );
     }
 
-    const remetenteEmail = String(mensagem.remetente_email || "").trim().toLowerCase();
+    const remetenteEmail = String(mensagem.remetente_email || "")
+      .trim()
+      .toLowerCase();
+
     const destinatarios = new Set<string>();
 
     if (mensagem.grupo_id) {
@@ -223,9 +315,9 @@ Deno.serve(async (req) => {
     );
 
     webpush.setVapidDetails(
-      vapidSubject,
-      vapidPublicKey,
-      vapidPrivateKey,
+      config.vapid_subject,
+      config.vapid_public_key,
+      config.vapid_private_key,
     );
 
     const payload = JSON.stringify({
@@ -233,6 +325,7 @@ Deno.serve(async (req) => {
       body: corpo,
       tag: "mensagem-" + String(messageId),
       data: {
+        url: "/WhatisApp/",
         tipo: mensagem.grupo_id ? "grupo" : "privado",
         grupo_id: mensagem.grupo_id || null,
         remetente_email: mensagem.remetente_email || null,
@@ -257,20 +350,15 @@ Deno.serve(async (req) => {
             },
           },
           payload,
-          {
-            TTL: 60,
-            urgency: "high",
-          },
+          { TTL: 300, urgency: "high" },
         );
 
         sent++;
 
-        await supabase
-          .from("push_entregas")
-          .insert({
-            mensagem_id: messageId,
-            endpoint: subscription.endpoint,
-          });
+        await supabase.from("push_entregas").insert({
+          mensagem_id: messageId,
+          endpoint: subscription.endpoint,
+        });
       } catch (erro: any) {
         const statusCode = Number(erro?.statusCode || 0);
 
