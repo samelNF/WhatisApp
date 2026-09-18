@@ -405,6 +405,14 @@ async function verificarSessao() {
 
     console.log("Sessão ativa para:", usuario.email);
 
+    if (
+        !localStorage.getItem("pushSessionToken") &&
+        usuario.senha &&
+        typeof window.criarSessaoPush === "function"
+    ) {
+        await window.criarSessaoPush(usuario.email, usuario.senha);
+    }
+
     aplicarSessaoCacheNoRuntime({
         email: usuario.email,
         usuario: usuario.usuario || "",
@@ -429,6 +437,10 @@ async function verificarSessao() {
 async function deslogar() {
     pararMonitoramentoPresenca();
 
+    if (typeof window.desativarSistemaNotificacoes === "function") {
+        try { await window.desativarSistemaNotificacoes(); } catch (e) {}
+    }
+
     if (escutaRealtime) {
         try { _supabase.removeChannel(escutaRealtime); } catch (e) {}
         escutaRealtime = null;
@@ -449,6 +461,7 @@ async function deslogar() {
     localStorage.removeItem("nomeUsuario");
     localStorage.removeItem("fotoUsuario");
     localStorage.removeItem("corUsuario");
+    localStorage.removeItem("pushSessionToken");
 
     alert("Sessão encerrada!");
 
@@ -503,6 +516,7 @@ async function criarConta() {
     }
 
     sessionStorage.setItem("emailCadastro", email);
+    sessionStorage.setItem("pushSenhaHashCadastro", senhaHash);
 
     mostrarTela('etapa-usuario');
 }
@@ -620,7 +634,17 @@ async function salvarUsuarioSegundaEtapa() {
         localStorage.setItem("fotoUsuario", urlFotoPublica);
     }
 
+    const pushSenhaHashCadastro = sessionStorage.getItem("pushSenhaHashCadastro");
+
+    if (
+        pushSenhaHashCadastro &&
+        typeof window.criarSessaoPush === "function"
+    ) {
+        await window.criarSessaoPush(emailCadastrado, pushSenhaHashCadastro);
+    }
+
     sessionStorage.removeItem("emailCadastro");
+    sessionStorage.removeItem("pushSenhaHashCadastro");
 
     await salvarSessaoNoCache({
         email: emailCadastrado,
@@ -672,6 +696,10 @@ async function conectarConta() {
             localStorage.setItem("corUsuario", conta.cor);
         } else {
             localStorage.removeItem("corUsuario");
+        }
+
+        if (typeof window.criarSessaoPush === "function") {
+            await window.criarSessaoPush(conta.email, senhaHash);
         }
 
         await salvarSessaoNoCache(conta);
@@ -1955,16 +1983,6 @@ function inscreverRealtime() {
                 // Entrega a mensagem também ao sistema de notificações.
                 if (typeof window.processarNotificacaoMensagem === "function") {
                     window.processarNotificacaoMensagem(novaMsg);
-                }
-
-                // O remetente avisa o backend para disparar Web Push real.
-                // Isso acorda o Service Worker do destinatário mesmo com o PWA fechado.
-                if (
-                    (novaMsg.remetente_email || "").trim().toLowerCase() ===
-                    (meuEmail || "").trim().toLowerCase() &&
-                    typeof window.enviarPushMensagemServidor === "function"
-                ) {
-                    window.enviarPushMensagemServidor(novaMsg.id);
                 }
 
                 carregarListaContatos(); // Atualiza a lista lateral com a última mensagem
