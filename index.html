@@ -151,7 +151,7 @@
              aria-label="Abrir dados do usuário"
              onkeydown="if(event.key === 'Enter' || event.key === ' '){ event.preventDefault(); abrirDadosUsuario(); }">
             <div class="voce-foto-hero">
-                <img id="voce-foto-perfil" src="svg/icon.svg" class="foto-perfil-grande" alt="Foto do perfil">
+                <img id="voce-foto-perfil" src="svg/user-placeholder.svg" class="foto-perfil-grande" alt="Foto do perfil">
             </div>
             <h2 id="voce-nome-usuario">Carregando...</h2>
             <p id="voce-email-usuario">@usuario</p>
@@ -167,7 +167,7 @@
             <div class="dados-usuario-conteudo">
                 <img
                     id="dados-foto-usuario"
-                    src="svg/icon.svg"
+                    src="svg/user-placeholder.svg"
                     class="dados-foto-grande"
                 >
 
@@ -301,7 +301,7 @@
                 <span>Conversas</span>
             </button>
             <button class="tu" onclick="alternarAba('voce', this)" title="Você">
-                <img id="foto-aba-voce" src="svg/icon.svg" class="vose">
+                <img id="foto-aba-voce" src="svg/user-placeholder.svg" class="vose">
                 <span>Você</span>
             </button>
         </div>
@@ -339,7 +339,7 @@
     <section id="etapa-usuario" class="senhor-usuario" style="display: none;">
         <h1>Escolha seu Perfil</h1>
         <div class="avatar-container">
-            <img id="avatar-preview" src="svg/icon.svg" alt="Foto de Perfil" class="avatar-preview">
+            <img id="avatar-preview" src="svg/user-placeholder.svg" alt="Foto de Perfil" class="avatar-preview">
             <label for="foto-input" class="avatar-upload-btn">
                 <img src="svg/plus.svg" alt="Adicionar">
             </label>
@@ -377,7 +377,7 @@
             </button>
 
             <div class="chat-identidade" onclick="abrirPainelDadosContato()">
-                <img id="chat-foto-usuario" src="svg/icon.svg" class="chat-avatar" alt="Foto do contato">
+                <img id="chat-foto-usuario" src="svg/user-placeholder.svg" class="chat-avatar" alt="Foto do contato">
                 <div class="chat-info-usuario">
                     <h2 id="chat-nome-usuario">Contato</h2>
                     <span id="chat-status-usuario" class="status-online"></span>
@@ -484,7 +484,7 @@
             <h3>Dados do contato</h3>
         </div>
         <div class="modal-content">
-            <img  id="chat-foto-usuario" src="svg/icon.svg" class="chat-avatar">
+            <img  id="chat-foto-usuario" src="svg/user-placeholder.svg" class="chat-avatar">
             <div class="modal-body" style="padding: 20px;">
                 <p style="margin-bottom: 15px; cursor: pointer;" id="btn-tema-conversa" onclick="acionarTrocaFundo()">🎨 Tema da conversa</p>
                 <!-- Input oculto para selecionar a foto de fundo do chat -->
