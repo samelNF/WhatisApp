@@ -1844,42 +1844,82 @@ body {
 /* ==========================================
    AJUSTE TAMANHO DO PLACEHOLDER
    ========================================== */
-/* O SVG de usuário ocupa quase todo o viewBox, então precisa de mais respiro
-   dentro do círculo pra não parecer uma foto gigante. */
+/* IMPORTANTE: não usar padding em %, porque em CSS a porcentagem do padding
+   é calculada pela largura do elemento pai. Foi isso que fez o avatar virar
+   aquele círculo gigante. Aqui usamos px por tamanho de avatar. */
 .avatar-sem-foto {
     object-fit: contain !important;
     object-position: center !important;
-    padding: 29% !important;
+    box-sizing: border-box !important;
 }
 
-/* Lista de conversas / contatos */
+/* Lista de conversas / contatos: 62px (58px em telas menores) */
 .foto-contato.avatar-sem-foto {
-    padding: 27% !important;
+    width: 62px !important;
+    height: 62px !important;
+    min-width: 62px !important;
+    min-height: 62px !important;
+    max-width: 62px !important;
+    max-height: 62px !important;
+    padding: 15px !important;
+    flex: 0 0 62px !important;
+}
+@media (max-width: 390px) {
+    .foto-contato.avatar-sem-foto {
+        width: 58px !important;
+        height: 58px !important;
+        min-width: 58px !important;
+        min-height: 58px !important;
+        max-width: 58px !important;
+        max-height: 58px !important;
+        padding: 14px !important;
+        flex-basis: 58px !important;
+    }
 }
 
-/* Avatar pequeno do topo do chat */
+/* Topo do chat */
 .chat-avatar.avatar-sem-foto {
-    padding: 28% !important;
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    max-width: 48px !important;
+    max-height: 48px !important;
+    padding: 12px !important;
 }
 
 /* Seleção de membros */
 .foto-contato-pequena.avatar-sem-foto {
-    padding: 28% !important;
+    width: 45px !important;
+    height: 45px !important;
+    min-width: 45px !important;
+    min-height: 45px !important;
+    max-width: 45px !important;
+    max-height: 45px !important;
+    padding: 11px !important;
 }
 
-/* Aba Você e barra inferior */
-.foto-perfil-grande.avatar-sem-foto,
-.dados-foto-grande.avatar-sem-foto,
+/* Avatar grande da aba Você */
+.foto-perfil-grande.avatar-sem-foto {
+    padding: 34px !important;
+}
+
+/* Avatar grande em Dados do usuário */
+.dados-foto-grande.avatar-sem-foto {
+    padding: 54px !important;
+}
+
+/* Ícone da aba inferior */
 .vose.avatar-sem-foto {
-    padding: 29% !important;
+    padding: 7px !important;
 }
 
 /* Popup de novo contato */
 #novo-contato-foto.avatar-sem-foto {
-    padding: 29% !important;
+    padding: 29px !important;
 }
 
 /* Painel de dados do contato */
 #painel-dados-contato #painel-foto-contato.avatar-sem-foto {
-    padding: 29% !important;
+    padding: 27px !important;
 }
