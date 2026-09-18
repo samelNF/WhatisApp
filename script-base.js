@@ -775,6 +775,40 @@ async function obterNomeContato(email) {
     return data?.usuario || null;
 }
 
+const cacheUsuariosMensagem = new Map();
+
+async function obterUsuarioMensagem(email) {
+    const chave = (email || "").trim().toLowerCase();
+    if (!chave) return null;
+
+    const meuEmail = (localStorage.getItem("usuarioLogado") || "").trim().toLowerCase();
+    if (chave === meuEmail) {
+        return {
+            usuario: localStorage.getItem("nomeUsuario") || "Você",
+            email,
+            cor: localStorage.getItem("corUsuario") || "#888888"
+        };
+    }
+
+    if (cacheUsuariosMensagem.has(chave)) {
+        return cacheUsuariosMensagem.get(chave);
+    }
+
+    const { data, error } = await _supabase
+        .from("usuarios")
+        .select("usuario, email, cor")
+        .eq("email", email)
+        .maybeSingle();
+
+    if (error) {
+        console.error("Erro ao buscar usuário da mensagem:", error);
+        return null;
+    }
+
+    if (data) cacheUsuariosMensagem.set(chave, data);
+    return data || null;
+}
+
 function obterLarguraBalaoOriginal(idMensagem, textoMensagem) {
     if (idMensagem !== null && idMensagem !== undefined) {
         const original = document.querySelector(`.balao-msg[data-message-id="${idMensagem}"]`);
@@ -842,11 +876,7 @@ async function renderizarBalao(texto, ehMinha, dataCriacao, idMensagem, mensagem
                 nomeCitadoOriginal = "Você";
                 corCitado = localStorage.getItem("corUsuario") || "#888888";
             } else {
-                const { data: usuarioOriginal } = await _supabase
-                    .from("usuarios")
-                    .select("usuario, cor")
-                    .eq("email", emailOriginal)
-                    .maybeSingle();
+                const usuarioOriginal = await obterUsuarioMensagem(emailOriginal);
 
                 nomeCitadoOriginal = usuarioOriginal?.usuario || emailOriginal;
                 corCitado = usuarioOriginal?.cor || "#888888";
@@ -951,11 +981,7 @@ async function renderizarBalaoGrupo(texto, ehMinha, dataCriacao, nomeRemetente, 
                 nomeCitadoOriginal = "Você";
                 corCitado = localStorage.getItem("corUsuario") || "#888888";
             } else {
-                const { data: usuarioOriginal } = await _supabase
-                    .from("usuarios")
-                    .select("usuario, cor")
-                    .eq("email", emailOriginal)
-                    .maybeSingle();
+                const usuarioOriginal = await obterUsuarioMensagem(emailOriginal);
 
                 nomeCitadoOriginal = usuarioOriginal?.usuario || emailOriginal;
                 corCitado = usuarioOriginal?.cor || "#888888";
@@ -1202,12 +1228,12 @@ async function carregarMensagens() {
             dadosRespondida = mensagens.find(m => m.id === msg.mensagem_respondida_id);
         }
 
-        renderizarBalao(
+        await renderizarBalao(
             msg.texto,
             msg.remetente_email === meuEmail,
             msg.created_at,
             msg.id,
-            dadosRespondida // Passa o objeto encontrado para o balão renderizar
+            dadosRespondida // Mantém a ordem cronológica mesmo quando a resposta precisa buscar usuário/cor
         );
     }
 
@@ -1358,12 +1384,8 @@ async function carregarMensagensGrupo(idGrupo) {
 
         if (!ehMinha) {
             // Busca amigável do nome de usuário e da COR pelo email remetente
-            const { data: userData } = await _supabase
-                .from("usuarios")
-                .select("usuario, email, cor")
-                .eq("email", msg.remetente_email)
-                .maybeSingle();
-            
+            const userData = await obterUsuarioMensagem(msg.remetente_email);
+
             if (userData) {
                 nomeRemetente = userData.usuario || userData.email;
                 corRemetente = userData.cor || null;
@@ -1381,7 +1403,7 @@ async function carregarMensagensGrupo(idGrupo) {
             );
         }
 
-        renderizarBalaoGrupo(
+        await renderizarBalaoGrupo(
             msg.texto,
             ehMinha,
             msg.created_at,
@@ -1548,12 +1570,13 @@ function inscreverRealtime() {
 
                 // Se o chat aberto for um grupo e a mensagem for desse grupo
                 if (window.grupoAtualId && novaMsg.grupo_id === window.grupoAtualId) {
-                    carregarMensagensGrupo(window.grupoAtualId);
+                    await carregarMensagensGrupo(window.grupoAtualId);
                 }
-                
-                // Se o chat aberto for privado
+
+                // Se o chat aberto for privado, recarrega a sequência completa já ordenada.
+                // Assim respostas nunca chegam atrasadas por causa de await no nome/cor.
                 if (destinatarioAtual && novaMsg.remetente_email === destinatarioAtual && !novaMsg.grupo_id) {
-                    renderizarBalao(novaMsg.texto, false, novaMsg.created_at);
+                    await carregarMensagens();
                 }
             }
         )
@@ -1569,9 +1592,8 @@ function inscreverRealtime() {
                 const novaMsg = payload.new;
                 carregarListaContatos();
 
-                if (destinatarioAtual && novaMsg.remetente_email === destinatarioAtual && !novaMsg.grupo_id) {
-                    renderizarBalao(novaMsg.texto, false, novaMsg.created_at);
-                }
+                // A renderização do chat já é feita pelo listener geral acima.
+                // Não renderiza de novo aqui para evitar duplicação e corrida assíncrona.
             }
         )
         .on(
