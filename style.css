@@ -1923,3 +1923,285 @@ body {
 #painel-dados-contato #painel-foto-contato.avatar-sem-foto {
     padding: 27px !important;
 }
+
+
+/* ==========================================
+   BALOES E RESPOSTAS - FORMATO WHATSAPP
+   Mantém as cores atuais do WhatisApp.
+   ========================================== */
+#tela-chat .balao-msg {
+    position: relative;
+    width: fit-content;
+    min-width: 82px;
+    max-width: min(82%, 520px);
+    margin: 2px 8px 4px;
+    padding: 7px 9px 6px !important;
+    border-radius: 16px !important;
+    overflow: visible;
+    word-break: normal;
+    overflow-wrap: anywhere;
+    box-shadow: none !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+#tela-chat .balao-enviada {
+    align-self: flex-end;
+    border-bottom-right-radius: 6px !important;
+}
+
+#tela-chat .balao-recebida {
+    align-self: flex-start;
+    border-bottom-left-radius: 6px !important;
+}
+
+/* Rabinho do balão */
+#tela-chat .balao-enviada::after,
+#tela-chat .balao-recebida::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    width: 14px;
+    height: 18px;
+    pointer-events: none;
+}
+
+#tela-chat .balao-enviada::after {
+    right: -9px;
+    background: #2b2b2b;
+    clip-path: polygon(0 0, 0 100%, 100% 100%);
+    border-bottom-right-radius: 8px;
+}
+
+#tela-chat .balao-recebida::after {
+    left: -9px;
+    background: #1f1f1f;
+    clip-path: polygon(100% 0, 0 100%, 100% 100%);
+    border-bottom-left-radius: 8px;
+}
+
+/* Nome no grupo fica acima de tudo, como no WhatsApp */
+#tela-chat .nome-remetente {
+    display: block;
+    margin: 0 2px 3px;
+    font-size: 13px;
+    line-height: 16px;
+    font-weight: 700;
+}
+
+/* Linha principal deixa texto e horário dividirem a mesma base.
+   Em mensagem curta o horário fica na mesma linha; em longa vai pro final. */
+#tela-chat .balao-linha {
+    min-width: 0;
+    display: flex;
+    align-items: flex-end;
+    gap: 9px;
+}
+
+#tela-chat .balao-conteudo {
+    min-width: 0;
+    flex: 1 1 auto;
+    color: inherit;
+    font-size: 16px;
+    line-height: 1.28;
+}
+
+#tela-chat .balao-texto {
+    display: inline;
+    white-space: pre-wrap;
+}
+
+#tela-chat .balao-meta {
+    flex: 0 0 auto;
+    align-self: flex-end;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin: 0 0 1px;
+    white-space: nowrap;
+    color: rgba(255,255,255,.52);
+    line-height: 1;
+}
+
+#tela-chat .balao-hora {
+    margin: 0 !important;
+    align-self: auto !important;
+    color: inherit;
+    font-size: 11px;
+    line-height: 12px;
+}
+
+#tela-chat .balao-visto {
+    color: rgba(255,255,255,.56);
+    font-size: 16px;
+    line-height: 11px;
+    font-weight: 500;
+    transform: translateY(-1px);
+}
+
+/* Mídias seguem a mesma forma do balão */
+#tela-chat .balao-midia {
+    display: block;
+    width: min(100%, 260px);
+    max-width: 260px;
+    height: auto;
+    border-radius: 11px;
+    background: #000;
+}
+
+#tela-chat .balao-foto {
+    cursor: pointer;
+}
+
+/* Citação dentro do balão respondido */
+#tela-chat .citacao-resposta {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+    margin: 0 0 6px;
+    padding: 7px 10px 7px 12px;
+    box-sizing: border-box;
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: rgba(0,0,0,.17);
+}
+
+#tela-chat .citacao-resposta::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    background: var(--cor-citacao, #ff7b00);
+}
+
+#tela-chat .citacao-nome {
+    min-width: 0;
+    padding-left: 1px;
+    color: var(--cor-citacao, #ff7b00);
+    font-size: 13px;
+    line-height: 16px;
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#tela-chat .citacao-texto {
+    min-width: 0;
+    padding-left: 1px;
+    color: rgba(255,255,255,.78);
+    font-size: 14px;
+    line-height: 18px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Quando há citação, o balão ganha largura suficiente pra ficar parecido
+   com o cartão de resposta da referência. */
+#tela-chat .balao-msg:has(.citacao-resposta) {
+    min-width: min(300px, 74vw);
+}
+
+/* Painel acima do input enquanto escolhe uma mensagem para responder */
+#tela-chat .painel-resposta {
+    position: relative;
+    width: 100%;
+    min-height: 72px;
+    margin: 0 0 8px;
+    padding: 10px 48px 10px 16px !important;
+    box-sizing: border-box;
+    border: 0 !important;
+    border-radius: 0 !important;
+    align-items: center;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow: hidden;
+}
+
+#tela-chat .painel-resposta::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 4px;
+    bottom: 4px;
+    width: 4px;
+    border-radius: 0 3px 3px 0;
+    background: #ff7b00;
+}
+
+#tela-chat .painel-resposta-conteudo {
+    width: 100%;
+    min-width: 0;
+    gap: 4px;
+}
+
+#tela-chat .painel-resposta-conteudo strong {
+    margin: 0 !important;
+    color: #ffb45f;
+    font-size: 16px;
+    line-height: 20px;
+    font-weight: 700;
+}
+
+#tela-chat .painel-resposta-conteudo span {
+    color: rgba(255,255,255,.9);
+    font-size: 15px;
+    line-height: 20px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#tela-chat .painel-resposta-fechar {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px;
+    transform: translateY(-50%);
+    padding: 0 !important;
+    border: 2px solid rgba(255,255,255,.9) !important;
+    border-radius: 50% !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #fff !important;
+    font-size: 26px !important;
+    line-height: 1;
+}
+
+#tela-chat .painel-resposta-fechar:active {
+    transform: translateY(-50%) scale(.93) !important;
+}
+
+/* Input durante resposta */
+#tela-chat .chat-campo-pill #input-mensagem::placeholder {
+    color: rgba(255,255,255,.72);
+    opacity: 1;
+}
+
+@media (max-width: 420px) {
+    #tela-chat .balao-msg {
+        max-width: 84%;
+        margin-left: 6px;
+        margin-right: 6px;
+    }
+
+    #tela-chat .balao-conteudo {
+        font-size: 15.5px;
+    }
+
+    #tela-chat .citacao-texto {
+        font-size: 13.5px;
+    }
+
+    #tela-chat .balao-msg:has(.citacao-resposta) {
+        min-width: min(280px, 78vw);
+    }
+}
