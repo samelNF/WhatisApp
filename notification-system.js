@@ -107,6 +107,27 @@
         }
     }
 
+    window.marcarMensagensVistasServidor = async function (contatoEmail) {
+        const sessaoPush = tokenSessaoPush();
+
+        if (!sessaoPush || !contatoEmail) {
+            return { ok: false, mensagens: [] };
+        }
+
+        const resultado = await chamarPushServidor({
+            action: 'mark-seen',
+            session_token: sessaoPush,
+            contato_email: contatoEmail
+        });
+
+        if (!resultado?.ok) {
+            console.warn('[Visto] Não foi possível marcar mensagens como visualizadas.');
+            return { ok: false, mensagens: [] };
+        }
+
+        return resultado;
+    };
+
     async function obterAssinaturaPush() {
         const reg = await garantirServiceWorker();
         if (!reg?.pushManager) return null;
