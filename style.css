@@ -3996,3 +3996,284 @@ body.camera-whatisapp-aberta {
         height: 61px;
     }
 }
+
+
+/* ==========================================
+   LIGACOES DE VOZ - BASE FUNCIONAL
+   ========================================== */
+#tela-chat .balao-chamada {
+    min-width: 250px !important;
+    max-width: min(82vw, 360px) !important;
+    padding: 12px 14px !important;
+    display: grid !important;
+    grid-template-columns: 58px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 11px;
+    cursor: pointer;
+}
+
+#tela-chat .chamada-bolha-icone {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: #f5f5f5;
+    background: rgba(0,0,0,.26);
+}
+
+#tela-chat .chamada-bolha-icone svg {
+    width: 31px;
+    height: 31px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+#tela-chat .chamada-bolha-info {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+#tela-chat .chamada-bolha-titulo {
+    color: #f7f7f7;
+    font-size: 17px;
+    line-height: 1.15;
+    font-weight: 700;
+}
+
+#tela-chat .chamada-bolha-status {
+    color: rgba(255,255,255,.57);
+    font-size: 15px;
+    line-height: 1.2;
+}
+
+#tela-chat .chamada-bolha-hora {
+    align-self: end;
+    padding-bottom: 1px;
+    color: rgba(255,255,255,.56);
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+#tela-chat .balao-chamada.chamada-status-verde .chamada-bolha-icone,
+#tela-chat .balao-chamada.chamada-status-verde .chamada-bolha-titulo {
+    color: #35d36f;
+}
+
+#tela-chat .balao-chamada.chamada-status-vermelho .chamada-bolha-icone,
+#tela-chat .balao-chamada.chamada-status-vermelho .chamada-bolha-titulo {
+    color: #ff4f5d;
+}
+
+#tela-chat .balao-chamada:active {
+    transform: scale(.992);
+}
+
+/* Tela funcional da ligação; o visual final vem depois da referência do usuário. */
+.tela-chamada {
+    position: fixed;
+    inset: 0;
+    z-index: 15000;
+    display: flex;
+    flex-direction: column;
+    color: #fff;
+    background:
+        radial-gradient(circle at 50% 24%, rgba(82,82,84,.32), transparent 35%),
+        linear-gradient(180deg, #1d1d1f 0%, #111112 58%, #090909 100%);
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.tela-chamada.hidden {
+    display: none !important;
+}
+
+body.chamada-aberta {
+    overflow: hidden !important;
+}
+
+.tela-chamada #chamada-audio-remoto {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: .001;
+    pointer-events: none;
+}
+
+.chamada-topo {
+    width: 100%;
+    min-height: 68px;
+    padding:
+        max(env(safe-area-inset-top, 12px), 12px)
+        18px
+        8px;
+    display: grid;
+    grid-template-columns: 48px 1fr 48px;
+    align-items: center;
+}
+
+.chamada-minimizar {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid rgba(255,255,255,.10);
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    background: rgba(255,255,255,.08);
+    font: inherit;
+    box-shadow: none;
+}
+
+.chamada-minimizar span {
+    transform: translateY(-3px);
+    font-size: 30px;
+    line-height: 1;
+}
+
+.chamada-tipo-label {
+    text-align: center;
+    color: rgba(255,255,255,.64);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.chamada-centro {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 24px 38px;
+}
+
+.chamada-avatar {
+    width: 142px;
+    height: 142px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #333336;
+    box-shadow: 0 14px 38px rgba(0,0,0,.25);
+}
+
+.chamada-centro h2 {
+    max-width: 88vw;
+    margin: 24px 0 8px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: #fff;
+    font-size: 32px;
+    line-height: 1.05;
+    font-weight: 700;
+}
+
+.chamada-centro p {
+    margin: 0;
+    color: rgba(255,255,255,.61);
+    font-size: 17px;
+    font-variant-numeric: tabular-nums;
+}
+
+.chamada-controles {
+    flex: 0 0 auto;
+    width: 100%;
+    min-height: 170px;
+    padding:
+        18px
+        28px
+        max(28px, env(safe-area-inset-bottom, 18px));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(34px, 14vw, 74px);
+}
+
+.chamada-controles.hidden {
+    display: none !important;
+}
+
+.chamada-acao {
+    width: 92px;
+    min-width: 92px;
+    padding: 0;
+    border: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 9px;
+    color: #fff;
+    background: transparent;
+    font: inherit;
+    font-size: 13px;
+    box-shadow: none;
+}
+
+.chamada-acao-icone {
+    width: 66px;
+    height: 66px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.10);
+}
+
+.chamada-acao-icone svg,
+.chamada-acao-icone img {
+    width: 29px;
+    height: 29px;
+    object-fit: contain;
+}
+
+.chamada-acao-icone svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.chamada-recusar .chamada-acao-icone,
+.chamada-encerrar .chamada-acao-icone {
+    background: #e83b3f;
+}
+
+.chamada-atender .chamada-acao-icone {
+    background: #33c767;
+}
+
+.chamada-mudo.ativo .chamada-acao-icone {
+    background: rgba(255,255,255,.92);
+}
+
+.chamada-mudo.ativo {
+    color: rgba(255,255,255,.72);
+}
+
+@media (max-width: 390px) {
+    #tela-chat .balao-chamada {
+        min-width: 230px !important;
+    }
+
+    .chamada-avatar {
+        width: 126px;
+        height: 126px;
+    }
+
+    .chamada-centro h2 {
+        font-size: 29px;
+    }
+
+    .chamada-controles {
+        gap: 28px;
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+}
