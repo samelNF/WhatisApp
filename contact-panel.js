@@ -10,7 +10,9 @@ window.abrirPainelDadosContato = function () {
     const nomeHeader = document.getElementById('chat-nome-usuario');
     const fotoHeader = document.getElementById('chat-foto-usuario');
     const nome = nomeHeader ? nomeHeader.textContent.trim() : 'Nome';
-    const foto = fotoHeader ? fotoHeader.src : 'svg/icon.svg';
+    const temFoto = fotoHeader?.dataset.temFoto === 'true';
+    const foto = temFoto && fotoHeader ? fotoHeader.src : '';
+    const cor = fotoHeader?.dataset.avatarCor || '#3a3a3c';
     const conteudo = painel.querySelector('.modal-content');
     if (!conteudo) return;
     let fotoPainel = conteudo.querySelector('#painel-foto-contato');
@@ -18,7 +20,14 @@ window.abrirPainelDadosContato = function () {
         fotoPainel = conteudo.querySelector('img');
         if (fotoPainel) fotoPainel.id = 'painel-foto-contato';
     }
-    if (fotoPainel && foto) fotoPainel.src = foto;
+    if (fotoPainel) {
+        if (typeof window.aplicarAvatarUsuario === 'function') {
+            window.aplicarAvatarUsuario(fotoPainel, foto, cor);
+        } else {
+            fotoPainel.src = foto || 'svg/user-placeholder.svg';
+            fotoPainel.style.backgroundColor = foto ? 'transparent' : cor;
+        }
+    }
     let nomePainel = conteudo.querySelector('#painel-nome-contato');
     if (!nomePainel) {
         nomePainel = document.createElement('h2');
