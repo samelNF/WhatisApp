@@ -7,98 +7,143 @@
     position: fixed !important;
     inset: 0 !important;
     width: 100% !important;
-    height: 100% !important;
+    height: var(--app-viewport-height, 100dvh) !important;
+    min-height: var(--app-viewport-height, 100dvh) !important;
     box-sizing: border-box;
     display: none;
     flex-direction: column;
-    align-items: stretch;
-    justify-content: flex-start;
-    background: #0A0A0A !important;
+    background: #050505 !important;
     color: #FAFAFA;
-    z-index: 3000;
-    overflow-y: auto;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    z-index: 3300;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-#painel-dados-contato .menu-chat-header {
+#painel-dados-contato .painel-contato-header {
     position: relative;
+    flex: 0 0 auto;
     width: 100%;
-    height: 72px;
-    min-height: 72px;
+    min-height: calc(76px + env(safe-area-inset-top, 0px));
+    padding:
+        max(env(safe-area-inset-top), 10px)
+        16px
+        10px;
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: center;
-    padding: 0;
     box-sizing: border-box;
-    background: transparent;
+    background: #050505;
 }
 
-#painel-dados-contato .menu-chat-header h3 {
-    margin: 0;
-    padding: 0;
+#painel-dados-contato .painel-contato-header h3 {
+    margin: 0 0 14px;
     color: #FAFAFA;
-    font-size: 22px;
-    font-weight: 600;
+    font-size: 20px;
     line-height: 1;
+    font-weight: 700;
     text-align: center;
 }
 
-#painel-dados-contato .menu-chat-header .close-btn {
+#painel-dados-contato .painel-contato-btn-voltar,
+#painel-dados-contato .painel-contato-btn-editar {
     position: absolute;
-    left: 15px;
-    top: 15px;
-    width: 42px;
-    height: 42px;
-    margin: 0;
-    padding: 0 0 5px 0;
-    border: none;
-    border-radius: 50%;
-    background: #292929;
-    color: #FAFAFA;
-    font-family: Arial, sans-serif;
-    font-size: 34px;
-    font-weight: 300;
-    line-height: 42px;
+    bottom: 8px;
+    height: 52px;
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
+    color: #FAFAFA !important;
+    background:
+        linear-gradient(145deg,
+            rgba(255,255,255,.18),
+            rgba(255,255,255,.075) 58%,
+            rgba(255,255,255,.045)) !important;
+    border: 1px solid rgba(255,255,255,.19) !important;
+    box-shadow:
+        0 8px 22px rgba(0,0,0,.24),
+        inset 0 1px 0 rgba(255,255,255,.20),
+        inset 0 -1px 0 rgba(255,255,255,.035) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(180%);
+    backdrop-filter: blur(18px) saturate(180%);
 }
 
-#painel-dados-contato .modal-content {
-    width: 100%;
-    max-width: none;
+#painel-dados-contato .painel-contato-btn-voltar {
+    left: 16px;
+    width: 52px;
+    min-width: 52px;
+    padding: 0 !important;
+    border-radius: 50% !important;
+}
+
+#painel-dados-contato .painel-contato-btn-voltar svg {
+    width: 28px;
+    height: 28px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+#painel-dados-contato .painel-contato-btn-editar {
+    right: 16px;
+    min-width: 92px;
+    padding: 0 20px !important;
+    border-radius: 999px !important;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+#painel-dados-contato .painel-contato-body {
+    flex: 1 1 auto;
     min-height: 0;
-    padding: 42px 15px 110px;
-    margin: 0;
+    width: 100%;
+    padding: 18px 16px max(28px, env(safe-area-inset-bottom));
     box-sizing: border-box;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+#painel-dados-contato .painel-contato-perfil {
     display: flex;
     flex-direction: column;
     align-items: center;
-    background: transparent;
-    border-radius: 0;
-    box-shadow: none;
-    overflow: visible;
+    padding: 20px 0 24px;
 }
 
-#painel-dados-contato #painel-foto-contato {
-    width: 112px;
-    height: 112px;
-    min-width: 112px;
-    min-height: 112px;
-    margin: 0 0 25px 0;
+#painel-dados-contato .painel-contato-foto {
+    width: 154px;
+    height: 154px;
+    min-width: 154px;
+    min-height: 154px;
+    max-width: 154px;
+    max-height: 154px;
+    margin: 0 0 20px;
+    padding: 0 !important;
     border-radius: 50%;
     object-fit: cover;
-    background: #40368b;
-    padding: 25px;
-    box-sizing: border-box;
+    background: #3a3a3c;
+    box-shadow:
+        inset 0 0 0 2px rgba(255,255,255,.10),
+        0 10px 30px rgba(0,0,0,.22);
+}
+
+#painel-dados-contato .painel-contato-foto.avatar-sem-foto {
+    width: 154px !important;
+    height: 154px !important;
+    min-width: 154px !important;
+    min-height: 154px !important;
+    max-width: 154px !important;
+    max-height: 154px !important;
+    padding: 38px !important;
+    object-fit: contain !important;
 }
 
 #painel-dados-contato #painel-nome-contato {
-    width: 100%;
-    margin: 0 0 72px 0;
+    max-width: 100%;
+    margin: 0;
     color: #FAFAFA;
-    font-size: 38px;
+    font-size: 34px;
     line-height: 1.05;
     font-weight: 700;
     text-align: center;
@@ -107,66 +152,214 @@
     white-space: nowrap;
 }
 
-#painel-dados-contato .modal-body {
+#painel-dados-contato #painel-subtitulo-contato {
+    max-width: 100%;
+    margin: 8px 0 0;
+    color: #85858a;
+    font-size: 17px;
+    line-height: 1.2;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#painel-dados-contato .painel-contato-acoes {
     width: 100%;
     max-width: 690px;
-    padding: 0 !important;
-    margin: 0;
-    max-height: none;
-    overflow: visible;
-    box-sizing: border-box;
+    margin: 0 auto 22px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
 }
 
-#painel-dados-contato #btn-tema-conversa {
-    width: 100%;
-    min-height: 58px;
-    margin: 0;
-    padding: 8px 16px;
-    box-sizing: border-box;
-    border-radius: 32px;
-    background: #191919;
-    color: #FAFAFA;
+#painel-dados-contato .painel-acao-card {
+    min-height: 118px;
+    padding: 14px 10px !important;
+    border-radius: 28px !important;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 14px;
-    text-align: left;
-    font-family: inherit;
-    font-size: 17px;
-    line-height: 22px;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
+    justify-content: center;
+    gap: 12px;
+    color: #FAFAFA !important;
+    background:
+        linear-gradient(150deg,
+            rgba(255,255,255,.105),
+            rgba(255,255,255,.052) 58%,
+            rgba(255,255,255,.035)) !important;
+    border: 1px solid rgba(255,255,255,.12) !important;
+    box-shadow:
+        0 14px 30px rgba(0,0,0,.20),
+        inset 0 1px 0 rgba(255,255,255,.12) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(170%);
+    backdrop-filter: blur(24px) saturate(170%);
 }
 
-#painel-dados-contato #btn-tema-conversa .tema-icone {
-    width: 34px;
-    min-width: 34px;
-    height: 34px;
+#painel-dados-contato .painel-acao-icone {
+    width: 36px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 22px;
+    color: #ff8a1f;
 }
 
-#painel-dados-contato #btn-tema-conversa .tema-texto {
+#painel-dados-contato .painel-acao-icone svg {
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+#painel-dados-contato .painel-acao-card > span:last-child {
+    font-size: 17px;
+    line-height: 1;
+    font-weight: 500;
+}
+
+#painel-dados-contato .painel-contato-card {
+    width: 100%;
+    max-width: 690px;
+    margin: 0 auto;
+    overflow: hidden;
+    border-radius: 28px;
+    background:
+        linear-gradient(150deg,
+            rgba(255,255,255,.105),
+            rgba(255,255,255,.052) 58%,
+            rgba(255,255,255,.035)) !important;
+    border: 1px solid rgba(255,255,255,.12);
+    box-shadow:
+        0 14px 30px rgba(0,0,0,.20),
+        inset 0 1px 0 rgba(255,255,255,.12);
+    -webkit-backdrop-filter: blur(24px) saturate(170%);
+    backdrop-filter: blur(24px) saturate(170%);
+}
+
+#painel-dados-contato .painel-contato-row {
+    position: relative;
+    width: 100%;
+    min-height: 76px;
+    padding: 10px 18px !important;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    text-align: left;
+    color: #FAFAFA !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+#painel-dados-contato .painel-row-icone {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ff8a1f;
+}
+
+#painel-dados-contato .painel-row-icone svg {
+    width: 29px;
+    height: 29px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+#painel-dados-contato .painel-row-texto {
+    min-width: 0;
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
 }
 
-#painel-dados-contato #btn-tema-conversa .tema-seta {
+#painel-dados-contato .painel-row-texto strong {
+    color: #FAFAFA;
+    font-size: 18px;
+    line-height: 22px;
+    font-weight: 500;
+}
+
+#painel-dados-contato .painel-row-texto small {
+    color: #85858a;
+    font-size: 13px;
+    line-height: 17px;
+}
+
+#painel-dados-contato .painel-row-seta {
     margin-left: auto;
     color: #777;
     font-size: 34px;
-    font-weight: 300;
     line-height: 1;
+    font-weight: 300;
 }
 
-@media (max-width: 500px) {
-    #painel-dados-contato .modal-content {
-        padding-top: 38px;
+@media (max-width: 430px) {
+    #painel-dados-contato .painel-contato-header {
+        min-height: calc(72px + env(safe-area-inset-top, 0px));
+        padding-left: 13px;
+        padding-right: 13px;
+    }
+
+    #painel-dados-contato .painel-contato-btn-voltar {
+        left: 13px;
+        width: 48px;
+        height: 48px;
+        min-width: 48px;
+    }
+
+    #painel-dados-contato .painel-contato-btn-editar {
+        right: 13px;
+        height: 48px;
+        min-width: 82px;
+        padding-inline: 16px !important;
+        font-size: 17px;
+    }
+
+    #painel-dados-contato .painel-contato-body {
+        padding-left: 13px;
+        padding-right: 13px;
+    }
+
+    #painel-dados-contato .painel-contato-foto {
+        width: 142px;
+        height: 142px;
+        min-width: 142px;
+        min-height: 142px;
+        max-width: 142px;
+        max-height: 142px;
+    }
+
+    #painel-dados-contato .painel-contato-foto.avatar-sem-foto {
+        width: 142px !important;
+        height: 142px !important;
+        min-width: 142px !important;
+        min-height: 142px !important;
+        max-width: 142px !important;
+        max-height: 142px !important;
+        padding: 35px !important;
     }
 
     #painel-dados-contato #painel-nome-contato {
-        margin-bottom: 72px;
-        font-size: 36px;
+        font-size: 31px;
+    }
+
+    #painel-dados-contato #painel-subtitulo-contato {
+        font-size: 16px;
+    }
+
+    #painel-dados-contato .painel-acao-card {
+        min-height: 108px;
     }
 }
 
