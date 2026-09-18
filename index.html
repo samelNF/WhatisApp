@@ -13,6 +13,7 @@
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="cache-db.js" defer></script>
+    <script src="audio-system.js" defer></script>
     <script src="script.js" defer></script>
     <script src="chat-visual.js" defer></script>
     <script src="safe-area.js" defer></script>
@@ -422,6 +423,27 @@
                     <span id="resposta-texto-preview">Texto da mensagem...</span>
                 </div>
                 <button type="button" class="painel-resposta-fechar" onclick="cancelarResposta()" aria-label="Cancelar resposta">&times;</button>
+            </div>
+
+            <!-- Gravação de áudio -->
+            <div id="audio-recording-bar" class="audio-recording-bar hidden">
+                <button type="button" class="audio-recording-cancel" onclick="cancelarGravacaoAudio()" aria-label="Cancelar gravação">
+                    ×
+                </button>
+
+                <div class="audio-recording-info">
+                    <span class="audio-recording-dot" aria-hidden="true"></span>
+                    <span id="audio-recording-time">0:00</span>
+                </div>
+
+                <div class="audio-recording-center">
+                    <div id="audio-recording-wave" class="audio-recording-wave" aria-hidden="true"></div>
+                    <span class="audio-recording-hint">Deslize para cancelar</span>
+                </div>
+
+                <button type="button" id="audio-recording-send" class="audio-recording-send" onclick="pararGravacaoAudio()" aria-label="Enviar áudio">
+                    <img src="svg/microphone.svg" alt="">
+                </button>
             </div>
 
             <!-- Barra normal de envio -->
