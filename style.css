@@ -3290,3 +3290,31 @@ body.subtela-aberta #tela-conversas .topo-conversas {
         -webkit-user-select: none !important;
     }
 }
+
+
+/* ==========================================
+   SVGs CUSTOMIZADOS DO CHAT
+   ========================================== */
+#tela-chat .chat-header-voltar img {
+    width: 29px;
+    height: 29px;
+    object-fit: contain;
+}
+
+#tela-chat .chat-call-btn img {
+    width: 27px;
+    height: 27px;
+    object-fit: contain;
+}
+
+#tela-chat .chat-sticker-btn img {
+    width: 25px;
+    height: 25px;
+    object-fit: contain;
+}
+
+#tela-chat .chat-mic-btn img {
+    width: 25px;
+    height: 25px;
+    object-fit: contain;
+}
