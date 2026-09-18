@@ -23,10 +23,12 @@ let solicitacaoAtual = null;
 // INICIALIZAÇÃO E SERVICE WORKER
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
-    verificarSessao();
+    Promise.resolve(verificarSessao())
+        .catch(erro => console.error("Erro ao restaurar sessão:", erro))
+        .finally(() => document.body?.classList.remove("sessao-resolvendo"));
+
     registrarServiceWorker();
     inicializarEventosSolicitacoes();
-    
 });
 
 async function alternarNotificacoes(checkbox) {
