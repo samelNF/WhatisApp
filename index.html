@@ -26,50 +26,68 @@
     
     <!-- ABA 1: CONVERSAS E LISTA DE CONTATOS -->
     <div id="tela-conversas" class="aba-conteudo">
-        <header>
-            <div class="topo">
-                <!-- DROPDOWN DE OPÇÕES -->
-                <div class="dropdown-container" style="position: relative;">
-                    <button id="btn-opcoes" class="cinza" title="Mais opções">
-                        •••
+        <header class="header-conversas">
+            <div class="topo topo-conversas">
+                <!-- MENU DE OPÇÕES -->
+                <div class="dropdown-container topo-menu-esquerda">
+                    <button id="btn-opcoes" class="cinza topo-bolha" title="Mais opções">
+                        <span class="topo-reticencias">•••</span>
                         <span id="badge-solicitacoes" class="badge hidden">0</span>
                     </button>
 
-                    <div id="dropdown-menu" class="dropdown-menu hidden" style="margin-left: -20%; margin-top: -123%;">
+                    <div id="dropdown-menu" class="dropdown-menu hidden">
                         <ul>
                             <li id="btn-abrir-solicitacoes">
-                                <i class="fas fa-user-clock"></i> 
-                                Pedidos de conversa 
+                                <i class="fas fa-user-clock"></i>
+                                Pedidos de conversa
                                 <span id="contador-menu" class="count-tag">0</span>
                             </li>
                         </ul>
                     </div>
                 </div>
 
-                <!-- BOTÃO MAIS (+) COM MENU FLUTUANTE DE OPÇÕES -->
-                <div class="dropdown-container" style="position: relative;">
-                    <button class="verde" title="Adicionar" onclick="alternarMenuMais(event)">
-                        <img src="svg/plus.svg" class="plusi">
+                <div class="topo-acoes-direita">
+                    <button class="cinza topo-bolha topo-camera" type="button" title="Câmera" aria-label="Câmera">
+                        <img src="svg/camera.svg" class="icone-topo-camera" alt="">
                     </button>
 
-                    <div id="dropdown-menu-mais" class="hidden dropdown-menu" style="margin-left: -365%; margin-top: -123%;">
-                        <ul>
-                            <li onclick="pedirEmailContato()">Adicionar contato</li>
-                            <li onclick="iniciarCriacaoGrupo()">Criar grupo</li>
-                        </ul>
+                    <!-- Mantém o menu de Adicionar contato / Criar grupo já existente -->
+                    <div class="dropdown-container">
+                        <button class="verde topo-bolha topo-plus" title="Adicionar" onclick="alternarMenuMais(event)">
+                            <img src="svg/plus.svg" class="plusi">
+                        </button>
+
+                        <div id="dropdown-menu-mais" class="hidden dropdown-menu menu-mais-conversas">
+                            <ul>
+                                <li onclick="pedirEmailContato()">Adicionar contato</li>
+                                <li onclick="iniciarCriacaoGrupo()">Criar grupo</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="conversa">
+
+            <div class="conversa conversa-nova">
                 <h1>Conversas</h1>
             </div>
         </header>
 
-        <main>
-            <div class="pesquisa">
+        <main class="main-conversas">
+            <div class="pesquisa pesquisa-conversas">
                 <img src="svg/glasses.svg" class="glass">
-                <input type="text" id="input-pesquisa" placeholder=" Pesquisar" oninput="filtrarContatos()" title="Pesquisa">
+                <input type="text" id="input-pesquisa" placeholder="Pesquisar" oninput="filtrarContatos()" title="Pesquisa">
             </div>
+
+            <!-- Filtros visuais inspirados no layout do WhatsApp.
+                 Por enquanto não alteram a lógica das conversas. -->
+            <div class="filtros-conversa" aria-label="Filtros de conversa">
+                <button class="filtro-chip ativo" type="button">Todas</button>
+                <button class="filtro-chip" type="button">Não lidas</button>
+                <button class="filtro-chip" type="button">Favoritos</button>
+                <button class="filtro-chip" type="button">Amigos</button>
+                <button class="filtro-chip filtro-chip-mais" type="button" aria-label="Mais filtros">+</button>
+            </div>
+
             <div class="contatos">
                 <ul id="lista-contatos">
                     <!-- Os contatos carregam via JS -->
