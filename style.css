@@ -2981,3 +2981,36 @@ body {
         padding: 26px !important;
     }
 }
+
+
+/* ==========================================
+   TOPO DA HOME APENAS NA TELA DE CONVERSAS
+   ========================================== */
+/* O topo fixo de Conversas não pode vazar para chat, dados, modais etc. */
+body.subtela-aberta #tela-conversas .topo-conversas {
+    display: none !important;
+}
+
+/* A tela de chat precisa ficar acima do topo fixo da home.
+   Antes: topo = 1500 e chat = 1000, por isso os botões vazavam por cima. */
+#tela-chat,
+.tela-chat {
+    z-index: 2500 !important;
+}
+
+/* Painéis/subtelas continuam acima do chat quando abertos. */
+#painel-dados-usuario {
+    z-index: 3100 !important;
+}
+
+#painel-dados-grupo {
+    z-index: 3200 !important;
+}
+
+#painel-dados-contato {
+    z-index: 3300 !important;
+}
+
+.tela-grupo-overlay {
+    z-index: 9999 !important;
+}
