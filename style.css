@@ -3331,3 +3331,47 @@ body.subtela-aberta #tela-conversas .topo-conversas {
         -webkit-user-select: none !important;
     }
 }
+
+
+/* ==========================================
+   IOS - TOPO FIXO SEM ELASTICIDADE
+   ========================================== */
+@supports (-webkit-touch-callout: none) {
+    #tela-chat {
+        overscroll-behavior: none !important;
+        touch-action: none;
+    }
+
+    #tela-chat .chat-header {
+        position: relative !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        transform: none !important;
+        translate: none !important;
+        flex-shrink: 0 !important;
+        overscroll-behavior: none !important;
+        touch-action: manipulation !important;
+        will-change: auto !important;
+    }
+
+    #tela-chat .chat-conteudo {
+        min-height: 0 !important;
+        overflow: hidden !important;
+        touch-action: none;
+    }
+
+    #tela-chat .chat-mensagens {
+        overflow-y: auto !important;
+        overscroll-behavior-y: none !important;
+        touch-action: pan-y !important;
+        -webkit-overflow-scrolling: auto !important;
+    }
+
+    #tela-chat .chat-footer {
+        flex-shrink: 0 !important;
+        transform: none !important;
+        translate: none !important;
+        overscroll-behavior: none !important;
+    }
+}
