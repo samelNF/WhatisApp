@@ -2363,3 +2363,78 @@ body::before {
         min-width: 0 !important;
     }
 }
+
+
+/* ==========================================
+   RESPOSTA COMPACTA NO TAMANHO ORIGINAL
+   ========================================== */
+
+/* Preview acima do campo: não ocupa mais a largura inteira do rodapé. */
+#tela-chat .painel-resposta {
+    align-self: flex-start !important;
+    width: fit-content !important;
+    max-width: calc(100% - 20px) !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    margin: 0 0 7px 52px !important;
+    padding: 7px 42px 7px 12px !important;
+    border-radius: 13px !important;
+    background: rgba(31,31,32,.96) !important;
+    overflow: visible !important;
+}
+
+/* A parte com nome + texto tem a mesma largura do balão que está sendo respondido. */
+#tela-chat .painel-resposta-conteudo {
+    width: var(--largura-mensagem-original, auto) !important;
+    max-width: min(72vw, 340px) !important;
+    min-width: 0 !important;
+    flex: 0 1 auto !important;
+}
+
+/* Mantém o preview compacto mesmo com texto longo. */
+#tela-chat .painel-resposta-conteudo strong,
+#tela-chat .painel-resposta-conteudo span {
+    max-width: 100% !important;
+}
+
+/* X fica grudado no card em vez de empurrar o painel até a borda da tela. */
+#tela-chat .painel-resposta-fechar {
+    right: 6px !important;
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    font-size: 22px !important;
+}
+
+/* Dentro de um balão enviado, a citação usa a largura EXATA medida
+   do balão original, limitada apenas pela viewport. */
+#tela-chat .balao-com-resposta .citacao-resposta {
+    width: var(--largura-mensagem-original, fit-content) !important;
+    max-width: min(72vw, 340px) !important;
+    min-width: 0 !important;
+}
+
+/* Impede nome/texto da citação de inflarem o cartão além da mensagem original. */
+#tela-chat .balao-com-resposta .citacao-nome,
+#tela-chat .balao-com-resposta .citacao-texto {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+/* O balão externo cresce só o necessário para conter citação + mensagem nova. */
+#tela-chat .balao-com-resposta {
+    width: fit-content !important;
+    min-width: 0 !important;
+}
+
+@media (max-width: 420px) {
+    #tela-chat .painel-resposta {
+        margin-left: 44px !important;
+        max-width: calc(100% - 12px) !important;
+    }
+
+    #tela-chat .painel-resposta-conteudo,
+    #tela-chat .balao-com-resposta .citacao-resposta {
+        max-width: 74vw !important;
+    }
+}
