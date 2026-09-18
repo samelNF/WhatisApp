@@ -1206,7 +1206,17 @@ function abrirChatGrupo(idGrupo, nomeGrupo, fotoGrupo) {
     const spanStatus = document.getElementById("chat-status-usuario");
 
     if (elemNome) elemNome.innerText = nomeGrupo;
-    if (elemFoto && fotoGrupo) elemFoto.src = fotoGrupo;
+    if (elemFoto) {
+        const fotoGrupoValida = fotoGrupo && !fotoGrupo.includes("user-placeholder.svg");
+        if (fotoGrupoValida) {
+            elemFoto.src = fotoGrupo;
+            elemFoto.style.backgroundColor = "transparent";
+            elemFoto.classList.remove("avatar-sem-foto");
+            elemFoto.dataset.temFoto = "true";
+        } else {
+            aplicarAvatarUsuario(elemFoto, "", "#3a3a3c");
+        }
+    }
     if (spanStatus) spanStatus.innerText = "Toque para ver os dados do grupo";
     
     // CORREÇÃO: Adiciona a classe 'ativa' igual ao chat privado para exibir a tela
