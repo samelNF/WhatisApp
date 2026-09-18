@@ -687,76 +687,176 @@ async function conectarConta() {
 async function carregarListaContatos() {
     const meuEmail = localStorage.getItem("usuarioLogado");
     const meuUsuario = localStorage.getItem("nomeUsuario");
+    const cache = window.WhatisCache || null;
 
-    if (!meuUsuario || !meuEmail) return;
+    if (!meuEmail) return;
 
-    // 1. Busca os contatos individuais
-    const { data: relacaoContatos } = await _supabase
-        .from("contatos")
-        .select("contato_usuario")
-        .eq("usuario_origem", meuUsuario);
+    // 1. Mostra a lista local primeiro. Assim a home continua útil sem internet.
+    let listaCache = [];
 
-    const nomesSalvos = relacaoContatos ? relacaoContatos.map(c => c.contato_usuario) : [];
-
-    let usuarios = [];
-    if (nomesSalvos.length > 0) {
-        const { data: dadosUsuarios } = await _supabase
-            .from("usuarios")
-            .select("email, usuario, foto_url, cor")
-            .in("usuario", nomesSalvos);
-        usuarios = dadosUsuarios || [];
+    if (cache?.obterListaConversas) {
+        try {
+            listaCache = await cache.obterListaConversas(meuEmail);
+        } catch (e) {
+            console.warn("Erro ao ler conversas do cache:", e);
+        }
     }
 
-    const contatosComMensagens = await Promise.all(
-        usuarios.map(async (contato) => {
-            const { data: ultimasMsgs } = await _supabase
-                .from("mensagens")
-                .select("texto, created_at")
-                .or(`and(remetente_email.eq.${meuEmail},destinatario_email.eq.${contato.email}),and(remetente_email.eq.${contato.email},destinatario_email.eq.${meuEmail})`)
-                .order("created_at", { ascending: false })
-                .limit(1);
-
-            const temMsg = ultimasMsgs && ultimasMsgs.length > 0;
-
-            return {
-                ...contato,
-                tipo: 'contato',
-                identificador: contato.email,
-                ultimaMsg: temMsg ? ultimasMsgs[0].texto : "Nenhuma mensagem ainda",
-                horaUltimaMsg: temMsg ? formatarHora(ultimasMsgs[0].created_at) : ""
-            };
-        })
-    );
-
-    // 2. BUSCA OS GRUPOS USANDO A COLUNA CORRETA "usuario_nome"
-    const { data: relacaoGrupos } = await _supabase
-        .from("grupo_membros")
-        .select("grupo_id")
-        .eq("usuario_nome", meuUsuario);
-
-    const idsGrupos = relacaoGrupos ? relacaoGrupos.map(g => g.grupo_id) : [];
-
-    let meusGrupos = [];
-    if (idsGrupos.length > 0) {
-        const { data: dadosGrupos } = await _supabase
-            .from("grupos")
-            .select("id, nome, foto_url")
-            .in("id", idsGrupos);
-        meusGrupos = dadosGrupos || [];
+    if (listaCache.length) {
+        todosContatos = listaCache;
+        renderizarContatos(todosContatos);
     }
 
-    const gruposFormatados = meusGrupos.map(grupo => ({
-        ...grupo,
-        tipo: 'grupo',
-        identificador: grupo.id,
-        usuario: grupo.nome,
-        foto_url: grupo.foto_url || "svg/user-placeholder.svg", // Define um ícone padrão caso esteja vazio
-        ultimaMsg: "Toque para ver o grupo",
-        horaUltimaMsg: ""
-    }));
+    // Sem internet, para aqui mantendo a lista salva na tela.
+    if (!navigator.onLine || !_supabase || !meuUsuario) {
+        if (!listaCache.length) {
+            const container = document.getElementById("lista-contatos");
+            if (container) {
+                container.innerHTML = `
+                    <li style="color:#888;text-align:center;margin-top:20px;font-family:sans-serif;">
+                        Nenhuma conversa salva neste aparelho.
+                    </li>
+                `;
+            }
+        }
+        return;
+    }
 
-    todosContatos = [...contatosComMensagens, ...gruposFormatados];
-    renderizarContatos(todosContatos);
+    try {
+        // 2. Busca os contatos individuais.
+        const { data: relacaoContatos, error: erroContatos } = await _supabase
+            .from("contatos")
+            .select("contato_usuario")
+            .eq("usuario_origem", meuUsuario);
+
+        if (erroContatos) throw erroContatos;
+
+        const nomesSalvos = relacaoContatos
+            ? relacaoContatos.map(item => item.contato_usuario).filter(Boolean)
+            : [];
+
+        let usuarios = [];
+
+        if (nomesSalvos.length > 0) {
+            const { data: dadosUsuarios, error: erroUsuarios } = await _supabase
+                .from("usuarios")
+                .select("email, usuario, foto_url, cor")
+                .in("usuario", nomesSalvos);
+
+            if (erroUsuarios) throw erroUsuarios;
+            usuarios = dadosUsuarios || [];
+        }
+
+        const contatosComMensagens = await Promise.all(
+            usuarios.map(async (contato) => {
+                let ultimaMsg = null;
+
+                try {
+                    const { data: ultimasMsgs } = await _supabase
+                        .from("mensagens")
+                        .select("texto, created_at")
+                        .or(`and(remetente_email.eq.${meuEmail},destinatario_email.eq.${contato.email}),and(remetente_email.eq.${contato.email},destinatario_email.eq.${meuEmail})`)
+                        .order("created_at", { ascending: false })
+                        .limit(1);
+
+                    ultimaMsg = ultimasMsgs?.[0] || null;
+                } catch (e) {}
+
+                // Se a consulta da prévia falhar, tenta o histórico local.
+                if (!ultimaMsg && cache) {
+                    const local = await cache.ultimaMensagem(
+                        cache.conversaPrivada(contato.email)
+                    );
+
+                    if (local) ultimaMsg = local;
+                }
+
+                return {
+                    ...contato,
+                    tipo: 'contato',
+                    identificador: contato.email,
+                    ultimaMsg: ultimaMsg?.texto || "Nenhuma mensagem ainda",
+                    horaUltimaMsg: ultimaMsg?.created_at
+                        ? formatarHora(ultimaMsg.created_at)
+                        : ""
+                };
+            })
+        );
+
+        // 3. Busca grupos.
+        const { data: relacaoGrupos, error: erroRelacaoGrupos } = await _supabase
+            .from("grupo_membros")
+            .select("grupo_id")
+            .eq("usuario_nome", meuUsuario);
+
+        if (erroRelacaoGrupos) throw erroRelacaoGrupos;
+
+        const idsGrupos = relacaoGrupos
+            ? relacaoGrupos.map(g => g.grupo_id).filter(id => id !== null && id !== undefined)
+            : [];
+
+        let meusGrupos = [];
+
+        if (idsGrupos.length > 0) {
+            const { data: dadosGrupos, error: erroGrupos } = await _supabase
+                .from("grupos")
+                .select("id, nome, foto_url")
+                .in("id", idsGrupos);
+
+            if (erroGrupos) throw erroGrupos;
+            meusGrupos = dadosGrupos || [];
+        }
+
+        const gruposFormatados = await Promise.all(
+            meusGrupos.map(async grupo => {
+                let ultimaMsg = null;
+
+                if (cache) {
+                    ultimaMsg = await cache.ultimaMensagem(
+                        cache.conversaGrupo(grupo.id)
+                    );
+                }
+
+                return {
+                    ...grupo,
+                    tipo: 'grupo',
+                    identificador: grupo.id,
+                    usuario: grupo.nome,
+                    foto_url: grupo.foto_url || "svg/group-placeholder.svg",
+                    ultimaMsg: ultimaMsg?.texto || "Toque para ver o grupo",
+                    horaUltimaMsg: ultimaMsg?.created_at
+                        ? formatarHora(ultimaMsg.created_at)
+                        : ""
+                };
+            })
+        );
+
+        const listaAtualizada = [
+            ...contatosComMensagens,
+            ...gruposFormatados
+        ];
+
+        todosContatos = listaAtualizada;
+        renderizarContatos(todosContatos);
+
+        // 4. Persiste a home inteira para a próxima abertura offline.
+        if (cache?.salvarListaConversas) {
+            await cache.salvarListaConversas(meuEmail, listaAtualizada);
+        }
+    } catch (erro) {
+        console.warn("Falha ao atualizar conversas online. Mantendo cache local.", erro);
+
+        if (!listaCache.length) {
+            const container = document.getElementById("lista-contatos");
+            if (container) {
+                container.innerHTML = `
+                    <li style="color:#888;text-align:center;margin-top:20px;font-family:sans-serif;">
+                        Não foi possível carregar as conversas agora.
+                    </li>
+                `;
+            }
+        }
+    }
 }
 
 function renderizarContatos(lista) {
