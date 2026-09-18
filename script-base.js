@@ -1179,45 +1179,134 @@ async function enviarFotoChat(event) {
     }
 }
 
-async function carregarMensagens() {
-    const meuEmail = localStorage.getItem("usuarioLogado");
-
-    if (!meuEmail || !destinatarioAtual) return;
-
+async function renderizarMensagensPrivadasDoCache(mensagens, chaveConversa, limparTudo) {
+    const meuEmail = (localStorage.getItem("usuarioLogado") || "").trim().toLowerCase();
+    const contatoAtual = (destinatarioAtual || "").trim().toLowerCase();
     const container = document.getElementById("chat-mensagens");
-    if (!container) return;
 
-    container.innerHTML = "";
+    if (!container || !contatoAtual) return;
 
-    // 1. Busca todas as mensagens simples do chat sem o join complexo
-    const { data: mensagens, error } = await _supabase
-        .from("mensagens")
-        .select("*")
-        .or(`and(remetente_email.eq.${meuEmail},destinatario_email.eq.${destinatarioAtual}),and(remetente_email.eq.${destinatarioAtual},destinatario_email.eq.${meuEmail})`)
-        .order("created_at", { ascending: true });
-
-    if (error) {
-        console.error("Erro ao carregar mensagens:", error.message);
-        return;
+    if (limparTudo) {
+        container.innerHTML = "";
+        container.dataset.cacheConversa = chaveConversa;
     }
 
-    // 2. Mapeia as mensagens para associar a mensagem respondida caso exista o ID
-    for (let i = 0; i < mensagens.length; i++) {
-        let msg = mensagens[i];
+    const mapa = new Map((mensagens || []).map(msg => [String(msg.id), msg]));
+
+    for (const msg of (mensagens || [])) {
+        if ((destinatarioAtual || "").trim().toLowerCase() !== contatoAtual) break;
+
+        if (msg.id !== null && msg.id !== undefined) {
+            const existente = container.querySelector(`.balao-msg[data-message-id="${String(msg.id)}"]`);
+            if (existente) continue;
+        }
+
         let dadosRespondida = null;
 
         if (msg.mensagem_respondida_id) {
-            // Procura na lista local a mensagem que foi respondida
-            dadosRespondida = mensagens.find(m => m.id === msg.mensagem_respondida_id);
+            dadosRespondida = mapa.get(String(msg.mensagem_respondida_id)) || null;
+
+            if (!dadosRespondida && window.WhatisCache) {
+                dadosRespondida = await window.WhatisCache.mensagemPorId(
+                    chaveConversa,
+                    msg.mensagem_respondida_id
+                );
+            }
         }
 
         await renderizarBalao(
             msg.texto,
-            msg.remetente_email === meuEmail,
+            (msg.remetente_email || "").trim().toLowerCase() === meuEmail,
             msg.created_at,
             msg.id,
-            dadosRespondida // Mantém a ordem cronológica mesmo quando a resposta precisa buscar usuário/cor
+            dadosRespondida
         );
+    }
+}
+
+async function carregarMensagens() {
+    const meuEmail = (localStorage.getItem("usuarioLogado") || "").trim();
+    const emailContato = (destinatarioAtual || "").trim();
+
+    if (!meuEmail || !emailContato) return;
+
+    const container = document.getElementById("chat-mensagens");
+    if (!container) return;
+
+    const cache = window.WhatisCache || null;
+    const chaveConversa = cache
+        ? cache.conversaPrivada(emailContato)
+        : `privado|${meuEmail.toLowerCase()}|${emailContato.toLowerCase()}`;
+
+    const mudouConversa = container.dataset.cacheConversa !== chaveConversa;
+
+    let mensagensCache = [];
+
+    if (cache) {
+        mensagensCache = await cache.listarMensagens(chaveConversa);
+
+        // Usuário pode ter trocado de chat enquanto o IndexedDB respondia.
+        if ((destinatarioAtual || "").trim() !== emailContato) return;
+
+        if (mensagensCache.length) {
+            await renderizarMensagensPrivadasDoCache(
+                mensagensCache,
+                chaveConversa,
+                mudouConversa
+            );
+        } else if (mudouConversa) {
+            container.innerHTML = "";
+            container.dataset.cacheConversa = chaveConversa;
+        }
+    } else if (mudouConversa) {
+        container.innerHTML = "";
+        container.dataset.cacheConversa = chaveConversa;
+    }
+
+    let consulta = _supabase
+        .from("mensagens")
+        .select("*")
+        .or(`and(remetente_email.eq.${meuEmail},destinatario_email.eq.${emailContato}),and(remetente_email.eq.${emailContato},destinatario_email.eq.${meuEmail})`)
+        .order("created_at", { ascending: true });
+
+    // Se já há histórico local, busca só o trecho mais recente.
+    // "gte" repete no máximo a última mensagem e o dedupe por ID remove a duplicata.
+    const ultimaCache = mensagensCache.length
+        ? mensagensCache[mensagensCache.length - 1]
+        : null;
+
+    if (ultimaCache?.created_at) {
+        consulta = consulta.gte("created_at", ultimaCache.created_at);
+    }
+
+    const { data: novasMensagens, error } = await consulta;
+
+    if (error) {
+        console.error("Erro ao sincronizar mensagens:", error.message);
+        return; // O histórico em cache continua visível.
+    }
+
+    if ((destinatarioAtual || "").trim() !== emailContato) return;
+
+    const recebidas = novasMensagens || [];
+
+    if (cache && recebidas.length) {
+        await cache.salvarMensagens(chaveConversa, recebidas);
+    }
+
+    const idsCache = new Set(mensagensCache.map(msg => String(msg.id)));
+    const apenasNovas = ultimaCache
+        ? recebidas.filter(msg => !idsCache.has(String(msg.id)))
+        : recebidas;
+
+    if (!mensagensCache.length) {
+        // Primeira carga neste aparelho: renderiza o histórico vindo da rede uma vez.
+        if (recebidas.length) {
+            await renderizarMensagensPrivadasDoCache(recebidas, chaveConversa, true);
+        }
+    } else if (apenasNovas.length) {
+        const combinadas = mensagensCache.concat(apenasNovas);
+        await renderizarMensagensPrivadasDoCache(combinadas, chaveConversa, false);
     }
 
     container.scrollTop = container.scrollHeight;
@@ -1342,35 +1431,34 @@ function abrirChatGrupo(idGrupo, nomeGrupo, fotoGrupo) {
     if (chatActionBar) chatActionBar.classList.add('hidden');
 }
 
-async function carregarMensagensGrupo(idGrupo) {
+async function renderizarMensagensGrupoDoCache(mensagens, idGrupo, chaveConversa, limparTudo) {
     const meuEmail = (localStorage.getItem("usuarioLogado") || "").trim().toLowerCase();
+    const container = document.getElementById("chat-mensagens");
 
-    const { data: mensagens, error } = await _supabase
-        .from("mensagens")
-        .select("*")
-        .eq("grupo_id", idGrupo)
-        .order("created_at", { ascending: true });
+    if (!container) return;
 
-    if (error) {
-        console.error("Erro ao carregar mensagens do grupo:", error.message);
-        return;
+    if (limparTudo) {
+        container.innerHTML = "";
+        container.dataset.cacheConversa = chaveConversa;
     }
 
-    const containerChat = document.getElementById("chat-mensagens"); 
-    if (!containerChat) return;
-
-    containerChat.innerHTML = "";
+    const mapa = new Map((mensagens || []).map(msg => [String(msg.id), msg]));
 
     for (const msg of (mensagens || [])) {
-        // Normaliza para evitar problemas de maiúsculas/minúsculas ou espaços
+        if (String(window.grupoAtualId || "") !== String(idGrupo)) break;
+
+        if (msg.id !== null && msg.id !== undefined) {
+            const existente = container.querySelector(`.balao-msg[data-message-id="${String(msg.id)}"]`);
+            if (existente) continue;
+        }
+
         const emailRemetenteMsg = (msg.remetente_email || "").trim().toLowerCase();
         const ehMinha = emailRemetenteMsg === meuEmail;
-        
+
         let nomeRemetente = msg.remetente_email;
         let corRemetente = null;
 
         if (!ehMinha) {
-            // Busca amigável do nome de usuário e da COR pelo email remetente
             const userData = await obterUsuarioMensagem(msg.remetente_email);
 
             if (userData) {
@@ -1378,16 +1466,20 @@ async function carregarMensagensGrupo(idGrupo) {
                 corRemetente = userData.cor || null;
             }
         } else {
-            // Se for minha mensagem, posso pegar minha própria cor salva no localStorage ou banco se precisar
             corRemetente = localStorage.getItem("corUsuario") || null;
         }
 
         let dadosRespondida = null;
 
         if (msg.mensagem_respondida_id) {
-            dadosRespondida = mensagens.find(
-                m => m.id === msg.mensagem_respondida_id
-            );
+            dadosRespondida = mapa.get(String(msg.mensagem_respondida_id)) || null;
+
+            if (!dadosRespondida && window.WhatisCache) {
+                dadosRespondida = await window.WhatisCache.mensagemPorId(
+                    chaveConversa,
+                    msg.mensagem_respondida_id
+                );
+            }
         }
 
         await renderizarBalaoGrupo(
@@ -1399,6 +1491,87 @@ async function carregarMensagensGrupo(idGrupo) {
             msg.id,
             dadosRespondida
         );
+    }
+}
+
+async function carregarMensagensGrupo(idGrupo) {
+    const meuEmail = (localStorage.getItem("usuarioLogado") || "").trim().toLowerCase();
+    if (!meuEmail || idGrupo === null || idGrupo === undefined) return;
+
+    const containerChat = document.getElementById("chat-mensagens");
+    if (!containerChat) return;
+
+    const cache = window.WhatisCache || null;
+    const chaveConversa = cache
+        ? cache.conversaGrupo(idGrupo)
+        : `grupo|${meuEmail}|${String(idGrupo)}`;
+
+    const mudouConversa = containerChat.dataset.cacheConversa !== chaveConversa;
+
+    let mensagensCache = [];
+
+    if (cache) {
+        mensagensCache = await cache.listarMensagens(chaveConversa);
+
+        if (String(window.grupoAtualId || "") !== String(idGrupo)) return;
+
+        if (mensagensCache.length) {
+            await renderizarMensagensGrupoDoCache(
+                mensagensCache,
+                idGrupo,
+                chaveConversa,
+                mudouConversa
+            );
+        } else if (mudouConversa) {
+            containerChat.innerHTML = "";
+            containerChat.dataset.cacheConversa = chaveConversa;
+        }
+    } else if (mudouConversa) {
+        containerChat.innerHTML = "";
+        containerChat.dataset.cacheConversa = chaveConversa;
+    }
+
+    let consulta = _supabase
+        .from("mensagens")
+        .select("*")
+        .eq("grupo_id", idGrupo)
+        .order("created_at", { ascending: true });
+
+    const ultimaCache = mensagensCache.length
+        ? mensagensCache[mensagensCache.length - 1]
+        : null;
+
+    if (ultimaCache?.created_at) {
+        consulta = consulta.gte("created_at", ultimaCache.created_at);
+    }
+
+    const { data: novasMensagens, error } = await consulta;
+
+    if (error) {
+        console.error("Erro ao sincronizar mensagens do grupo:", error.message);
+        return;
+    }
+
+    if (String(window.grupoAtualId || "") !== String(idGrupo)) return;
+
+    const recebidas = novasMensagens || [];
+
+    if (cache && recebidas.length) {
+        await cache.salvarMensagens(chaveConversa, recebidas);
+    }
+
+    const idsCache = new Set(mensagensCache.map(msg => String(msg.id)));
+    const apenasNovas = ultimaCache
+        ? recebidas.filter(msg => !idsCache.has(String(msg.id)))
+        : recebidas;
+
+    if (!mensagensCache.length) {
+        if (recebidas.length) {
+            await renderizarMensagensGrupoDoCache(recebidas, idGrupo, chaveConversa, true);
+        }
+    } else if (apenasNovas.length) {
+        const combinadas = mensagensCache.concat(apenasNovas);
+        await renderizarMensagensGrupoDoCache(combinadas, idGrupo, chaveConversa, false);
     }
 
     containerChat.scrollTop = containerChat.scrollHeight;
@@ -1562,15 +1735,39 @@ function inscreverRealtime() {
 
                 carregarListaContatos(); // Atualiza a lista lateral com a última mensagem
 
-                // Se o chat aberto for um grupo e a mensagem for desse grupo
-                if (window.grupoAtualId && novaMsg.grupo_id === window.grupoAtualId) {
+                // O carregamento agora é incremental: IndexedDB guarda o histórico e
+                // somente a mensagem nova é sincronizada/renderizada.
+                if (window.grupoAtualId && String(novaMsg.grupo_id || "") === String(window.grupoAtualId)) {
+                    const cache = window.WhatisCache;
+                    if (cache) {
+                        await cache.salvarMensagens(
+                            cache.conversaGrupo(window.grupoAtualId),
+                            [novaMsg]
+                        );
+                    }
                     await carregarMensagensGrupo(window.grupoAtualId);
                 }
 
-                // Se o chat aberto for privado, recarrega a sequência completa já ordenada.
-                // Assim respostas nunca chegam atrasadas por causa de await no nome/cor.
-                if (destinatarioAtual && novaMsg.remetente_email === destinatarioAtual && !novaMsg.grupo_id) {
-                    await carregarMensagens();
+                if (!novaMsg.grupo_id && destinatarioAtual) {
+                    const meuEmailAtual = (localStorage.getItem("usuarioLogado") || "").trim().toLowerCase();
+                    const outro = (destinatarioAtual || "").trim().toLowerCase();
+                    const remetente = (novaMsg.remetente_email || "").trim().toLowerCase();
+                    const destinatario = (novaMsg.destinatario_email || "").trim().toLowerCase();
+
+                    const pertenceAoChat =
+                        (remetente === meuEmailAtual && destinatario === outro) ||
+                        (remetente === outro && destinatario === meuEmailAtual);
+
+                    if (pertenceAoChat) {
+                        const cache = window.WhatisCache;
+                        if (cache) {
+                            await cache.salvarMensagens(
+                                cache.conversaPrivada(destinatarioAtual),
+                                [novaMsg]
+                            );
+                        }
+                        await carregarMensagens();
+                    }
                 }
             }
         )
