@@ -60,10 +60,12 @@
 
         // Prioriza os containers de topo conhecidos do app.
         const candidatosPrioritarios = [
-            document.querySelector('#tela-chat.ativa .chat-header'),
-            document.querySelector('#tela-conversas .topo-conversas'),
+            document.querySelector('#painel-dados-grupo:not(.hidden) .grupo-add-overlay:not(.hidden) .grupo-add-header'),
+            document.querySelector('#painel-dados-grupo:not(.hidden) .grupo-panel-header'),
+            document.querySelector('#painel-dados-contato:not(.hidden) .menu-chat-header'),
             document.querySelector('#painel-dados-usuario[style*="flex"] .dados-usuario-header'),
-            document.querySelector('#painel-dados-contato:not(.hidden) .menu-chat-header')
+            document.querySelector('#tela-chat.ativa .chat-header'),
+            document.querySelector('#tela-conversas .topo-conversas')
         ].filter(Boolean);
 
         for (const el of candidatosPrioritarios) {
