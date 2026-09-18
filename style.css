@@ -702,3 +702,145 @@ input:checked + .slider {
         background-color: rgba(35,35,35,.94) !important;
     }
 }
+
+
+/* ==========================================
+   AJUSTES NAVEGAÇÃO LIQUID GLASS
+   ========================================== */
+
+/* A barra é um único vidro. Os botões por dentro ficam transparentes:
+   o cilindro ativo é desenhado uma vez só e desliza entre as abas. */
+.baixo {
+    position: fixed !important;
+    overflow: hidden;
+    isolation: isolate;
+    padding: 3px !important;
+    box-sizing: border-box;
+}
+
+.baixo::before {
+    content: "";
+    position: absolute;
+    z-index: 0;
+    top: 4px;
+    bottom: 4px;
+    left: 4px;
+    width: calc(50% - 6px);
+    border-radius: 999px;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 28% 2%,
+            rgba(255,255,255,.34) 0%,
+            rgba(255,255,255,.16) 28%,
+            rgba(255,255,255,.08) 62%,
+            rgba(255,255,255,.045) 100%);
+    border: 1px solid rgba(255,255,255,.25);
+    box-shadow:
+        0 8px 22px rgba(0,0,0,.25),
+        inset 0 1px 0 rgba(255,255,255,.36),
+        inset 0 -1px 0 rgba(255,255,255,.055),
+        inset 8px 0 18px rgba(255,255,255,.035);
+    -webkit-backdrop-filter: blur(26px) saturate(210%);
+    backdrop-filter: blur(26px) saturate(210%);
+    transition:
+        left .52s cubic-bezier(.22, .82, .18, 1),
+        transform .52s cubic-bezier(.22, .82, .18, 1),
+        box-shadow .32s ease,
+        background .32s ease;
+}
+
+/* Quando "Você" vira a aba ativa, o MESMO cilindro corre pra direita. */
+.baixo:has(.tu.ativo)::before {
+    left: calc(50% + 2px);
+}
+
+/* Durante a troca ele ganha uma leve sensação de alongamento/gelatina. */
+.baixo:has(.chat-bt:active)::before,
+.baixo:has(.tu:active)::before {
+    transform: scaleX(1.055) scaleY(.96);
+    box-shadow:
+        0 10px 28px rgba(0,0,0,.28),
+        inset 0 1px 0 rgba(255,255,255,.42),
+        inset 0 -1px 0 rgba(255,255,255,.07);
+}
+
+/* Remove a segunda "moldura" dos botões internos.
+   Assim, quando Conversas está ativa, a área de Você fica realmente sem cilindro. */
+.baixo .chat-bt,
+.baixo .tu,
+.baixo .chat-bt.ativo,
+.baixo .tu.ativo {
+    position: relative;
+    z-index: 1;
+    width: 50% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 999px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    transform: none;
+    filter: none;
+}
+
+/* O item inativo fica mais apagado; o ativo clareia por cima do vidro móvel. */
+.baixo .chat-bt,
+.baixo .tu {
+    opacity: .68;
+    transition: opacity .30s ease, transform .22s ease;
+}
+
+.baixo .chat-bt.ativo,
+.baixo .tu.ativo {
+    opacity: 1;
+}
+
+.baixo .chat-bt:active,
+.baixo .tu:active {
+    transform: scale(.97);
+}
+
+/* Mata qualquer indicador antigo da navegação. */
+.baixo .chat-bt::after,
+.baixo .tu::after,
+.baixo .chat-bt.ativo::after,
+.baixo .tu.ativo::after {
+    display: none !important;
+}
+
+/* PLUS: continua laranja, mas como um vidro tingido de laranja. */
+.verde {
+    background:
+        radial-gradient(circle at 32% 16%,
+            rgba(255,225,190,.56) 0%,
+            rgba(255,163,72,.50) 24%,
+            rgba(255,123,0,.58) 58%,
+            rgba(130,48,0,.42) 100%) !important;
+    border: 1px solid rgba(255,190,120,.62) !important;
+    color: #ff9a3c !important;
+    box-shadow:
+        0 10px 28px rgba(255,123,0,.26),
+        0 0 24px rgba(255,123,0,.12),
+        inset 0 1px 0 rgba(255,245,230,.48),
+        inset 0 -1px 0 rgba(120,42,0,.22) !important;
+    -webkit-backdrop-filter: blur(22px) saturate(205%);
+    backdrop-filter: blur(22px) saturate(205%);
+}
+
+/* O desenho do + acompanha o laranja do vidro sem ficar preto chapado. */
+.verde .plusi {
+    filter: brightness(0) saturate(100%) invert(63%) sepia(95%) saturate(2050%)
+            hue-rotate(342deg) brightness(103%) contrast(102%) !important;
+    opacity: .98;
+}
+
+/* Clique do + com resposta elástica mais próxima do iOS. */
+.verde:active {
+    transform: scale(.92) !important;
+    box-shadow:
+        0 6px 18px rgba(255,123,0,.24),
+        inset 0 1px 0 rgba(255,255,255,.54),
+        inset 0 -1px 0 rgba(120,42,0,.20) !important;
+}
