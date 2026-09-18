@@ -3654,3 +3654,25 @@ body.subtela-aberta #tela-conversas .topo-conversas {
         font-size: 11px;
     }
 }
+
+
+/* ==========================================
+   HOME - SCROLL NATIVO RESTAURADO
+   ========================================== */
+body:not(.subtela-aberta) {
+    overflow-y: auto !important;
+    touch-action: pan-y !important;
+    -webkit-overflow-scrolling: touch;
+}
+
+#tela-conversas {
+    overflow-y: visible !important;
+    touch-action: pan-y !important;
+}
+
+#tela-conversas .main-conversas,
+#tela-conversas .contatos,
+#tela-conversas #lista-contatos,
+#tela-conversas .item-contato {
+    touch-action: pan-y !important;
+}
