@@ -5,6 +5,11 @@
 // nem carregar novamente a lógica existente do aplicativo.
 
 window.abrirPainelDadosContato = function () {
+    if (window.grupoAtualId && typeof window.abrirPainelDadosGrupo === 'function') {
+        window.abrirPainelDadosGrupo();
+        return;
+    }
+
     const painel = document.getElementById('painel-dados-contato');
     if (!painel) return;
     const nomeHeader = document.getElementById('chat-nome-usuario');
