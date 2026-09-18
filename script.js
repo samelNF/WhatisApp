@@ -20,7 +20,11 @@
         // Se ele já passou quando o carregamento terminou, iniciamos
         // manualmente as mesmas rotinas que o script original usaria.
         if (document.readyState !== 'loading') {
-            if (typeof verificarSessao === 'function') verificarSessao();
+            if (typeof verificarSessao === 'function') {
+                Promise.resolve(verificarSessao())
+                    .catch(erro => console.error('Erro ao restaurar sessão:', erro))
+                    .finally(() => document.body?.classList.remove('sessao-resolvendo'));
+            }
             if (typeof registrarServiceWorker === 'function') registrarServiceWorker();
             if (typeof inicializarEventosSolicitacoes === 'function') inicializarEventosSolicitacoes();
         }
