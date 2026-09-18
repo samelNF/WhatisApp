@@ -193,27 +193,37 @@
                 li.className = 'solicitacao-item';
 
                 let nome = solicitacao.remetente_email;
-                let foto = 'svg/icon.svg';
+                let foto = '';
+                let cor = '#3a3a3c';
 
                 const { data: remetente } = await _supabase
                     .from('usuarios')
-                    .select('usuario, foto_url')
+                    .select('usuario, foto_url, cor')
                     .eq('email', solicitacao.remetente_email)
                     .maybeSingle();
 
                 if (remetente) {
                     nome = remetente.usuario || nome;
-                    foto = remetente.foto_url || foto;
+                    foto = remetente.foto_url || '';
+                    cor = remetente.cor || cor;
                 }
 
                 li.innerHTML = `
-                    <img src="${foto}" class="foto-contato" style="width:42px;height:42px;border-radius:50%;object-fit:cover;">
+                    <img src="" class="foto-contato" style="width:42px;height:42px;border-radius:50%;">
                     <div class="user-info">
                         <strong>${nome}</strong>
                         <p>Enviou uma mensagem</p>
                     </div>
                     <button class="btn-abrir-pedido">Ver</button>
                 `;
+
+                const avatar = li.querySelector('.foto-contato');
+                if (typeof window.aplicarAvatarUsuario === 'function') {
+                    window.aplicarAvatarUsuario(avatar, foto, cor);
+                } else if (avatar) {
+                    avatar.src = foto || 'svg/user-placeholder.svg';
+                    avatar.style.backgroundColor = foto ? 'transparent' : cor;
+                }
 
                 li.querySelector('.btn-abrir-pedido').addEventListener('click', () => {
                     window.abrirChatSolicitacao(solicitacao);
@@ -273,14 +283,19 @@
 
             const { data: remetente } = await _supabase
                 .from('usuarios')
-                .select('usuario, foto_url')
+                .select('usuario, foto_url, cor')
                 .eq('email', solicitacao.remetente_email)
                 .maybeSingle();
 
             const nome = document.getElementById('chat-nome-usuario');
             const foto = document.getElementById('chat-foto-usuario');
             if (nome) nome.innerText = remetente?.usuario || solicitacao.remetente_email;
-            if (foto) foto.src = remetente?.foto_url || 'svg/icon.svg';
+            if (typeof window.aplicarAvatarUsuario === 'function') {
+                window.aplicarAvatarUsuario(foto, remetente?.foto_url || '', remetente?.cor || '#3a3a3c');
+            } else if (foto) {
+                foto.src = remetente?.foto_url || 'svg/user-placeholder.svg';
+                foto.style.backgroundColor = remetente?.foto_url ? 'transparent' : (remetente?.cor || '#3a3a3c');
+            }
 
             if (tela) {
                 tela.style.display = 'flex';
