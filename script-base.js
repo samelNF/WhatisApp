@@ -266,7 +266,6 @@ async function verificarSessao() {
         localStorage.setItem("fotoUsuario", usuario.foto_url);
     } else {
         localStorage.removeItem("fotoUsuario");
-    localStorage.removeItem("corUsuario");
     }
 
     if (usuario.cor) {
@@ -300,6 +299,7 @@ function deslogar() {
     localStorage.removeItem("usuarioLogado");
     localStorage.removeItem("nomeUsuario");
     localStorage.removeItem("fotoUsuario");
+    localStorage.removeItem("corUsuario");
 
     alert("Sessão encerrada!");
 
