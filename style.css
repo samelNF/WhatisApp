@@ -3373,3 +3373,53 @@ body.subtela-aberta #tela-conversas .topo-conversas {
         overscroll-behavior: none !important;
     }
 }
+
+
+/* ==========================================
+   IOS - TOPO HOME ACOMPANHA SAFE AREA
+   ========================================== */
+/* A barra pode entrar na região da status bar, mas o conteúdo da página
+   desce exatamente o mesmo tanto. Assim não sobra um vão nem o título fica
+   escondido atrás da barra quando o safe-area do iPhone muda. */
+@supports (-webkit-touch-callout: none) {
+    #tela-conversas {
+        --home-safe-top: env(safe-area-inset-top, 0px);
+        --home-topo-base: 60px;
+        padding-top:
+            calc(var(--home-safe-top) + var(--home-topo-base) + 12px)
+            !important;
+    }
+
+    #tela-conversas .topo-conversas {
+        top: 0 !important;
+        min-height:
+            calc(var(--home-safe-top) + var(--home-topo-base))
+            !important;
+        height:
+            calc(var(--home-safe-top) + var(--home-topo-base))
+            !important;
+        padding:
+            var(--home-safe-top)
+            16px
+            10px
+            !important;
+        align-items: flex-end !important;
+    }
+
+    #tela-conversas .conversa-nova {
+        margin-top: 0 !important;
+    }
+
+    @media (max-width: 500px) {
+        #tela-conversas {
+            padding-top:
+                calc(var(--home-safe-top) + var(--home-topo-base) + 10px)
+                !important;
+        }
+
+        #tela-conversas .topo-conversas {
+            padding-left: 13px !important;
+            padding-right: 13px !important;
+        }
+    }
+}
