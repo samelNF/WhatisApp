@@ -39,6 +39,11 @@
 
     window.formatarPreviewMensagem = function (msg) {
         if (!msg) return '';
+        if (
+            msg.tipo === 'chamada' ||
+            msg.texto === '[CHAMADA]' ||
+            msg.chamada_id
+        ) return '📞 Ligação de voz';
         if (ehMensagemAudio(msg)) return '🎤 Áudio';
 
         const texto = String(msg.texto || '');
