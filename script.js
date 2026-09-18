@@ -285,7 +285,7 @@
 
                 const { data: usuarioRemetente } = await _supabase
                     .from('usuarios')
-                    .select('usuario, foto_url')
+                    .select('usuario, foto_url, cor')
                     .eq('email', solicitacao.remetente_email)
                     .maybeSingle();
 
@@ -348,12 +348,21 @@
 
             const { data: usuarioRemetente } = await _supabase
                 .from('usuarios')
-                .select('usuario, foto_url')
+                .select('usuario, foto_url, cor')
                 .eq('email', solicitacao.remetente_email)
                 .maybeSingle();
 
             if (elemNome) elemNome.innerText = usuarioRemetente?.usuario || solicitacao.remetente_email;
-            if (elemFoto) elemFoto.src = usuarioRemetente?.foto_url || 'svg/icon.svg';
+            if (typeof window.aplicarAvatarUsuario === 'function') {
+                window.aplicarAvatarUsuario(
+                    elemFoto,
+                    usuarioRemetente?.foto_url || '',
+                    usuarioRemetente?.cor || '#3a3a3c'
+                );
+            } else if (elemFoto) {
+                elemFoto.src = usuarioRemetente?.foto_url || 'svg/user-placeholder.svg';
+                elemFoto.style.backgroundColor = usuarioRemetente?.foto_url ? 'transparent' : (usuarioRemetente?.cor || '#3a3a3c');
+            }
 
             if (telaChat) {
                 telaChat.style.display = "flex";
