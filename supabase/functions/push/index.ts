@@ -123,7 +123,7 @@ Deno.serve(async (req) => {
     return json({ ok: true, token });
   }
 
-  if (action === "register" || action === "unregister") {
+  if (action === "register" || action === "unregister" || action === "mark-seen") {
     const token = String(body?.session_token || "");
     if (!token) {
       return json({ ok: false, error: "Sessão Push ausente." }, 401);
@@ -147,6 +147,33 @@ Deno.serve(async (req) => {
     }
 
     const email = String(sessao.usuario_email || "").trim().toLowerCase();
+
+    if (action === "mark-seen") {
+      const contatoEmail = String(body?.contato_email || "").trim().toLowerCase();
+
+      if (!contatoEmail) {
+        return json({ ok: false, error: "Contato ausente." }, 400);
+      }
+
+      const { data: atualizadas, error: erroAtualizar } = await supabase
+        .from("mensagens")
+        .update({ visualizada: true })
+        .eq("destinatario_email", email)
+        .eq("remetente_email", contatoEmail)
+        .is("grupo_id", null)
+        .eq("visualizada", false)
+        .select("*");
+
+      if (erroAtualizar) {
+        return json({ ok: false, error: erroAtualizar.message }, 500);
+      }
+
+      return json({
+        ok: true,
+        updated: atualizadas?.length || 0,
+        mensagens: atualizadas || []
+      });
+    }
 
     if (action === "register") {
       const subscription = body?.subscription;
