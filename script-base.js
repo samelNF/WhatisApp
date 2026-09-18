@@ -1957,6 +1957,16 @@ function inscreverRealtime() {
                     window.processarNotificacaoMensagem(novaMsg);
                 }
 
+                // O remetente avisa o backend para disparar Web Push real.
+                // Isso acorda o Service Worker do destinatário mesmo com o PWA fechado.
+                if (
+                    (novaMsg.remetente_email || "").trim().toLowerCase() ===
+                    (meuEmail || "").trim().toLowerCase() &&
+                    typeof window.enviarPushMensagemServidor === "function"
+                ) {
+                    window.enviarPushMensagemServidor(novaMsg.id);
+                }
+
                 carregarListaContatos(); // Atualiza a lista lateral com a última mensagem
 
                 // O carregamento agora é incremental: IndexedDB guarda o histórico e
