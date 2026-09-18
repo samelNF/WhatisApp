@@ -495,7 +495,7 @@
         }, 1200);
     }
 
-    window.ativarSistemaNotificacoes = async function () {
+    window.ativarSistemaNotificacoes = async function (criarPushSeNecessario = true) {
         if (!('Notification' in window)) {
             console.warn('[Notificações] Notifications API indisponível.');
             return false;
@@ -512,7 +512,7 @@
 
         // Criar a PushSubscription precisa acontecer a partir do gesto do usuário
         // (o clique no alternador), especialmente no iOS.
-        const webPushRegistrado = await registrarWebPushReal(true);
+        const webPushRegistrado = await registrarWebPushReal(criarPushSeNecessario);
 
         await iniciarCanal();
 
@@ -582,8 +582,7 @@
             ) {
                 // Se já existe uma PushSubscription, renova o vínculo com o servidor.
                 // Não cria uma nova automaticamente porque iOS exige gesto do usuário.
-                registrarWebPushReal(false);
-                window.ativarSistemaNotificacoes();
+                window.ativarSistemaNotificacoes(false);
             }
         }
     }, 250);
