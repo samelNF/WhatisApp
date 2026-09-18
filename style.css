@@ -3339,7 +3339,6 @@ body.subtela-aberta #tela-conversas .topo-conversas {
 @supports (-webkit-touch-callout: none) {
     #tela-chat {
         overscroll-behavior: none !important;
-        touch-action: none;
     }
 
     #tela-chat .chat-header {
@@ -3358,7 +3357,6 @@ body.subtela-aberta #tela-conversas .topo-conversas {
     #tela-chat .chat-conteudo {
         min-height: 0 !important;
         overflow: hidden !important;
-        touch-action: none;
     }
 
     #tela-chat .chat-mensagens {
