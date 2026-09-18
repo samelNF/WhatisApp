@@ -32,22 +32,50 @@ document.addEventListener("DOMContentLoaded", () => {
 async function alternarNotificacoes(checkbox) {
     if (checkbox.checked) {
         if (!("Notification" in window)) {
-            alert("Este navegador não suporta notificações de trabalho.");
+            alert("Este navegador não suporta notificações.");
+            checkbox.checked = false;
+            localStorage.setItem("notificacoes", "false");
+            return;
+        }
+
+        const ehIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+            (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+        const ehStandalone = window.matchMedia?.("(display-mode: standalone)").matches ||
+            window.navigator.standalone === true;
+
+        if (ehIOS && !ehStandalone) {
+            alert("No iPhone/iPad, adicione o WhatisApp à Tela de Início e abra por lá para ativar notificações.");
             checkbox.checked = false;
             return;
         }
 
-        const permissao = await Notification.requestPermission();
+        let permissao = Notification.permission;
+
+        if (permissao !== "granted") {
+            permissao = await Notification.requestPermission();
+        }
 
         if (permissao === "granted") {
             localStorage.setItem("notificacoes", "true");
+
+            if (typeof window.ativarSistemaNotificacoes === "function") {
+                await window.ativarSistemaNotificacoes();
+            }
+
+            console.log("🔔 Notificações ativadas.");
         } else {
-            alert("A permissão para notificações foi negada nas configurações do seu navegador.");
+            alert("A permissão para notificações foi negada nas configurações do navegador/sistema.");
             checkbox.checked = false;
             localStorage.setItem("notificacoes", "false");
         }
     } else {
         localStorage.setItem("notificacoes", "false");
+
+        if (typeof window.desativarSistemaNotificacoes === "function") {
+            await window.desativarSistemaNotificacoes();
+        }
+
+        console.log("🔕 Notificações desativadas.");
     }
 }
 
