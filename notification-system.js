@@ -256,6 +256,7 @@
         if (texto.startsWith('[FOTO]:')) return '📷 Foto';
         if (texto.startsWith('[VIDEO]:')) return '🎥 Vídeo';
         if (texto.startsWith('[AUDIO]:')) return '🎤 Áudio';
+        if (texto.startsWith('[CHAMADA]')) return '📞 Ligação de voz';
 
         const limpo = texto.trim();
         return limpo.length > 140 ? limpo.slice(0, 137) + '...' : limpo;
@@ -432,12 +433,17 @@
             return;
         }
 
+        const ehChamada = msg.tipo === 'chamada' || msg.texto === '[CHAMADA]';
+
         await mostrarNotificacao(nomeRemetente, {
             body: corpo,
-            tag: 'privado-' + (msg.id ?? Date.now()),
+            tag: (ehChamada ? 'chamada-' : 'privado-') + (msg.id ?? Date.now()),
             data: {
-                url: './index.html',
-                tipo: 'privado',
+                url: ehChamada && msg.chamada_id
+                    ? './index.html?call=' + encodeURIComponent(msg.chamada_id)
+                    : './index.html',
+                tipo: ehChamada ? 'chamada' : 'privado',
+                chamada_id: ehChamada ? (msg.chamada_id || null) : null,
                 remetente_email: msg.remetente_email
             }
         });
