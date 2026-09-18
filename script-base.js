@@ -791,7 +791,7 @@ async function carregarListaContatos() {
                 try {
                     const { data: ultimasMsgs } = await _supabase
                         .from("mensagens")
-                        .select("texto, created_at")
+                        .select("texto, tipo, audio_url, audio_duracao, created_at")
                         .or(`and(remetente_email.eq.${meuEmail},destinatario_email.eq.${contato.email}),and(remetente_email.eq.${contato.email},destinatario_email.eq.${meuEmail})`)
                         .order("created_at", { ascending: false })
                         .limit(1);
@@ -812,7 +812,11 @@ async function carregarListaContatos() {
                     ...contato,
                     tipo: 'contato',
                     identificador: contato.email,
-                    ultimaMsg: ultimaMsg?.texto || "Nenhuma mensagem ainda",
+                    ultimaMsg: ultimaMsg
+                        ? (typeof window.formatarPreviewMensagem === "function"
+                            ? window.formatarPreviewMensagem(ultimaMsg)
+                            : ultimaMsg.texto)
+                        : "Nenhuma mensagem ainda",
                     horaUltimaMsg: ultimaMsg?.created_at
                         ? formatarHora(ultimaMsg.created_at)
                         : ""
@@ -860,7 +864,11 @@ async function carregarListaContatos() {
                     identificador: grupo.id,
                     usuario: grupo.nome,
                     foto_url: grupo.foto_url || "svg/group-placeholder.svg",
-                    ultimaMsg: ultimaMsg?.texto || "Toque para ver o grupo",
+                    ultimaMsg: ultimaMsg
+                        ? (typeof window.formatarPreviewMensagem === "function"
+                            ? window.formatarPreviewMensagem(ultimaMsg)
+                            : ultimaMsg.texto)
+                        : "Toque para ver o grupo",
                     horaUltimaMsg: ultimaMsg?.created_at
                         ? formatarHora(ultimaMsg.created_at)
                         : ""
@@ -1080,7 +1088,8 @@ async function obterUsuarioMensagem(email) {
         return {
             usuario: localStorage.getItem("nomeUsuario") || "Você",
             email,
-            cor: localStorage.getItem("corUsuario") || "#888888"
+            cor: localStorage.getItem("corUsuario") || "#888888",
+            foto_url: localStorage.getItem("fotoUsuario") || ""
         };
     }
 
@@ -1090,7 +1099,7 @@ async function obterUsuarioMensagem(email) {
 
     const { data, error } = await _supabase
         .from("usuarios")
-        .select("usuario, email, cor")
+        .select("usuario, email, cor, foto_url")
         .eq("email", email)
         .maybeSingle();
 
@@ -1129,6 +1138,7 @@ async function renderizarBalao(texto, ehMinha, dataCriacao, idMensagem, mensagem
         let textoCitado = mensagemRespondida.texto;
         if (textoCitado.startsWith("[FOTO]:")) textoCitado = "📷 Foto";
         if (textoCitado.startsWith("[VIDEO]:")) textoCitado = "🎥 Vídeo";
+        if (textoCitado.startsWith("[AUDIO]:")) textoCitado = "🎤 Áudio";
 
         let corCitado = "#888888";
         let nomeCitadoOriginal = "Respondendo a...";
@@ -1231,6 +1241,7 @@ async function renderizarBalaoGrupo(texto, ehMinha, dataCriacao, nomeRemetente, 
         let textoCitado = mensagemRespondida.texto;
         if (textoCitado.startsWith("[FOTO]:")) textoCitado = "📷 Foto";
         if (textoCitado.startsWith("[VIDEO]:")) textoCitado = "🎥 Vídeo";
+        if (textoCitado.startsWith("[AUDIO]:")) textoCitado = "🎤 Áudio";
 
         let corCitado = "#888888";
         let nomeCitadoOriginal = "Respondendo a...";
@@ -1322,6 +1333,8 @@ function iniciarResposta(idMensagem, nomeRemetente, textoMensagem) {
             textoEl.textContent = "📷 Foto";
         } else if (textoMensagem.startsWith("[VIDEO]:") || textoMensagem.startsWith("[MIDIA_VIDEO]")) {
             textoEl.textContent = "🎥 Vídeo";
+        } else if (textoMensagem.startsWith("[AUDIO]:")) {
+            textoEl.textContent = "🎤 Áudio";
         } else {
             textoEl.textContent = textoMensagem;
         }
@@ -1479,15 +1492,27 @@ async function renderizarMensagensPrivadasDoCache(mensagens, chaveConversa, limp
             }
         }
 
-        await renderizarBalao(
-            msg.texto,
-            (msg.remetente_email || "").trim().toLowerCase() === meuEmail,
-            msg.created_at,
-            msg.id,
-            dadosRespondida,
-            null,
-            msg.visualizada === true
-        );
+        const ehMinha = (msg.remetente_email || "").trim().toLowerCase() === meuEmail;
+
+        if (
+            typeof window.ehMensagemAudio === "function" &&
+            window.ehMensagemAudio(msg) &&
+            typeof window.renderizarBalaoAudio === "function"
+        ) {
+            await window.renderizarBalaoAudio(msg, ehMinha, {
+                mensagemRespondida: dadosRespondida
+            });
+        } else {
+            await renderizarBalao(
+                msg.texto,
+                ehMinha,
+                msg.created_at,
+                msg.id,
+                dadosRespondida,
+                null,
+                msg.visualizada === true
+            );
+        }
     }
 }
 
@@ -1798,6 +1823,7 @@ async function renderizarMensagensGrupoDoCache(mensagens, idGrupo, chaveConversa
 
         let nomeRemetente = msg.remetente_email;
         let corRemetente = null;
+        let fotoRemetente = "";
 
         if (!ehMinha) {
             const userData = await obterUsuarioMensagem(msg.remetente_email);
@@ -1805,9 +1831,11 @@ async function renderizarMensagensGrupoDoCache(mensagens, idGrupo, chaveConversa
             if (userData) {
                 nomeRemetente = userData.usuario || userData.email;
                 corRemetente = userData.cor || null;
+                fotoRemetente = userData.foto_url || "";
             }
         } else {
             corRemetente = localStorage.getItem("corUsuario") || null;
+            fotoRemetente = localStorage.getItem("fotoUsuario") || "";
         }
 
         let dadosRespondida = null;
@@ -1823,15 +1851,28 @@ async function renderizarMensagensGrupoDoCache(mensagens, idGrupo, chaveConversa
             }
         }
 
-        await renderizarBalaoGrupo(
-            msg.texto,
-            ehMinha,
-            msg.created_at,
-            ehMinha ? null : nomeRemetente,
-            corRemetente,
-            msg.id,
-            dadosRespondida
-        );
+        if (
+            typeof window.ehMensagemAudio === "function" &&
+            window.ehMensagemAudio(msg) &&
+            typeof window.renderizarBalaoAudio === "function"
+        ) {
+            await window.renderizarBalaoAudio(msg, ehMinha, {
+                nomeRemetente: ehMinha ? "" : nomeRemetente,
+                corRemetente,
+                fotoRemetente,
+                mensagemRespondida: dadosRespondida
+            });
+        } else {
+            await renderizarBalaoGrupo(
+                msg.texto,
+                ehMinha,
+                msg.created_at,
+                ehMinha ? null : nomeRemetente,
+                corRemetente,
+                msg.id,
+                dadosRespondida
+            );
+        }
     }
 }
 
