@@ -8,6 +8,27 @@
     const root = document.documentElement;
     let agendado = false;
 
+
+    function atualizarAlturaViewport() {
+        const vv = window.visualViewport;
+
+        // Em iOS/PWA VisualViewport costuma ser a medida mais confiável.
+        // innerHeight fica como fallback para navegadores sem essa API.
+        let altura = vv && vv.height ? vv.height : window.innerHeight;
+
+        // Em alguns estados do Safari/PWA o viewport visual começa abaixo de y=0.
+        // Somar offsetTop evita uma faixa vazia quando a UI do sistema muda de estado.
+        if (vv && Number.isFinite(vv.offsetTop) && vv.offsetTop > 0) {
+            altura += vv.offsetTop;
+        }
+
+        if (!Number.isFinite(altura) || altura <= 0) {
+            altura = document.documentElement.clientHeight || screen.height;
+        }
+
+        root.style.setProperty('--app-viewport-height', Math.round(altura) + 'px');
+    }
+
     function alphaDaCor(cor) {
         if (!cor) return 0;
         if (cor === 'transparent') return 0;
@@ -70,6 +91,7 @@
 
     function atualizarSafeArea() {
         agendado = false;
+        atualizarAlturaViewport();
 
         const alvo = elementoComFundoNoTopo();
         const bodyStyle = getComputedStyle(document.body);
@@ -137,8 +159,18 @@
 
     window.addEventListener('resize', solicitarAtualizacao, { passive: true });
     window.addEventListener('orientationchange', solicitarAtualizacao, { passive: true });
+
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', solicitarAtualizacao, { passive: true });
+        window.visualViewport.addEventListener('scroll', solicitarAtualizacao, { passive: true });
+    }
     window.addEventListener('pageshow', solicitarAtualizacao, { passive: true });
     document.addEventListener('visibilitychange', solicitarAtualizacao);
 
+    setTimeout(solicitarAtualizacao, 50);
+    setTimeout(solicitarAtualizacao, 250);
+    setTimeout(solicitarAtualizacao, 800);
+
     window.atualizarSafeArea = atualizarSafeArea;
+    window.atualizarAlturaViewport = atualizarAlturaViewport;
 })();
