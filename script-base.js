@@ -194,8 +194,20 @@ function esconderTelasAutenticacao() {
     });
 }
 
+function esconderAppPrincipal() {
+    document.querySelectorAll(".aba-conteudo").forEach(el => {
+        el.style.display = "none";
+    });
+
+    const barraNavegacao = document.querySelector(".ultrabaixo");
+    if (barraNavegacao) barraNavegacao.style.display = "none";
+
+    document.body?.classList.remove("app-principal-ativa");
+}
+
 function mostrarTela(idTela) {
     esconderTelasAutenticacao();
+    esconderAppPrincipal();
 
     const telaAlvo = document.getElementById(idTela);
 
@@ -214,7 +226,7 @@ function proximo() {
     if (meuEmail) {
         mostrarAppPrincipal();
     } else {
-        document.getElementById("login").style.display = "flex";
+        mostrarTela("login");
     }
 }
 
@@ -264,6 +276,7 @@ async function mostrarAppPrincipal() {
 
     if (telaConversas) telaConversas.style.display = "block";
     if (barraNavegacao) barraNavegacao.style.display = "flex";
+    document.body?.classList.add("app-principal-ativa");
 
     // Primeiro mostra o que existe localmente; se houver rede, a função
     // sincroniza e atualiza a lista sem bloquear a abertura do app.
@@ -337,10 +350,7 @@ async function verificarSessao() {
         (sessaoCache?.email ? "true" : null);
 
     if (!introducaoVista && !emailSalvo) {
-        esconderTelasAutenticacao();
-
-        const telaInicio = document.getElementById("inicio");
-        if (telaInicio) telaInicio.style.display = "flex";
+        mostrarTela("inicio");
         return;
     }
 
