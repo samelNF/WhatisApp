@@ -1925,36 +1925,54 @@ body {
 }
 
 
+
 /* ==========================================
-   BALOES E RESPOSTAS - FORMATO WHATSAPP
-   Mantém as cores atuais do WhatisApp.
+   BALOES E RESPOSTAS - LAYOUT UNIFICADO
    ========================================== */
+#tela-chat {
+    --balao-max-width: min(78vw, 340px);
+    --balao-font-size: 16px;
+    --balao-line-height: 1.28;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+/* Normal, resposta e mídia obedecem a MESMA regra de largura.
+   Mensagem curta fica curta; mensagem longa quebra até o mesmo limite. */
 #tela-chat .balao-msg {
     position: relative;
-    width: fit-content;
-    min-width: 82px;
-    max-width: min(82%, 520px);
-    margin: 2px 8px 4px;
-    padding: 7px 9px 6px !important;
+    display: flex;
+    flex-direction: column;
+    width: fit-content !important;
+    min-width: 0 !important;
+    max-width: var(--balao-max-width) !important;
+    margin: 3px 8px 4px;
+    padding: 8px 10px 6px !important;
+    box-sizing: border-box;
     border-radius: 16px !important;
     overflow: visible;
-    word-break: normal;
-    overflow-wrap: anywhere;
-    box-shadow: none !important;
+    color: #fff;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: var(--balao-font-size) !important;
+    line-height: var(--balao-line-height) !important;
+    box-shadow: none !important;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
 }
 
 #tela-chat .balao-enviada {
     align-self: flex-end;
+    background-color: #2b2b2b !important;
     border-bottom-right-radius: 6px !important;
 }
 
 #tela-chat .balao-recebida {
     align-self: flex-start;
+    background-color: #1f1f1f !important;
     border-bottom-left-radius: 6px !important;
 }
 
-/* Rabinho do balão */
+/* Rabinho */
 #tela-chat .balao-enviada::after,
 #tela-chat .balao-recebida::after {
     content: "";
@@ -1979,72 +1997,149 @@ body {
     border-bottom-left-radius: 8px;
 }
 
-/* Nome no grupo fica acima de tudo, como no WhatsApp */
-#tela-chat .nome-remetente {
-    display: block;
-    margin: 0 2px 3px;
-    font-size: 13px;
-    line-height: 16px;
-    font-weight: 700;
-}
-
-/* Linha principal deixa texto e horário dividirem a mesma base.
-   Em mensagem curta o horário fica na mesma linha; em longa vai pro final. */
+/* Linha da mensagem: conteúdo + hora/check */
 #tela-chat .balao-linha {
-    min-width: 0;
     display: flex;
     align-items: flex-end;
-    gap: 9px;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
 }
 
 #tela-chat .balao-conteudo {
-    min-width: 0;
-    flex: 1 1 auto;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    max-width: 100%;
+    width: auto !important;
     color: inherit;
-    font-size: 16px;
-    line-height: 1.28;
+    font-size: inherit !important;
+    line-height: inherit !important;
 }
 
 #tela-chat .balao-texto {
-    display: inline;
+    display: block;
+    max-width: 100%;
+    color: inherit;
+    font-size: var(--balao-font-size) !important;
+    line-height: var(--balao-line-height) !important;
+    font-weight: 400 !important;
     white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
 }
 
 #tela-chat .balao-meta {
     flex: 0 0 auto;
-    align-self: flex-end;
     display: inline-flex;
     align-items: center;
     gap: 3px;
     margin: 0 0 1px;
     white-space: nowrap;
     color: rgba(255,255,255,.52);
-    line-height: 1;
+    font-size: 11px !important;
+    line-height: 1 !important;
 }
 
 #tela-chat .balao-hora {
     margin: 0 !important;
     align-self: auto !important;
     color: inherit;
-    font-size: 11px;
-    line-height: 12px;
+    font-size: 11px !important;
+    line-height: 1 !important;
 }
 
 #tela-chat .balao-visto {
     color: rgba(255,255,255,.56);
-    font-size: 16px;
-    line-height: 11px;
+    font-size: 16px !important;
+    line-height: 1 !important;
     font-weight: 500;
-    transform: translateY(-1px);
 }
 
-/* Mídias seguem a mesma forma do balão */
+/* Nome do remetente em grupo */
+#tela-chat .nome-remetente {
+    display: block;
+    margin: 0 2px 3px;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px !important;
+    line-height: 16px !important;
+    font-weight: 700;
+}
+
+/* Citação de resposta:
+   não mede/copia largura via JS; apenas usa o espaço do balão atual. */
+#tela-chat .citacao-resposta {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    margin: 0 0 6px;
+    padding: 8px 10px 8px 12px;
+    box-sizing: border-box;
+    border-radius: 12px;
+    overflow: hidden;
+    background: rgba(0,0,0,.18);
+}
+
+#tela-chat .citacao-resposta::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 4px;
+    background: var(--cor-citacao, #ff7b00);
+}
+
+#tela-chat .citacao-nome {
+    display: block;
+    min-width: 0;
+    max-width: 100%;
+    color: var(--cor-citacao, #ff7b00);
+    font-size: 15px !important;
+    line-height: 1.2 !important;
+    font-weight: 700 !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#tela-chat .citacao-texto {
+    display: block;
+    min-width: 0;
+    max-width: 100%;
+    color: rgba(255,255,255,.78);
+    font-size: 15px !important;
+    line-height: 1.2 !important;
+    font-weight: 400 !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+/* Mídia segue o mesmo limite do balão e nunca cria uma largura paralela. */
+#tela-chat .balao-com-midia {
+    max-width: min(78vw, 280px) !important;
+}
+
 #tela-chat .balao-midia {
     display: block;
-    width: min(100%, 260px);
-    max-width: 260px;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
     height: auto;
-    border-radius: 11px;
+    border-radius: 12px;
+    object-fit: cover;
     background: #000;
 }
 
@@ -2052,71 +2147,23 @@ body {
     cursor: pointer;
 }
 
-/* Citação dentro do balão respondido */
-#tela-chat .citacao-resposta {
-    position: relative;
-    width: 100%;
-    min-width: 0;
-    margin: 0 0 6px;
-    padding: 7px 10px 7px 12px;
-    box-sizing: border-box;
-    border-radius: 12px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    background: rgba(0,0,0,.17);
-}
-
-#tela-chat .citacao-resposta::before {
-    content: "";
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: 4px;
-    background: var(--cor-citacao, #ff7b00);
-}
-
-#tela-chat .citacao-nome {
-    min-width: 0;
-    padding-left: 1px;
-    color: var(--cor-citacao, #ff7b00);
-    font-size: 13px;
-    line-height: 16px;
-    font-weight: 700;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-#tela-chat .citacao-texto {
-    min-width: 0;
-    padding-left: 1px;
-    color: rgba(255,255,255,.78);
-    font-size: 14px;
-    line-height: 18px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-/* Quando há citação, o balão ganha largura suficiente pra ficar parecido
-   com o cartão de resposta da referência. */
-#tela-chat .balao-msg:has(.citacao-resposta) {
-    min-width: min(300px, 74vw);
-}
-
-/* Painel acima do input enquanto escolhe uma mensagem para responder */
+/* Preview de resposta acima do input.
+   Também usa um único limite previsível, sem copiar largura do balão antigo. */
 #tela-chat .painel-resposta {
     position: relative;
-    width: 100%;
-    min-height: 72px;
-    margin: 0 0 8px;
-    padding: 10px 48px 10px 16px !important;
+    align-self: flex-start !important;
+    display: flex;
+    align-items: center;
+    width: fit-content !important;
+    min-width: 0 !important;
+    max-width: min(78vw, 340px) !important;
+    min-height: 0 !important;
+    margin: 0 0 8px 48px !important;
+    padding: 8px 42px 8px 12px !important;
     box-sizing: border-box;
     border: 0 !important;
-    border-radius: 0 !important;
-    align-items: center;
-    background: transparent !important;
+    border-radius: 13px !important;
+    background: rgba(31,31,32,.96) !important;
     box-shadow: none !important;
     overflow: hidden;
 }
@@ -2133,35 +2180,47 @@ body {
 }
 
 #tela-chat .painel-resposta-conteudo {
-    width: 100%;
-    min-width: 0;
-    gap: 4px;
+    flex: 0 1 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
 }
 
 #tela-chat .painel-resposta-conteudo strong {
+    display: block;
     margin: 0 !important;
+    max-width: 100%;
     color: #ffb45f;
-    font-size: 16px;
-    line-height: 20px;
+    font-size: 15px !important;
+    line-height: 1.2 !important;
     font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 #tela-chat .painel-resposta-conteudo span {
+    display: block;
+    max-width: 100%;
     color: rgba(255,255,255,.9);
-    font-size: 15px;
-    line-height: 20px;
+    font-size: 15px !important;
+    line-height: 1.2 !important;
+    font-weight: 400;
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 #tela-chat .painel-resposta-fechar {
     position: absolute;
-    right: 10px;
+    right: 6px !important;
     top: 50%;
-    width: 34px !important;
-    height: 34px !important;
-    min-width: 34px;
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
     transform: translateY(-50%);
     padding: 0 !important;
     border: 2px solid rgba(255,255,255,.9) !important;
@@ -2172,37 +2231,33 @@ body {
     background: transparent !important;
     box-shadow: none !important;
     color: #fff !important;
-    font-size: 26px !important;
-    line-height: 1;
+    font-size: 22px !important;
+    line-height: 1 !important;
 }
 
 #tela-chat .painel-resposta-fechar:active {
     transform: translateY(-50%) scale(.93) !important;
 }
 
-/* Input durante resposta */
 #tela-chat .chat-campo-pill #input-mensagem::placeholder {
     color: rgba(255,255,255,.72);
     opacity: 1;
 }
 
 @media (max-width: 420px) {
+    #tela-chat {
+        --balao-max-width: min(80vw, 330px);
+        --balao-font-size: 16px;
+    }
+
     #tela-chat .balao-msg {
-        max-width: 84%;
         margin-left: 6px;
         margin-right: 6px;
     }
 
-    #tela-chat .balao-conteudo {
-        font-size: 15.5px;
-    }
-
-    #tela-chat .citacao-texto {
-        font-size: 13.5px;
-    }
-
-    #tela-chat .balao-msg:has(.citacao-resposta) {
-        min-width: min(280px, 78vw);
+    #tela-chat .painel-resposta {
+        margin-left: 44px !important;
+        max-width: min(80vw, 330px) !important;
     }
 }
 
@@ -2255,186 +2310,3 @@ body::before {
 }
 
 
-/* ==========================================
-   BALAO COMPACTO PARA RESPOSTAS E MIDIAS
-   ========================================== */
-/* Evita aquele bloco cinza enorme quando o conteúdo é pequeno. */
-#tela-chat .balao-msg {
-    min-width: 0 !important;
-    width: fit-content !important;
-    max-width: min(82%, 520px);
-}
-
-/* A linha só ocupa o tamanho necessário do conteúdo + horário. */
-#tela-chat .balao-linha {
-    width: fit-content;
-    max-width: 100%;
-}
-
-#tela-chat .balao-conteudo {
-    flex: 0 1 auto !important;
-    width: fit-content;
-    max-width: 100%;
-}
-
-/* Mensagem normal curta ainda reserva só o necessário pro relógio/check. */
-#tela-chat .balao-msg:not(.balao-com-midia):not(.balao-com-resposta) .balao-linha {
-    min-width: max-content;
-}
-
-/* Resposta: o cartão citado cresce só até o texto que realmente existe. */
-#tela-chat .balao-com-resposta {
-    min-width: 0 !important;
-    width: fit-content !important;
-}
-
-#tela-chat .balao-com-resposta .citacao-resposta {
-    width: fit-content !important;
-    min-width: 0 !important;
-    max-width: min(320px, 70vw) !important;
-    align-self: flex-start;
-}
-
-#tela-chat .balao-com-resposta .citacao-nome,
-#tela-chat .balao-com-resposta .citacao-texto {
-    width: auto;
-    max-width: min(285px, 64vw);
-}
-
-/* Remove o min-width antigo que deixava respostas curtas gigantes. */
-#tela-chat .balao-msg:has(.citacao-resposta) {
-    min-width: 0 !important;
-}
-
-/* Mídia: imagem/vídeo define a largura do balão.
-   Horário/check descem pra uma linha curta embaixo e não alargam o card. */
-#tela-chat .balao-com-midia .balao-linha {
-    display: grid;
-    grid-template-columns: max-content;
-    width: fit-content;
-    max-width: 100%;
-    gap: 4px;
-}
-
-#tela-chat .balao-com-midia .balao-conteudo {
-    width: fit-content;
-    max-width: 100%;
-}
-
-#tela-chat .balao-com-midia .balao-meta {
-    justify-self: end;
-    margin-right: 1px;
-}
-
-/* Mantém a proporção natural e só limita o tamanho máximo. */
-#tela-chat .balao-com-midia .balao-midia {
-    width: auto !important;
-    max-width: min(260px, 70vw) !important;
-    min-width: 0 !important;
-}
-
-/* Vídeo sem dimensão própria recebe um tamanho razoável, mas nunca cria
-   uma faixa cinza larga à direita. */
-#tela-chat .balao-com-midia .balao-video {
-    width: min(260px, 70vw) !important;
-}
-
-/* Se resposta + mídia estiverem juntas, nenhum dos dois força um card gigante. */
-#tela-chat .balao-com-resposta.balao-com-midia {
-    width: fit-content !important;
-    max-width: min(82%, 520px);
-}
-
-#tela-chat .balao-com-resposta.balao-com-midia .citacao-resposta {
-    max-width: min(260px, 70vw) !important;
-}
-
-@media (max-width: 420px) {
-    #tela-chat .balao-com-resposta .citacao-resposta {
-        max-width: 72vw !important;
-    }
-
-    #tela-chat .balao-com-midia .balao-midia,
-    #tela-chat .balao-com-midia .balao-video {
-        max-width: 72vw !important;
-    }
-
-    #tela-chat .balao-msg:has(.citacao-resposta) {
-        min-width: 0 !important;
-    }
-}
-
-
-/* ==========================================
-   RESPOSTA COMPACTA NO TAMANHO ORIGINAL
-   ========================================== */
-
-/* Preview acima do campo: não ocupa mais a largura inteira do rodapé. */
-#tela-chat .painel-resposta {
-    align-self: flex-start !important;
-    width: fit-content !important;
-    max-width: calc(100% - 20px) !important;
-    min-width: 0 !important;
-    min-height: 0 !important;
-    margin: 0 0 7px 52px !important;
-    padding: 7px 42px 7px 12px !important;
-    border-radius: 13px !important;
-    background: rgba(31,31,32,.96) !important;
-    overflow: visible !important;
-}
-
-/* A parte com nome + texto tem a mesma largura do balão que está sendo respondido. */
-#tela-chat .painel-resposta-conteudo {
-    width: var(--largura-mensagem-original, auto) !important;
-    max-width: min(72vw, 340px) !important;
-    min-width: 0 !important;
-    flex: 0 1 auto !important;
-}
-
-/* Mantém o preview compacto mesmo com texto longo. */
-#tela-chat .painel-resposta-conteudo strong,
-#tela-chat .painel-resposta-conteudo span {
-    max-width: 100% !important;
-}
-
-/* X fica grudado no card em vez de empurrar o painel até a borda da tela. */
-#tela-chat .painel-resposta-fechar {
-    right: 6px !important;
-    width: 30px !important;
-    height: 30px !important;
-    min-width: 30px !important;
-    font-size: 22px !important;
-}
-
-/* Dentro de um balão enviado, a citação usa a largura EXATA medida
-   do balão original, limitada apenas pela viewport. */
-#tela-chat .balao-com-resposta .citacao-resposta {
-    width: var(--largura-mensagem-original, fit-content) !important;
-    max-width: min(72vw, 340px) !important;
-    min-width: 0 !important;
-}
-
-/* Impede nome/texto da citação de inflarem o cartão além da mensagem original. */
-#tela-chat .balao-com-resposta .citacao-nome,
-#tela-chat .balao-com-resposta .citacao-texto {
-    width: 100% !important;
-    max-width: 100% !important;
-}
-
-/* O balão externo cresce só o necessário para conter citação + mensagem nova. */
-#tela-chat .balao-com-resposta {
-    width: fit-content !important;
-    min-width: 0 !important;
-}
-
-@media (max-width: 420px) {
-    #tela-chat .painel-resposta {
-        margin-left: 44px !important;
-        max-width: calc(100% - 12px) !important;
-    }
-
-    #tela-chat .painel-resposta-conteudo,
-    #tela-chat .balao-com-resposta .citacao-resposta {
-        max-width: 74vw !important;
-    }
-}
