@@ -108,6 +108,36 @@ async function gerarHash(texto) {
         .map(byte => byte.toString(16).padStart(2, "0"))
         .join("");
 }
+
+// ==========================================
+// AVATAR DE USUÁRIO / COR DE PERFIL
+// ==========================================
+function aplicarAvatarUsuario(elemento, fotoUrl, corUsuario) {
+    if (!elemento) return;
+
+    const fotoValida = typeof fotoUrl === "string" &&
+        fotoUrl.trim() !== "" &&
+        !fotoUrl.includes("user-placeholder.svg") &&
+        !fotoUrl.includes("icon.svg");
+
+    const cor = corUsuario || "#3a3a3c";
+
+    elemento.dataset.avatarCor = cor;
+    elemento.dataset.temFoto = fotoValida ? "true" : "false";
+
+    if (fotoValida) {
+        elemento.src = fotoUrl;
+        elemento.style.backgroundColor = "transparent";
+        elemento.classList.remove("avatar-sem-foto");
+    } else {
+        elemento.src = "svg/user-placeholder.svg";
+        elemento.style.backgroundColor = cor;
+        elemento.classList.add("avatar-sem-foto");
+    }
+}
+
+window.aplicarAvatarUsuario = aplicarAvatarUsuario;
+
 // ==========================================
 // CONTROLE DE TELAS E NAVEGAÇÃO
 // ==========================================
@@ -234,6 +264,15 @@ async function verificarSessao() {
 
     if (usuario.foto_url) {
         localStorage.setItem("fotoUsuario", usuario.foto_url);
+    } else {
+        localStorage.removeItem("fotoUsuario");
+    localStorage.removeItem("corUsuario");
+    }
+
+    if (usuario.cor) {
+        localStorage.setItem("corUsuario", usuario.cor);
+    } else {
+        localStorage.removeItem("corUsuario");
     }
 
     if (usuario.usuario) {
@@ -468,6 +507,14 @@ async function conectarConta() {
 
         if (conta.foto_url) {
             localStorage.setItem("fotoUsuario", conta.foto_url);
+        } else {
+            localStorage.removeItem("fotoUsuario");
+        }
+
+        if (conta.cor) {
+            localStorage.setItem("corUsuario", conta.cor);
+        } else {
+            localStorage.removeItem("corUsuario");
         }
 
         atualizarFotoAbaVoce();
@@ -498,7 +545,7 @@ async function carregarListaContatos() {
     if (nomesSalvos.length > 0) {
         const { data: dadosUsuarios } = await _supabase
             .from("usuarios")
-            .select("email, usuario, foto_url")
+            .select("email, usuario, foto_url, cor")
             .in("usuario", nomesSalvos);
         usuarios = dadosUsuarios || [];
     }
@@ -546,7 +593,7 @@ async function carregarListaContatos() {
         tipo: 'grupo',
         identificador: grupo.id,
         usuario: grupo.nome,
-        foto_url: grupo.foto_url || "svg/icon.svg", // Define um ícone padrão caso esteja vazio
+        foto_url: grupo.foto_url || "svg/user-placeholder.svg", // Define um ícone padrão caso esteja vazio
         ultimaMsg: "Toque para ver o grupo",
         horaUltimaMsg: ""
     }));
@@ -574,11 +621,11 @@ function renderizarContatos(lista) {
         const li = document.createElement("li");
         li.classList.add("item-contato");
 
-        const foto = item.foto_url || "svg/icon.svg";
+        const foto = item.foto_url || "";
         const nome = item.usuario || item.nome;
 
         li.innerHTML = `
-            <img src="${foto}" class="foto-contato">
+            <img src="" class="foto-contato" alt="">
             <div class="info-contato">
                 <div class="info-contato-topo">
                     <span class="nome-contato">${nome} ${item.tipo === 'grupo' ? ' ' : ''}</span>
@@ -588,12 +635,19 @@ function renderizarContatos(lista) {
             </div>
         `;
 
+        const avatarLista = li.querySelector(".foto-contato");
+        if (item.tipo === "grupo") {
+            if (avatarLista) avatarLista.src = item.foto_url || "svg/user-placeholder.svg";
+        } else {
+            aplicarAvatarUsuario(avatarLista, foto, item.cor);
+        }
+
         // Ao clicar, verifica se é um grupo ou um chat normal
         li.onclick = () => {
             if (item.tipo === 'grupo') {
-                abrirChatGrupo(item.id, item.nome, foto);
+                abrirChatGrupo(item.id, item.nome, item.foto_url || "svg/user-placeholder.svg");
             } else {
-                abrirChatCom(item.identificador, nome, foto);
+                abrirChatCom(item.identificador, nome, foto, item.cor);
             }
         };
 
@@ -1248,7 +1302,7 @@ async function carregarMensagensGrupo(idGrupo) {
     containerChat.scrollTop = containerChat.scrollHeight;
 }
 
-function abrirChatCom(emailDestinatario, nomeDestinatario, fotoDestinatario) {
+function abrirChatCom(emailDestinatario, nomeDestinatario, fotoDestinatario, corDestinatario) {
     destinatarioAtual = emailDestinatario;
     window.grupoAtualId = null;
 
@@ -1257,7 +1311,7 @@ function abrirChatCom(emailDestinatario, nomeDestinatario, fotoDestinatario) {
     const telaChat = document.getElementById("tela-chat");
 
     if (elemNome) elemNome.innerText = nomeDestinatario || emailDestinatario;
-    if (elemFoto && fotoDestinatario) elemFoto.src = fotoDestinatario;
+    aplicarAvatarUsuario(elemFoto, fotoDestinatario, corDestinatario);
     
     if (telaChat) {
         telaChat.style.display = "flex";
@@ -1520,17 +1574,17 @@ document.addEventListener("visibilitychange", () => {
 // ==========================================
 function atualizarFotoAbaVoce() {
     const fotoSalva = localStorage.getItem("fotoUsuario");
+    const corSalva = localStorage.getItem("corUsuario");
     const imgVoce = document.getElementById("foto-aba-voce");
 
-    if (imgVoce && fotoSalva) {
-        imgVoce.src = fotoSalva;
-    }
+    aplicarAvatarUsuario(imgVoce, fotoSalva, corSalva);
 }
 
 function carregarDadosAbaVoce() {
     const email = localStorage.getItem("usuarioLogado");
     const usuario = localStorage.getItem("nomeUsuario");
     const foto = localStorage.getItem("fotoUsuario");
+    const cor = localStorage.getItem("corUsuario");
 
     const elemNome = document.getElementById("voce-nome-usuario");
     const elemEmail = document.getElementById("voce-email-usuario");
@@ -1538,7 +1592,7 @@ function carregarDadosAbaVoce() {
 
     if (elemNome) elemNome.innerText = usuario || "Sem nome";
     if (elemEmail) elemEmail.innerText = usuario ? `@${usuario}` : "";
-    if (elemFoto) elemFoto.src = foto || "svg/icon.svg";
+    aplicarAvatarUsuario(elemFoto, foto, cor);
 
     const temaEscuro = localStorage.getItem("temaEscuro") === "true";
     const permissaoConcedida = ("Notification" in window) && Notification.permission === "granted";
@@ -1894,9 +1948,11 @@ function abrirDadosUsuario() {
         dadosEmail.textContent = localStorage.getItem("usuarioLogado") || "";
     }
 
-    if (foto) {
-        dadosFoto.src = foto.src;
-    }
+    aplicarAvatarUsuario(
+        dadosFoto,
+        localStorage.getItem("fotoUsuario"),
+        localStorage.getItem("corUsuario")
+    );
 
     painel.style.display = 'flex';
 }
@@ -1916,9 +1972,19 @@ function alterarFotoDadosUsuario(event) {
 
     const url = URL.createObjectURL(arquivo);
 
-    document.getElementById('dados-foto-usuario').src = url;
-    document.getElementById('voce-foto-perfil').src = url;
-    document.getElementById('foto-aba-voce').src = url;
+    const alvosFoto = [
+        document.getElementById('dados-foto-usuario'),
+        document.getElementById('voce-foto-perfil'),
+        document.getElementById('foto-aba-voce')
+    ];
+
+    alvosFoto.forEach(img => {
+        if (!img) return;
+        img.src = url;
+        img.style.backgroundColor = "transparent";
+        img.classList.remove("avatar-sem-foto");
+        img.dataset.temFoto = "true";
+    });
 }
 
 function abrirAlterarNome() {
@@ -1972,16 +2038,18 @@ async function carregarContatosParaSelecao() {
     contatosParaGrupo.forEach(contato => {
         const li = document.createElement('li');
         li.className = 'item-selecao-contato';
-        const foto = contato.foto_url || "svg/icon.svg";
+        const foto = contato.foto_url || "";
         const nome = contato.usuario || contato.email;
 
         li.innerHTML = `
             <div class="esq-contato-sel">
                 <input type="checkbox" class="checkbox-membro" data-email="${contato.email}" data-nome="${nome}" onchange="tratarSelecaoMembro(this)">
-                <img src="${foto}" class="foto-contato-pequena">
+                <img src="" class="foto-contato-pequena" alt="">
                 <span class="nome-contato-sel">${nome}</span>
             </div>
         `;
+
+        aplicarAvatarUsuario(li.querySelector(".foto-contato-pequena"), foto, contato.cor);
         container.appendChild(li);
     });
 }
