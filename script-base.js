@@ -784,9 +784,10 @@ async function renderizarBalao(texto, ehMinha, dataCriacao, idMensagem, mensagem
     balao.classList.add(ehMinha ? "balao-enviada" : "balao-recebida");
 
     const horaFormatada = formatarHora(dataCriacao || new Date());
-    
+
     let conteudoHtml = "";
     let htmlResposta = "";
+
     if (mensagemRespondida && mensagemRespondida.texto) {
         let textoCitado = mensagemRespondida.texto;
         if (textoCitado.startsWith("[FOTO]:")) textoCitado = "📷 Foto";
@@ -797,7 +798,7 @@ async function renderizarBalao(texto, ehMinha, dataCriacao, idMensagem, mensagem
 
         if (mensagemRespondida.remetente_email) {
             const emailOriginal = mensagemRespondida.remetente_email;
-            
+
             if (emailOriginal === localStorage.getItem("usuarioLogado")) {
                 nomeCitadoOriginal = "Você";
                 corCitado = localStorage.getItem("corUsuario") || "#888888";
@@ -814,27 +815,32 @@ async function renderizarBalao(texto, ehMinha, dataCriacao, idMensagem, mensagem
         }
 
         htmlResposta = `
-            <div class="citacao-resposta" style="border-left: 3px solid ${corCitado}; background: rgba(0,0,0,0.05); padding: 4px 8px; margin-bottom: 4px; border-radius: 4px; font-size: 12px; opacity: 0.9;">
-                <span style="display: block; font-weight: bold; color: ${corCitado};">${nomeCitadoOriginal}</span>
-                <span style="display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;">${textoCitado}</span>
+            <div class="citacao-resposta" style="--cor-citacao: ${corCitado};">
+                <strong class="citacao-nome">${nomeCitadoOriginal}</strong>
+                <span class="citacao-texto">${textoCitado}</span>
             </div>
         `;
     }
 
     if (texto && texto.startsWith("[FOTO]:")) {
-        const urlImagem = texto.replace("[FOTO]:", "");
-        conteudoHtml = `<img src="${urlImagem}" style="max-width: 200px; border-radius: 8px; display: block; cursor: pointer;" onclick="window.open('${urlImagem}', '_blank')">`;
+        const urlImagem = texto.replace("[FOTO]:", "").trim();
+        conteudoHtml = `<img class="balao-midia balao-foto" src="${urlImagem}" onclick="window.open('${urlImagem}', '_blank')">`;
     } else if (texto && texto.startsWith("[VIDEO]:")) {
-        const urlVideo = texto.replace("[VIDEO]:", "");
-        conteudoHtml = `<video src="${urlVideo}" controls preload="metadata" style="max-width: 200px; width: 100%; border-radius: 8px; display: block; background: #000;"></video>`;
+        const urlVideo = texto.replace("[VIDEO]:", "").trim();
+        conteudoHtml = `<video class="balao-midia balao-video" src="${urlVideo}" controls preload="metadata"></video>`;
     } else {
-        conteudoHtml = `<span>${texto}</span>`;
+        conteudoHtml = `<span class="balao-texto">${texto}</span>`;
     }
-    
+
     balao.innerHTML = `
         ${htmlResposta}
-        ${conteudoHtml}
-        <span class="balao-hora">${horaFormatada}</span>
+        <div class="balao-linha">
+            <div class="balao-conteudo">${conteudoHtml}</div>
+            <span class="balao-meta">
+                <span class="balao-hora">${horaFormatada}</span>
+                ${ehMinha ? '<span class="balao-visto" aria-label="Enviada">✓</span>' : ''}
+            </span>
+        </div>
     `;
 
     balao.addEventListener("dblclick", () => {
@@ -845,11 +851,10 @@ async function renderizarBalao(texto, ehMinha, dataCriacao, idMensagem, mensagem
         );
     });
 
-    // Exemplo dentro do renderizarBalao:
     adicionarGestoArrastar(
-        balao, 
-        idMensagem, 
-        ehMinha ? "Você" : (document.getElementById("chat-nome-usuario")?.innerText || destinatarioAtual || "Contato"), 
+        balao,
+        idMensagem,
+        ehMinha ? "Você" : (document.getElementById("chat-nome-usuario")?.innerText || destinatarioAtual || "Contato"),
         texto
     );
 
@@ -866,15 +871,13 @@ async function renderizarBalaoGrupo(texto, ehMinha, dataCriacao, nomeRemetente, 
     balao.classList.add(ehMinha ? "balao-enviada" : "balao-recebida");
 
     const horaFormatada = formatarHora(dataCriacao || new Date());
-    
-    // Cria o HTML do nome apenas se não for mensagem sua
+
     let htmlNome = "";
     if (!ehMinha && nomeRemetente) {
-        const corEstilo = corRemetente ? `color: ${corRemetente};` : "color: #ff7b00;";
-        htmlNome = `<span class="nome-remetente" style="${corEstilo} font-weight: bold; display: block; font-size: 12px; margin-bottom: 2px;">${nomeRemetente}</span>`;
+        const corNome = corRemetente || "#ff7b00";
+        htmlNome = `<span class="nome-remetente" style="color:${corNome}">${nomeRemetente}</span>`;
     }
 
-    // Bloco da Citação/Resposta no Grupo
     let htmlResposta = "";
     if (mensagemRespondida && mensagemRespondida.texto) {
         let textoCitado = mensagemRespondida.texto;
@@ -886,7 +889,7 @@ async function renderizarBalaoGrupo(texto, ehMinha, dataCriacao, nomeRemetente, 
 
         if (mensagemRespondida.remetente_email) {
             const emailOriginal = mensagemRespondida.remetente_email;
-            
+
             if (emailOriginal === localStorage.getItem("usuarioLogado")) {
                 nomeCitadoOriginal = "Você";
                 corCitado = localStorage.getItem("corUsuario") || "#888888";
@@ -902,34 +905,36 @@ async function renderizarBalaoGrupo(texto, ehMinha, dataCriacao, nomeRemetente, 
             }
         }
 
-
         htmlResposta = `
-            <div class="citacao-resposta" style="border-left: 3px solid ${corCitado}; background: rgba(0,0,0,0.05); padding: 4px 8px; margin-bottom: 4px; border-radius: 4px; font-size: 12px; opacity: 0.9;">
-                <span style="display: block; font-weight: bold; color: ${corCitado};">${nomeCitadoOriginal}</span>
-                <span style="display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;">${textoCitado}</span>
+            <div class="citacao-resposta" style="--cor-citacao: ${corCitado};">
+                <strong class="citacao-nome">${nomeCitadoOriginal}</strong>
+                <span class="citacao-texto">${textoCitado}</span>
             </div>
         `;
     }
 
-    let conteudoHtml = `<span>${texto}</span>`;
+    let conteudoHtml = `<span class="balao-texto">${texto}</span>`;
 
     if (texto && texto.startsWith("[FOTO]:")) {
-        const urlImagem = texto.replace("[FOTO]:", "");
-        conteudoHtml = `<img src="${urlImagem}" style="max-width: 200px; border-radius: 8px; display: block; cursor: pointer;" onclick="window.open('${urlImagem}', '_blank')">`;
+        const urlImagem = texto.replace("[FOTO]:", "").trim();
+        conteudoHtml = `<img class="balao-midia balao-foto" src="${urlImagem}" onclick="window.open('${urlImagem}', '_blank')">`;
     } else if (texto && texto.startsWith("[VIDEO]:")) {
-        const urlVideo = texto.replace("[VIDEO]:", "");
-        conteudoHtml = `<video src="${urlVideo}" controls preload="metadata" style="max-width: 200px; width: 100%; border-radius: 8px; display: block; background: #000;"></video>`;
+        const urlVideo = texto.replace("[VIDEO]:", "").trim();
+        conteudoHtml = `<video class="balao-midia balao-video" src="${urlVideo}" controls preload="metadata"></video>`;
     }
 
-    // Monta o balão completo
     balao.innerHTML = `
         ${htmlNome}
         ${htmlResposta}
-        ${conteudoHtml}
-        <span class="balao-hora">${horaFormatada}</span>
+        <div class="balao-linha">
+            <div class="balao-conteudo">${conteudoHtml}</div>
+            <span class="balao-meta">
+                <span class="balao-hora">${horaFormatada}</span>
+                ${ehMinha ? '<span class="balao-visto" aria-label="Enviada">✓</span>' : ''}
+            </span>
+        </div>
     `;
 
-    // Adiciona o gatilho de duplo clique para responder mensagens no grupo também
     balao.addEventListener("dblclick", () => {
         iniciarResposta(
             idMensagem || null,
@@ -938,11 +943,10 @@ async function renderizarBalaoGrupo(texto, ehMinha, dataCriacao, nomeRemetente, 
         );
     });
 
-    // Exemplo dentro do renderizarBalao:
     adicionarGestoArrastar(
-        balao, 
-        idMensagem, 
-        ehMinha ? "Você" : (document.getElementById("chat-nome-usuario")?.innerText || destinatarioAtual || "Contato"), 
+        balao,
+        idMensagem,
+        ehMinha ? "Você" : (nomeRemetente || "Participante"),
         texto
     );
 
@@ -961,13 +965,15 @@ function acionarSeletorFotoChat() {
 
 function iniciarResposta(idMensagem, nomeRemetente, textoMensagem) {
     mensagemRespondendoId = idMensagem;
-    
+
     const painel = document.getElementById("painel-resposta");
     const nomeEl = document.getElementById("resposta-nome-usuario");
     const textoEl = document.getElementById("resposta-texto-preview");
+    const input = document.getElementById("input-mensagem");
 
     if (painel && nomeEl && textoEl) {
-        nomeEl.textContent = `Respondendo a ${nomeRemetente}`;
+        nomeEl.textContent = nomeRemetente || "Contato";
+
         if (textoMensagem.startsWith("[FOTO]:") || textoMensagem.startsWith("[MIDIA_IMAGEM]")) {
             textoEl.textContent = "📷 Foto";
         } else if (textoMensagem.startsWith("[VIDEO]:") || textoMensagem.startsWith("[MIDIA_VIDEO]")) {
@@ -975,17 +981,24 @@ function iniciarResposta(idMensagem, nomeRemetente, textoMensagem) {
         } else {
             textoEl.textContent = textoMensagem;
         }
+
         painel.style.display = "flex";
     }
 
-    const input = document.getElementById("input-mensagem");
-    if (input) input.focus();
+    if (input) {
+        input.placeholder = "Respondendo mensagem";
+        input.focus();
+    }
 }
 
 function cancelarResposta() {
     mensagemRespondendoId = null;
+
     const painel = document.getElementById("painel-resposta");
+    const input = document.getElementById("input-mensagem");
+
     if (painel) painel.style.display = "none";
+    if (input) input.placeholder = "";
 }
 
 async function enviarMidia(event) {
