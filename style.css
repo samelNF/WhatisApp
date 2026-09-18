@@ -2506,73 +2506,6 @@ body::before {
 
 
 /* ==========================================
-   CORRECAO VIEWPORT CHAT IOS
-   ========================================== */
-/* No iOS a altura inicial do viewport pode vir errada e só atualizar após girar.
-   O JS abaixo alimenta --app-viewport-height com VisualViewport/innerHeight. */
-html,
-body {
-    min-height: var(--app-viewport-height, 100dvh) !important;
-    height: var(--app-viewport-height, 100dvh) !important;
-}
-
-/* O chat ocupa exatamente toda a área visível, sem deixar a faixa preta embaixo. */
-#tela-chat,
-.tela-chat {
-    position: fixed !important;
-    inset: 0 !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    width: 100% !important;
-    height: var(--app-viewport-height, 100dvh) !important;
-    min-height: var(--app-viewport-height, 100dvh) !important;
-    max-height: var(--app-viewport-height, 100dvh) !important;
-    margin: 0 !important;
-    overflow: hidden !important;
-}
-
-/* Faz o miolo absorver toda a sobra entre topo e rodapé. */
-#tela-chat .chat-conteudo {
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
-    height: auto !important;
-}
-
-#tela-chat .chat-mensagens {
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
-}
-
-/* Rodapé sempre encosta no fim da viewport e respeita a home indicator. */
-#tela-chat .chat-footer {
-    flex: 0 0 auto !important;
-    margin: 0 !important;
-    padding-bottom: max(env(safe-area-inset-bottom), 12px) !important;
-}
-
-/* Fallbacks modernos antes do JS calcular a medida exata. */
-@supports (height: 100svh) {
-    #tela-chat,
-    .tela-chat {
-        height: var(--app-viewport-height, 100svh) !important;
-        min-height: var(--app-viewport-height, 100svh) !important;
-        max-height: var(--app-viewport-height, 100svh) !important;
-    }
-}
-
-@supports (height: 100dvh) {
-    #tela-chat,
-    .tela-chat {
-        height: var(--app-viewport-height, 100dvh) !important;
-        min-height: var(--app-viewport-height, 100dvh) !important;
-        max-height: var(--app-viewport-height, 100dvh) !important;
-    }
-}
-
-
-/* ==========================================
    PAINEL DE DADOS DO GRUPO - REFERÊNCIA IOS
    ========================================== */
 #painel-dados-grupo {
@@ -3276,64 +3209,6 @@ body.subtela-aberta #tela-conversas .topo-conversas {
 
 
 /* ==========================================
-   IOS - SEM ARRASTAR / SEM RUBBER BAND GLOBAL
-   ========================================== */
-/* No iOS o documento inteiro podia ser "puxado" e deslocava elementos fixos.
-   Agora somente as áreas que realmente precisam rolar recebem scroll. */
-@supports (-webkit-touch-callout: none) {
-    html,
-    body {
-        position: fixed !important;
-        inset: 0 !important;
-        width: 100% !important;
-        height: var(--app-viewport-height, 100dvh) !important;
-        min-height: var(--app-viewport-height, 100dvh) !important;
-        max-height: var(--app-viewport-height, 100dvh) !important;
-        overflow: hidden !important;
-        overscroll-behavior: none !important;
-    }
-
-    /* A home continua rolando normalmente, só não arrasta o documento inteiro. */
-    #tela-conversas {
-        height: var(--app-viewport-height, 100dvh) !important;
-        max-height: var(--app-viewport-height, 100dvh) !important;
-        overflow-x: hidden !important;
-        overflow-y: auto !important;
-        overscroll-behavior-y: none !important;
-        -webkit-overflow-scrolling: auto !important;
-    }
-
-    /* Telas que já possuem rolagem própria ficam isoladas do body. */
-    #tela-voce,
-    #painel-dados-contato .painel-contato-body,
-    #painel-dados-grupo .grupo-panel-conteudo,
-    #painel-dados-grupo .grupo-candidatos-lista,
-    #painel-dados-usuario .dados-usuario-conteudo,
-    #tela-chat .chat-mensagens,
-    .modal-body {
-        overscroll-behavior-y: none !important;
-        -webkit-overflow-scrolling: auto !important;
-    }
-
-    /* Impede o iOS de "pegar" imagem, SVG, botão ou link e arrastar pela tela. */
-    img,
-    svg,
-    button,
-    a,
-    [role="button"] {
-        -webkit-user-drag: none !important;
-        -webkit-touch-callout: none !important;
-    }
-
-    img,
-    svg {
-        user-select: none !important;
-        -webkit-user-select: none !important;
-    }
-}
-
-
-/* ==========================================
    IOS - TOPO FIXO SEM ELASTICIDADE
    ========================================== */
 @supports (-webkit-touch-callout: none) {
@@ -3375,102 +3250,24 @@ body.subtela-aberta #tela-conversas .topo-conversas {
 }
 
 
-/* ==========================================
-   IOS - TOPO HOME ACOMPANHA SAFE AREA
-   ========================================== */
-/* A barra pode entrar na região da status bar, mas o conteúdo da página
-   desce exatamente o mesmo tanto. Assim não sobra um vão nem o título fica
-   escondido atrás da barra quando o safe-area do iPhone muda. */
-@supports (-webkit-touch-callout: none) {
-    #tela-conversas {
-        --home-safe-top: env(safe-area-inset-top, 0px);
-        --home-topo-base: 60px;
-        padding-top:
-            calc(var(--home-safe-top) + var(--home-topo-base) + 12px)
-            !important;
-    }
-
-    #tela-conversas .topo-conversas {
-        top: 0 !important;
-        min-height:
-            calc(var(--home-safe-top) + var(--home-topo-base))
-            !important;
-        height:
-            calc(var(--home-safe-top) + var(--home-topo-base))
-            !important;
-        padding:
-            var(--home-safe-top)
-            16px
-            10px
-            !important;
-        align-items: flex-end !important;
-    }
-
-    #tela-conversas .conversa-nova {
-        margin-top: 0 !important;
-    }
-
-    @media (max-width: 500px) {
-        #tela-conversas {
-            padding-top:
-                calc(var(--home-safe-top) + var(--home-topo-base) + 10px)
-                !important;
-        }
-
-        #tela-conversas .topo-conversas {
-            padding-left: 13px !important;
-            padding-right: 13px !important;
-        }
-    }
-}
 
 
 /* ==========================================
-   IOS - CHAT PREENCHE A TELA INTEIRA
+   IOS - BLOQUEIO LEVE DE ARRASTO
    ========================================== */
-/* Não combina inset:0 com uma height menor calculada pelo VisualViewport.
-   Quando o teclado está fechado, o próprio fixed/inset ocupa o viewport inteiro. */
 @supports (-webkit-touch-callout: none) {
-    html:not(.teclado-aberto) body {
-        height: 100dvh !important;
-        min-height: 100dvh !important;
-        max-height: 100dvh !important;
+    img,
+    svg,
+    button,
+    a,
+    [role="button"] {
+        -webkit-user-drag: none !important;
+        -webkit-touch-callout: none !important;
     }
 
-    html:not(.teclado-aberto) #tela-chat,
-    html:not(.teclado-aberto) .tela-chat {
-        position: fixed !important;
-        inset: 0 !important;
-        top: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        height: auto !important;
-        min-height: 0 !important;
-        max-height: none !important;
-        margin: 0 !important;
-        overflow: hidden !important;
-    }
-
-    /* Com teclado aberto usa a altura visível calculada pelo JS. */
-    html.teclado-aberto #tela-chat,
-    html.teclado-aberto .tela-chat {
-        top: 0 !important;
-        right: 0 !important;
-        bottom: auto !important;
-        left: 0 !important;
-        height: var(--app-viewport-height, 100dvh) !important;
-        min-height: var(--app-viewport-height, 100dvh) !important;
-        max-height: var(--app-viewport-height, 100dvh) !important;
-    }
-
-    #tela-chat .chat-footer {
-        position: relative !important;
-        bottom: auto !important;
-        margin-bottom: 0 !important;
-        padding-bottom:
-            calc(10px + env(safe-area-inset-bottom, 0px))
-            !important;
-        flex: 0 0 auto !important;
+    img,
+    svg {
+        user-select: none !important;
+        -webkit-user-select: none !important;
     }
 }
