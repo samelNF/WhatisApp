@@ -6,12 +6,57 @@ const APP_URL = new URL('./index.html', self.registration.scope).href;
 const ICON_URL = new URL('./images/icon-192.png', self.registration.scope).href;
 const BADGE_URL = ICON_URL;
 
-self.addEventListener('install', () => {
-    self.skipWaiting();
+const APP_SHELL_CACHE = 'whatisapp-shell-v1';
+const RUNTIME_MEDIA_CACHE = 'whatisapp-media-v1';
+
+const APP_SHELL = [
+    './',
+    './index.html',
+    './style.css',
+    './style-base.css',
+    './cache-db.js',
+    './script.js',
+    './script-base.js',
+    './chat-visual.js',
+    './safe-area.js',
+    './notification-system.js',
+    './group-panel.js',
+    './contact-panel.js',
+    './novo-contato.js',
+    './solicitacoes.js',
+    './manifest.json',
+    './images/icon-192.png',
+    './images/icon-512.png'
+];
+
+self.addEventListener('install', event => {
+    event.waitUntil((async () => {
+        const cache = await caches.open(APP_SHELL_CACHE);
+
+        // Não deixa um SVG/arquivo opcional impedir a instalação inteira.
+        await Promise.allSettled(
+            APP_SHELL.map(url => cache.add(new Request(url, { cache: 'reload' })))
+        );
+
+        await self.skipWaiting();
+    })());
 });
 
 self.addEventListener('activate', event => {
-    event.waitUntil(clients.claim());
+    event.waitUntil((async () => {
+        const nomes = await caches.keys();
+
+        await Promise.all(
+            nomes
+                .filter(nome =>
+                    nome.startsWith('whatisapp-shell-') &&
+                    nome !== APP_SHELL_CACHE
+                )
+                .map(nome => caches.delete(nome))
+        );
+
+        await clients.claim();
+    })());
 });
 
 function normalizarPayloadPush(event) {
@@ -80,6 +125,96 @@ self.addEventListener('message', event => {
 
     if (data.type === 'SKIP_WAITING') {
         self.skipWaiting();
+    }
+});
+
+// ==========================================
+// CACHE DE ARQUIVOS E MIDIAS
+// ==========================================
+self.addEventListener('fetch', event => {
+    const request = event.request;
+
+    if (request.method !== 'GET') return;
+
+    const url = new URL(request.url);
+    const mesmaOrigem = url.origin === self.location.origin;
+
+    // Vídeo com Range precisa continuar indo direto à rede.
+    if (request.headers.has('range')) return;
+
+    // HTML/JS/CSS: tenta rede primeiro para não esconder atualizações do GitHub.
+    if (
+        mesmaOrigem &&
+        (
+            request.mode === 'navigate' ||
+            request.destination === 'script' ||
+            request.destination === 'style'
+        )
+    ) {
+        event.respondWith((async () => {
+            const cache = await caches.open(APP_SHELL_CACHE);
+
+            try {
+                const resposta = await fetch(request);
+
+                if (resposta && resposta.ok) {
+                    cache.put(request, resposta.clone()).catch(() => {});
+                }
+
+                return resposta;
+            } catch (erro) {
+                return (
+                    await cache.match(request) ||
+                    await cache.match('./index.html') ||
+                    Response.error()
+                );
+            }
+        })());
+
+        return;
+    }
+
+    // SVGs, ícones e fotos: cache-first. Inclui imagens vindas do Supabase Storage.
+    if (request.destination === 'image') {
+        event.respondWith((async () => {
+            const cache = await caches.open(RUNTIME_MEDIA_CACHE);
+            const salva = await cache.match(request);
+
+            if (salva) return salva;
+
+            try {
+                const resposta = await fetch(request);
+
+                if (resposta && (resposta.ok || resposta.type === 'opaque')) {
+                    cache.put(request, resposta.clone()).catch(() => {});
+                }
+
+                return resposta;
+            } catch (erro) {
+                return salva || Response.error();
+            }
+        })());
+
+        return;
+    }
+
+    // Demais arquivos estáticos da mesma origem: usa cache e atualiza em segundo plano.
+    if (mesmaOrigem) {
+        event.respondWith((async () => {
+            const cache = await caches.open(APP_SHELL_CACHE);
+            const salva = await cache.match(request);
+
+            const atualizacao = fetch(request)
+                .then(resposta => {
+                    if (resposta && resposta.ok) {
+                        cache.put(request, resposta.clone()).catch(() => {});
+                    }
+                    return resposta;
+                })
+                .catch(() => null);
+
+            return salva || (await atualizacao) || Response.error();
+        })());
     }
 });
 
