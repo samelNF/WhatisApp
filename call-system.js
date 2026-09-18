@@ -597,6 +597,16 @@
         return data;
     }
 
+    window.iniciarLigacaoContato = function () {
+        try {
+            if (typeof window.fecharPainelDadosContato === 'function') {
+                window.fecharPainelDadosContato();
+            }
+        } catch (e) {}
+
+        return window.iniciarLigacaoVoz();
+    };
+
     window.iniciarLigacaoVoz = async function () {
         const supabase = supabaseAtual();
         const meu = meuEmail();
