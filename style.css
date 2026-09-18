@@ -2245,10 +2245,29 @@ body {
 }
 
 #tela-chat .balao-visto {
-    color: rgba(255,255,255,.56);
-    font-size: 16px !important;
+    display: inline-flex;
+    align-items: center;
+    width: 18px;
+    height: 13px;
+    margin-left: 1px;
+    color: rgba(255,255,255,.52);
+    font-size: 15px !important;
     line-height: 1 !important;
-    font-weight: 500;
+    font-weight: 600;
+    transition: color .16s ease, opacity .16s ease;
+}
+
+#tela-chat .balao-visto .balao-visto-check {
+    display: inline-block;
+    line-height: 1;
+}
+
+#tela-chat .balao-visto .balao-visto-check + .balao-visto-check {
+    margin-left: -7px;
+}
+
+#tela-chat .balao-visto.visualizada {
+    color: #ffffff;
 }
 
 /* Nome do remetente em grupo */
