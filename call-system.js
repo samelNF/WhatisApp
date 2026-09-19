@@ -401,7 +401,14 @@
             await obterCameraLigacao(false);
         } catch (erro) {
             console.warn('[Ligação] Câmera recusada/indisponível:', erro);
-            alert('Não foi possível ativar a câmera.');
+
+            const atualizada = await atualizarChamada(chamadaAtual.id, {
+                video_pedido_status: 'rejected'
+            });
+
+            if (atualizada) chamadaAtual = atualizada;
+            esconderPedidoVideo();
+            alert('Não foi possível ativar a câmera. A ligação continua por voz.');
             return;
         }
 
@@ -1548,6 +1555,16 @@
                 await obterCameraLigacao(true);
             } catch (erroCamera) {
                 console.warn('[Ligação] Não foi possível ativar câmera após consenso:', erroCamera);
+
+                const revertida = await atualizarChamada(chamada.id, {
+                    modo: 'voz',
+                    video_pedido_status: 'rejected'
+                });
+
+                if (revertida) {
+                    chamadaAtual = revertida;
+                    atualizarTipoTela(revertida);
+                }
             }
         }
 
