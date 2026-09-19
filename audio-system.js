@@ -42,11 +42,25 @@
         if (
             msg.tipo === 'chamada_grupo' ||
             msg.texto === '[CHAMADA_GRUPO]'
-        ) return '📞 Ligação de voz em grupo';
+        ) {
+            return (
+                msg?.meta?.modo === 'video' ||
+                msg?.meta?.tipo_chamada === 'video_grupo'
+            )
+                ? '🎥 Ligação de vídeo em grupo'
+                : '📞 Ligação de voz em grupo';
+        }
         if (
             msg.tipo === 'chamada' ||
             msg.texto === '[CHAMADA]'
-        ) return '📞 Ligação de voz';
+        ) {
+            return (
+                msg?.meta?.modo === 'video' ||
+                msg?.meta?.tipo_chamada === 'video'
+            )
+                ? '🎥 Ligação de vídeo'
+                : '📞 Ligação de voz';
+        }
         if (ehMensagemAudio(msg)) return '🎤 Áudio';
 
         const texto = String(msg.texto || '');
