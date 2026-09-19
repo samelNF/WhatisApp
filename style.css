@@ -1317,6 +1317,45 @@ input:checked + .slider {
     white-space: nowrap;
 }
 
+#tela-conversas .info-contato-rodape {
+    width: 100%;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#tela-conversas .info-contato-rodape .ultima-msg {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#tela-conversas .badge-nao-lidas {
+    flex: 0 0 auto;
+    min-width: 21px;
+    height: 21px;
+    padding: 0 6px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #15100b;
+    background: #ff8a1f;
+    font-size: 12px;
+    line-height: 1;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    box-shadow: 0 2px 9px rgba(0,0,0,.24);
+}
+
+#tela-conversas .item-contato.tem-nao-lidas .nome-contato {
+    font-weight: 700;
+}
+
 #tela-conversas #dropdown-menu {
     top: 57px;
     left: 0;
