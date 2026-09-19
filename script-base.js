@@ -2270,13 +2270,15 @@ function alterarFundoChat(event) {
 function carregarFundoChatSalvo(emailContato) {
     const meuEmail = localStorage.getItem("usuarioLogado");
     const fundoSalvo = localStorage.getItem(`fundo_chat_${meuEmail}_${emailContato}`);
+    const fundoGlobal = localStorage.getItem(`fundo_chat_global_${meuEmail}`);
     const containerMensagens = document.getElementById("chat-mensagens");
+    const fundoAplicado = fundoSalvo || fundoGlobal || "";
 
     if (containerMensagens) {
-        if (fundoSalvo) {
-            containerMensagens.style.backgroundImage = `url(${fundoSalvo})`;
-            containerMensagens.style.backgroundSize = 'cover';
-            containerMensagens.style.backgroundPosition = 'center';
+        if (fundoAplicado) {
+            containerMensagens.style.backgroundImage = `url("${fundoAplicado}")`;
+            containerMensagens.style.backgroundSize = "cover";
+            containerMensagens.style.backgroundPosition = "center";
         } else {
             containerMensagens.style.backgroundImage = "";
         }
@@ -2626,15 +2628,13 @@ function carregarDadosAbaVoce() {
     if (elemEmail) elemEmail.innerText = usuario ? `@${usuario}` : "";
     aplicarAvatarUsuario(elemFoto, foto, cor);
 
-    const temaEscuro = localStorage.getItem("temaEscuro") === "true";
     const permissaoConcedida = ("Notification" in window) && Notification.permission === "granted";
     const prefNotificacoes = localStorage.getItem("notificacoes") !== "false";
 
-    const checkTema = document.getElementById("check-tema-escuro");
     const checkNotif = document.getElementById("check-notificacoes");
 
-    if (checkTema) checkTema.checked = temaEscuro;
     if (checkNotif) checkNotif.checked = permissaoConcedida && prefNotificacoes;
+    carregarPreferenciasAparencia();
 }
 
 async function trocarFotoPerfil(event) {
@@ -2680,6 +2680,168 @@ async function trocarFotoPerfil(event) {
     atualizarFotoAbaVoce();
     carregarDadosAbaVoce();
 }
+// ==========================================
+// APARÊNCIA - FUNDO GLOBAL + ÍCONE DO PWA
+// ==========================================
+const ICONES_PWA = {
+    normal: './images/icon-normal.png',
+    dark: './images/icon-dark.png',
+    clear: './images/icon-clear.png'
+};
+
+function chaveFundoGlobal() {
+    const meuEmail = localStorage.getItem("usuarioLogado") || "local";
+    return `fundo_chat_global_${meuEmail}`;
+}
+
+function obterFundoGlobal() {
+    return localStorage.getItem(chaveFundoGlobal()) || "";
+}
+
+function abrirAparencia() {
+    const painel = document.getElementById("painel-aparencia");
+    if (!painel) return;
+
+    painel.classList.remove("hidden");
+    painel.style.display = "flex";
+    carregarPreferenciasAparencia();
+
+    if (typeof window.atualizarSafeArea === "function") {
+        requestAnimationFrame(() => window.atualizarSafeArea());
+    }
+}
+
+function fecharAparencia() {
+    const painel = document.getElementById("painel-aparencia");
+    if (!painel) return;
+
+    painel.classList.add("hidden");
+    painel.style.display = "none";
+
+    if (typeof window.atualizarSafeArea === "function") {
+        requestAnimationFrame(() => window.atualizarSafeArea());
+    }
+}
+
+function atualizarPreviewFundoGlobal() {
+    const preview = document.getElementById("aparencia-fundo-preview");
+    const remover = document.getElementById("aparencia-remover-fundo");
+    const fundo = obterFundoGlobal();
+
+    if (preview) {
+        preview.style.backgroundImage = fundo ? `url("${fundo}")` : "";
+        preview.classList.toggle("sem-fundo", !fundo);
+    }
+
+    if (remover) {
+        remover.disabled = !fundo;
+    }
+}
+
+function acionarTrocaFundoGlobal() {
+    document.getElementById("input-fundo-global")?.click();
+}
+
+function alterarFundoGlobal(event) {
+    const arquivo = event.target.files?.[0];
+    if (!arquivo) return;
+
+    const reader = new FileReader();
+
+    reader.onload = function (e) {
+        const url = e.target?.result;
+        if (!url) return;
+
+        try {
+            localStorage.setItem(chaveFundoGlobal(), url);
+        } catch (erro) {
+            console.warn("Não foi possível salvar o fundo global:", erro);
+            alert("Essa imagem ficou grande demais para salvar. Tenta uma imagem menor.");
+            return;
+        }
+
+        atualizarPreviewFundoGlobal();
+        aplicarFundoGlobalNoChatAtual();
+    };
+
+    reader.readAsDataURL(arquivo);
+    event.target.value = "";
+}
+
+function removerFundoGlobal() {
+    localStorage.removeItem(chaveFundoGlobal());
+    atualizarPreviewFundoGlobal();
+    aplicarFundoGlobalNoChatAtual();
+}
+
+function aplicarFundoGlobalNoChatAtual() {
+    if (window.grupoAtualId && typeof window.carregarFundoGrupoSalvo === "function") {
+        window.carregarFundoGrupoSalvo(window.grupoAtualId);
+        return;
+    }
+
+    if (destinatarioAtual) {
+        carregarFundoChatSalvo(destinatarioAtual);
+    }
+}
+
+function atualizarSelecaoIconePWA() {
+    const escolhido = localStorage.getItem("iconeWhatisApp") || "normal";
+
+    document.querySelectorAll("[data-icone-pwa]").forEach(botao => {
+        botao.classList.toggle(
+            "selecionado",
+            botao.dataset.iconePwa === escolhido
+        );
+    });
+}
+
+function aplicarIconePWA(tipo = null) {
+    const escolhido = tipo || localStorage.getItem("iconeWhatisApp") || "normal";
+    const caminho = ICONES_PWA[escolhido] || ICONES_PWA.normal;
+
+    // Só troca os links se o arquivo realmente existir. Enquanto o usuário
+    // ainda não colocou os PNGs em /images, o ícone atual continua intacto.
+    const teste = new Image();
+
+    teste.onload = function () {
+        const touch = document.getElementById("apple-touch-icon-whatisapp");
+        const favicon = document.getElementById("favicon-whatisapp");
+
+        if (touch) touch.href = caminho;
+        if (favicon) favicon.href = caminho;
+    };
+
+    teste.onerror = function () {
+        console.info("[Aparência] Ícone ainda não encontrado:", caminho);
+    };
+
+    teste.src = caminho;
+}
+
+function selecionarIconePWA(tipo) {
+    if (!ICONES_PWA[tipo]) return;
+
+    localStorage.setItem("iconeWhatisApp", tipo);
+    atualizarSelecaoIconePWA();
+    aplicarIconePWA(tipo);
+}
+
+function carregarPreferenciasAparencia() {
+    atualizarPreviewFundoGlobal();
+    atualizarSelecaoIconePWA();
+    aplicarIconePWA();
+}
+
+// Aplica a preferência do ícone também em aberturas normais do PWA.
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+        carregarPreferenciasAparencia();
+    }, { once: true });
+} else {
+    carregarPreferenciasAparencia();
+}
+
 // ==========================================
 // GERENCIAMENTO DE SOLICITAÇÕES DE CHAT
 // ==========================================
@@ -2956,7 +3118,8 @@ function aplicarFundoNaTela(urlImagem) {
 function carregarFundoChatSalvo(emailContato) {
     const meuEmail = localStorage.getItem("usuarioLogado");
     const fundoSalvo = localStorage.getItem(`fundo_chat_${meuEmail}_${emailContato}`);
-    aplicarFundoNaTela(fundoSalvo);
+    const fundoGlobal = localStorage.getItem(`fundo_chat_global_${meuEmail}`);
+    aplicarFundoNaTela(fundoSalvo || fundoGlobal || "");
 }
 
 function abrirDadosUsuario() {
