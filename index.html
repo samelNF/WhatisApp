@@ -401,7 +401,7 @@
             </div>
 
             <div class="chat-call-group" aria-label="Ações de chamada">
-                <button type="button" class="chat-call-btn" title="Chamada de vídeo" aria-label="Chamada de vídeo">
+                <button type="button" class="chat-call-btn" title="Chamada de vídeo" aria-label="Chamada de vídeo" onclick="iniciarLigacaoVideo()">
                     <img src="svg/video-camera.svg" alt="" aria-hidden="true">
                 </button>
                 <button type="button" class="chat-call-btn" title="Ligação" aria-label="Ligação" onclick="iniciarLigacaoVoz()">
@@ -618,10 +618,23 @@
             <span class="chamada-topo-spacer"></span>
         </div>
 
+        <div class="chamada-video-stage">
+            <video id="chamada-video-remoto" class="chamada-video-remoto hidden" autoplay playsinline></video>
+            <video id="chamada-video-local" class="chamada-video-local hidden" autoplay muted playsinline></video>
+        </div>
+
         <div class="chamada-centro">
             <img id="chamada-avatar" src="svg/user-placeholder.svg" alt="" class="chamada-avatar">
             <h2 id="chamada-nome">Contato</h2>
             <p id="chamada-status">Ligando...</p>
+        </div>
+
+        <div id="chamada-pedido-video" class="chamada-pedido-video hidden">
+            <p id="chamada-pedido-video-texto">Quer ativar o vídeo?</p>
+            <div id="chamada-pedido-video-acoes" class="chamada-pedido-video-acoes">
+                <button type="button" class="chamada-pedido-video-nao" onclick="responderPedidoVideoLigacao(false)">Agora não</button>
+                <button type="button" class="chamada-pedido-video-sim" onclick="responderPedidoVideoLigacao(true)">Ativar vídeo</button>
+            </div>
         </div>
 
         <div id="chamada-controles-recebendo" class="chamada-controles chamada-controles-recebendo hidden">
@@ -661,6 +674,13 @@
                 <span>Silenciar</span>
             </button>
 
+            <button type="button" id="chamada-btn-video" class="chamada-acao chamada-video-toggle" onclick="alternarCameraLigacao()">
+                <span class="chamada-acao-icone">
+                    <img src="svg/video-camera.svg" alt="">
+                </span>
+                <span>Vídeo</span>
+            </button>
+
             <button type="button" class="chamada-acao chamada-encerrar" onclick="finalizarLigacaoVoz()">
                 <span class="chamada-acao-icone">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -694,6 +714,14 @@
 
         <div id="grupo-chamada-participantes" class="grupo-chamada-participantes"></div>
 
+        <div id="grupo-chamada-pedido-video" class="grupo-chamada-pedido-video hidden">
+            <p id="grupo-chamada-pedido-video-texto">Ativar vídeo para todos?</p>
+            <div id="grupo-chamada-pedido-video-acoes" class="grupo-chamada-pedido-video-acoes">
+                <button type="button" class="grupo-chamada-pedido-video-nao" onclick="responderPedidoVideoGrupo(false)">Continuar por voz</button>
+                <button type="button" class="grupo-chamada-pedido-video-sim" onclick="responderPedidoVideoGrupo(true)">Ativar vídeo</button>
+            </div>
+        </div>
+
         <div id="grupo-chamada-controles-recebendo" class="grupo-chamada-controles grupo-chamada-controles-recebendo hidden">
             <button type="button" class="grupo-chamada-acao grupo-chamada-recusar" onclick="recusarLigacaoGrupo()">
                 <span class="grupo-chamada-acao-icone">
@@ -720,6 +748,13 @@
                     <img src="svg/microphone.svg" alt="">
                 </span>
                 <span class="grupo-chamada-acao-label">Silenciar</span>
+            </button>
+
+            <button type="button" id="grupo-chamada-btn-video" class="grupo-chamada-acao grupo-chamada-video-toggle" onclick="alternarCameraLigacaoGrupo()">
+                <span class="grupo-chamada-acao-icone">
+                    <img src="svg/video-camera.svg" alt="">
+                </span>
+                <span class="grupo-chamada-acao-label">Vídeo</span>
             </button>
 
             <button type="button" class="grupo-chamada-acao grupo-chamada-sair" onclick="sairLigacaoGrupo()">
