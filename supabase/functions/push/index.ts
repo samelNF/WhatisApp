@@ -48,6 +48,7 @@ function textoNotificacao(texto?: string | null) {
   if (texto.startsWith("[VIDEO]:")) return "🎥 Vídeo";
   if (texto.startsWith("[AUDIO]:")) return "🎤 Áudio";
   if (texto.startsWith("[CHAMADA]")) return "📞 Ligação de voz";
+  if (texto.startsWith("[CHAMADA_GRUPO]")) return "📞 Ligação de voz em grupo";
 
   const limpo = texto.trim();
   return limpo.length > 140 ? limpo.slice(0, 137) + "..." : limpo;
@@ -353,21 +354,43 @@ Deno.serve(async (req) => {
       mensagem.tipo === "chamada" ||
       mensagem.texto === "[CHAMADA]";
 
-    const urlDestino =
-      ehChamada && mensagem.chamada_id
-        ? "/WhatisApp/?call=" + encodeURIComponent(String(mensagem.chamada_id))
-        : "/WhatisApp/";
+    const ehChamadaGrupo =
+      mensagem.tipo === "chamada_grupo" ||
+      mensagem.texto === "[CHAMADA_GRUPO]";
+
+    let urlDestino = "/WhatisApp/";
+
+    if (ehChamada && mensagem.chamada_id) {
+      urlDestino =
+        "/WhatisApp/?call=" +
+        encodeURIComponent(String(mensagem.chamada_id));
+    } else if (ehChamadaGrupo && mensagem.chamada_id) {
+      urlDestino =
+        "/WhatisApp/?groupCall=" +
+        encodeURIComponent(String(mensagem.chamada_id)) +
+        "&group=" +
+        encodeURIComponent(String(mensagem.grupo_id || ""));
+    }
 
     const payload = JSON.stringify({
       title: titulo,
       body: corpo,
-      tag: (ehChamada ? "chamada-" : "mensagem-") + String(messageId),
+      tag:
+        (ehChamadaGrupo
+          ? "chamada-grupo-"
+          : (ehChamada ? "chamada-" : "mensagem-")) +
+        String(messageId),
       data: {
         url: urlDestino,
-        tipo: ehChamada
-          ? "chamada"
-          : (mensagem.grupo_id ? "grupo" : "privado"),
-        chamada_id: ehChamada ? (mensagem.chamada_id || null) : null,
+        tipo: ehChamadaGrupo
+          ? "chamada_grupo"
+          : (ehChamada
+              ? "chamada"
+              : (mensagem.grupo_id ? "grupo" : "privado")),
+        chamada_id:
+          (ehChamada || ehChamadaGrupo)
+            ? (mensagem.chamada_id || null)
+            : null,
         grupo_id: mensagem.grupo_id || null,
         remetente_email: mensagem.remetente_email || null,
         mensagem_id: mensagem.id,
