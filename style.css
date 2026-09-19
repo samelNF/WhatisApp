@@ -601,6 +601,293 @@
 
 
 /* ==========================================
+   SUBTELA APARÊNCIA
+   ========================================== */
+#painel-aparencia {
+    position: fixed;
+    inset: 0;
+    z-index: 3900;
+    display: none;
+    flex-direction: column;
+    background: #0A0A0A;
+    color: #FAFAFA;
+    overflow: hidden;
+}
+
+#painel-aparencia:not(.hidden) {
+    display: flex;
+}
+
+#painel-aparencia .aparencia-header {
+    position: relative;
+    flex: 0 0 auto;
+    min-height: 72px;
+    padding:
+        max(env(safe-area-inset-top), 10px)
+        18px
+        12px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    background: rgba(10,10,10,.92);
+    border-bottom: 1px solid rgba(255,255,255,.09);
+    -webkit-backdrop-filter: blur(26px) saturate(170%);
+    backdrop-filter: blur(26px) saturate(170%);
+}
+
+#painel-aparencia .aparencia-header h3 {
+    margin: 0;
+    color: #f7f7f8;
+    font-size: 19px;
+    line-height: 28px;
+    font-weight: 650;
+}
+
+#painel-aparencia .aparencia-voltar {
+    position: absolute;
+    left: 12px;
+    bottom: 8px;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #ff982f;
+    font-size: 42px;
+    line-height: 34px;
+    font-weight: 300;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+#painel-aparencia .aparencia-voltar:active {
+    background: rgba(255,255,255,.07);
+}
+
+#painel-aparencia .aparencia-conteudo {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding:
+        22px
+        16px
+        calc(34px + env(safe-area-inset-bottom));
+}
+
+#painel-aparencia .aparencia-card {
+    width: 100%;
+    max-width: 680px;
+    margin: 0 auto 18px;
+    padding: 18px;
+    border: 1px solid rgba(255,255,255,.09);
+    border-radius: 28px;
+    background: #171717;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.035);
+}
+
+#painel-aparencia .aparencia-titulo-bloco {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 15px;
+}
+
+#painel-aparencia .aparencia-titulo-bloco strong {
+    font-size: 18px;
+    line-height: 23px;
+    font-weight: 650;
+}
+
+#painel-aparencia .aparencia-titulo-bloco small,
+#painel-aparencia .aparencia-aviso-icone {
+    color: #8b8b90;
+    font-size: 13px;
+    line-height: 18px;
+}
+
+#painel-aparencia .aparencia-fundo-preview {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    border-radius: 22px;
+    background-color: #202022;
+    background-size: cover;
+    background-position: center;
+    border: 1px solid rgba(255,255,255,.09);
+}
+
+#painel-aparencia .aparencia-fundo-preview.sem-fundo {
+    background-image:
+        radial-gradient(circle at 16% 20%, rgba(255,138,31,.10), transparent 24%),
+        radial-gradient(circle at 82% 74%, rgba(255,255,255,.05), transparent 22%);
+}
+
+#painel-aparencia .aparencia-preview-balao {
+    position: absolute;
+    max-width: 58%;
+    padding: 8px 12px;
+    border-radius: 14px;
+    font-size: 13px;
+    box-shadow: 0 4px 14px rgba(0,0,0,.22);
+}
+
+#painel-aparencia .aparencia-preview-balao.esquerda {
+    left: 12px;
+    top: 34%;
+    background: rgba(48,48,50,.94);
+}
+
+#painel-aparencia .aparencia-preview-balao.direita {
+    right: 12px;
+    bottom: 24%;
+    background: #b85f12;
+}
+
+#painel-aparencia .aparencia-acoes-fundo {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+#painel-aparencia .aparencia-btn-principal,
+#painel-aparencia .aparencia-btn-secundario {
+    min-height: 44px;
+    padding: 0 16px;
+    border-radius: 14px;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+#painel-aparencia .aparencia-btn-principal {
+    flex: 1;
+    border: 1px solid rgba(255,151,54,.30);
+    background: rgba(255,138,31,.16);
+    color: #ffad62;
+}
+
+#painel-aparencia .aparencia-btn-secundario {
+    border: 1px solid rgba(255,255,255,.10);
+    background: rgba(255,255,255,.055);
+    color: #d7d7da;
+}
+
+#painel-aparencia .aparencia-btn-secundario:disabled {
+    opacity: .35;
+    cursor: default;
+}
+
+#painel-aparencia .aparencia-icones {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+#painel-aparencia .aparencia-icone-opcao {
+    position: relative;
+    min-width: 0;
+    padding: 12px 8px 10px;
+    border: 1px solid rgba(255,255,255,.09);
+    border-radius: 20px;
+    background: #202022;
+    color: #dcdcdf;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+#painel-aparencia .aparencia-icone-opcao.selecionado {
+    border-color: rgba(255,145,42,.78);
+    background: rgba(255,138,31,.10);
+    color: #ffb06a;
+    box-shadow: inset 0 0 0 1px rgba(255,145,42,.16);
+}
+
+#painel-aparencia .aparencia-icone-preview {
+    width: 68px;
+    height: 68px;
+    border-radius: 18px;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    background: #efeff1;
+    box-shadow: 0 7px 18px rgba(0,0,0,.25);
+}
+
+#painel-aparencia .aparencia-icone-preview.escuro {
+    background: #09090a;
+}
+
+#painel-aparencia .aparencia-icone-preview.translucido {
+    background:
+        linear-gradient(145deg, rgba(255,255,255,.24), rgba(255,255,255,.07));
+    border: 1px solid rgba(255,255,255,.18);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+}
+
+#painel-aparencia .aparencia-icone-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+#painel-aparencia .aparencia-icone-check {
+    position: absolute;
+    top: 7px;
+    right: 7px;
+    width: 19px;
+    height: 19px;
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: #ff8a1f;
+    color: #17100a;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+#painel-aparencia .aparencia-icone-opcao.selecionado .aparencia-icone-check {
+    display: flex;
+}
+
+#painel-aparencia .aparencia-aviso-icone {
+    margin: 13px 2px 0;
+}
+
+@media (max-width: 420px) {
+    #painel-aparencia .aparencia-conteudo {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    #painel-aparencia .aparencia-card {
+        padding: 15px;
+        border-radius: 24px;
+    }
+
+    #painel-aparencia .aparencia-icone-preview {
+        width: 58px;
+        height: 58px;
+        border-radius: 16px;
+    }
+
+    #painel-aparencia .aparencia-icone-opcao {
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+}
+
+
+/* ==========================================
    LIQUID GLASS GLOBAL - iOS
    ========================================== */
 :root {
