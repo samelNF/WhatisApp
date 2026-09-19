@@ -1280,20 +1280,5 @@
         }
     });
 
-    window.addEventListener('pagehide', () => {
-        if (
-            chamadaAtual?.id &&
-            participanteAtual?.status === 'joined'
-        ) {
-            // Melhor esforço. Não encerra a sala; só sinaliza que este aparelho saiu.
-            const supabase = supabaseAtual();
-            supabase
-                ?.from('chamadas_grupo_participantes')
-                .update({ status: 'left' })
-                .eq('chamada_id', chamadaAtual.id)
-                .eq('usuario_email', meuEmail())
-                .then(() => {})
-                .catch(() => {});
-        }
-    });
+;
 })();
