@@ -1868,6 +1868,16 @@ async function renderizarMensagensGrupoDoCache(mensagens, idGrupo, chaveConversa
         }
 
         if (
+            typeof window.ehMensagemChamadaGrupo === "function" &&
+            window.ehMensagemChamadaGrupo(msg) &&
+            typeof window.renderizarBalaoChamadaGrupo === "function"
+        ) {
+            await window.renderizarBalaoChamadaGrupo(msg, ehMinha, {
+                nomeRemetente: ehMinha ? "" : nomeRemetente,
+                corRemetente,
+                fotoRemetente
+            });
+        } else if (
             typeof window.ehMensagemAudio === "function" &&
             window.ehMensagemAudio(msg) &&
             typeof window.renderizarBalaoAudio === "function"
@@ -2178,7 +2188,56 @@ function inscreverRealtime() {
             },
             async (payload) => {
                 const msg = payload.new;
-                if (!msg || msg.grupo_id) return;
+                if (!msg) return;
+
+                // A mensagem da ligação em grupo muda quando a sala encerra.
+                if (
+                    msg.grupo_id &&
+                    typeof window.ehMensagemChamadaGrupo === "function" &&
+                    window.ehMensagemChamadaGrupo(msg)
+                ) {
+                    carregarListaContatos();
+
+                    const cache = window.WhatisCache;
+
+                    if (cache) {
+                        await cache.salvarMensagens(
+                            cache.conversaGrupo(msg.grupo_id),
+                            [msg]
+                        );
+                    }
+
+                    if (
+                        window.grupoAtualId &&
+                        String(window.grupoAtualId) === String(msg.grupo_id)
+                    ) {
+                        const existente = document.querySelector(
+                            '#chat-mensagens .balao-msg[data-message-id="' + String(msg.id) + '"]'
+                        );
+
+                        if (existente && msg.chamada_id) {
+                            existente.classList.toggle(
+                                'chamada-status-verde',
+                                msg.meta?.status === 'active'
+                            );
+                            existente.classList.toggle(
+                                'chamada-status-neutro',
+                                msg.meta?.status !== 'active'
+                            );
+
+                            const status = existente.querySelector('.chamada-bolha-status');
+                            if (status && msg.meta?.status !== 'active') {
+                                status.textContent = 'Encerrada';
+                            }
+                        } else {
+                            await carregarMensagensGrupo(window.grupoAtualId);
+                        }
+                    }
+
+                    return;
+                }
+
+                if (msg.grupo_id) return;
 
                 const remetente = (msg.remetente_email || "").trim().toLowerCase();
                 const destinatario = (msg.destinatario_email || "").trim().toLowerCase();
