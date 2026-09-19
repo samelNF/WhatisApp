@@ -16,6 +16,7 @@
     <script src="audio-system.js" defer></script>
     <script src="camera-system.js" defer></script>
     <script src="call-system.js" defer></script>
+    <script src="group-call-system.js" defer></script>
     <script src="script.js" defer></script>
     <script src="chat-visual.js" defer></script>
     <script src="safe-area.js" defer></script>
@@ -658,6 +659,67 @@
                     </svg>
                 </span>
                 <span>Encerrar</span>
+            </button>
+        </div>
+    </section>
+
+    <!-- TELA FUNCIONAL DE LIGAÇÃO DE VOZ EM GRUPO -->
+    <section id="tela-chamada-grupo" class="tela-chamada-grupo hidden" aria-label="Ligação de voz em grupo">
+        <div id="grupo-chamada-audios" class="grupo-chamada-audios" aria-hidden="true"></div>
+
+        <div class="grupo-chamada-topo">
+            <button type="button" class="grupo-chamada-minimizar" onclick="minimizarLigacaoGrupo()" aria-label="Minimizar">
+                <span>⌄</span>
+            </button>
+
+            <span class="grupo-chamada-tipo">Ligação de voz em grupo</span>
+            <span class="grupo-chamada-topo-spacer"></span>
+        </div>
+
+        <div class="grupo-chamada-cabecalho">
+            <img id="grupo-chamada-avatar" src="svg/group-placeholder.svg" class="grupo-chamada-avatar" alt="">
+            <h2 id="grupo-chamada-nome">Grupo</h2>
+            <p id="grupo-chamada-status">Ligação de voz em grupo</p>
+            <span id="grupo-chamada-contador">0/15 na ligação</span>
+        </div>
+
+        <div id="grupo-chamada-participantes" class="grupo-chamada-participantes"></div>
+
+        <div id="grupo-chamada-controles-recebendo" class="grupo-chamada-controles grupo-chamada-controles-recebendo hidden">
+            <button type="button" class="grupo-chamada-acao grupo-chamada-recusar" onclick="recusarLigacaoGrupo()">
+                <span class="grupo-chamada-acao-icone">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M5.5 14.5c3.8-3.2 9.2-3.2 13 0l-2.2 3.7-3-1.3v-2.2a10.6 10.6 0 0 0-2.6 0v2.2l-3 1.3z"></path>
+                    </svg>
+                </span>
+                <span class="grupo-chamada-acao-label">Agora não</span>
+            </button>
+
+            <button type="button" class="grupo-chamada-acao grupo-chamada-atender" onclick="atenderLigacaoGrupo()">
+                <span class="grupo-chamada-acao-icone">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M6.8 3.7 9 7.8 7.1 9.3c1.3 2.8 3 4.5 5.8 5.8l1.5-1.9 4.1 2.2c.6.3.8.9.7 1.5-.5 1.6-1.9 2.7-3.6 2.7C9.3 19.6 4 14.3 4 8c0-1.7 1.1-3.1 2.7-3.6.6-.2 1.2.1 1.5.7Z"></path>
+                    </svg>
+                </span>
+                <span class="grupo-chamada-acao-label">Entrar</span>
+            </button>
+        </div>
+
+        <div id="grupo-chamada-controles-dentro" class="grupo-chamada-controles grupo-chamada-controles-dentro">
+            <button type="button" id="grupo-chamada-btn-mudo" class="grupo-chamada-acao grupo-chamada-mudo" onclick="alternarMudoLigacaoGrupo()">
+                <span class="grupo-chamada-acao-icone">
+                    <img src="svg/microphone.svg" alt="">
+                </span>
+                <span class="grupo-chamada-acao-label">Silenciar</span>
+            </button>
+
+            <button type="button" class="grupo-chamada-acao grupo-chamada-sair" onclick="sairLigacaoGrupo()">
+                <span class="grupo-chamada-acao-icone">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M5.5 14.5c3.8-3.2 9.2-3.2 13 0l-2.2 3.7-3-1.3v-2.2a10.6 10.6 0 0 0-2.6 0v2.2l-3 1.3z"></path>
+                    </svg>
+                </span>
+                <span class="grupo-chamada-acao-label">Sair</span>
             </button>
         </div>
     </section>
