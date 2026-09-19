@@ -60,6 +60,7 @@
     let wakeLock = null;
     let inicializadoParaEmail = null;
     let mutado = false;
+    let diagnosticosPendentes = [];
 
     function supabaseAtual() {
         try {
@@ -84,19 +85,38 @@
     async function registrarDiagnostico(evento, dados = {}) {
         const supabase = supabaseAtual();
         const chamadaId = chamadaAtual?.id;
+        const email = meuEmail();
 
-        if (!supabase || !chamadaId || !meuEmail()) return;
+        if (!supabase || !email) return;
+
+        if (!chamadaId) {
+            diagnosticosPendentes.push({ evento, dados });
+            if (diagnosticosPendentes.length > 80) {
+                diagnosticosPendentes = diagnosticosPendentes.slice(-50);
+            }
+            return;
+        }
 
         try {
             await supabase
                 .from('chamada_diagnosticos')
                 .insert([{
                     chamada_id: chamadaId,
-                    usuario_email: meuEmail(),
+                    usuario_email: email,
                     evento,
                     dados
                 }]);
         } catch (e) {}
+    }
+
+    async function flushDiagnosticosPendentes() {
+        if (!chamadaAtual?.id || !diagnosticosPendentes.length) return;
+
+        const lista = diagnosticosPendentes.splice(0);
+
+        for (const item of lista) {
+            await registrarDiagnostico(item.evento, item.dados);
+        }
     }
 
     async function tentarTocarAudioRemoto() {
@@ -822,6 +842,7 @@
             }
 
             chamadaAtual = chamada;
+            await flushDiagnosticosPendentes();
             await assinarIce(chamada.id);
             await flushCandidatesLocais();
             await abrirTelaParaChamada(chamada, 'ligando');
@@ -869,6 +890,7 @@
             }
 
             chamadaAtual = fresca;
+            await flushDiagnosticosPendentes();
 
             await obterMicrofone();
             criarPeer();
