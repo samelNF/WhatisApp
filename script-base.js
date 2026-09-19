@@ -2739,9 +2739,8 @@ async function trocarFotoPerfil(event) {
 // APARÊNCIA - FUNDO GLOBAL + ÍCONE DO PWA
 // ==========================================
 const ICONES_PWA = {
-    normal: './images/icon-normal.png',
-    dark: './images/icon-dark.png?v=8aeba4f8',
-    clear: './images/icon-clear.png'
+    normal: './images/icon-192.png',
+    dark: './images/icon-dark.png?v=8aeba4f8'
 };
 
 function chaveFundoGlobal() {
@@ -2841,7 +2840,13 @@ function aplicarFundoGlobalNoChatAtual() {
 }
 
 function atualizarSelecaoIconePWA() {
-    const escolhido = localStorage.getItem("iconeWhatisApp") || "normal";
+    let escolhido = localStorage.getItem("iconeWhatisApp") || "normal";
+
+    // Preferências antigas (ex.: "clear") voltam para o ícone com fundo.
+    if (!ICONES_PWA[escolhido]) {
+        escolhido = "normal";
+        localStorage.setItem("iconeWhatisApp", escolhido);
+    }
 
     document.querySelectorAll("[data-icone-pwa]").forEach(botao => {
         botao.classList.toggle(
@@ -2852,8 +2857,13 @@ function atualizarSelecaoIconePWA() {
 }
 
 function aplicarIconePWA(tipo = null) {
-    const escolhido = tipo || localStorage.getItem("iconeWhatisApp") || "normal";
-    const caminho = ICONES_PWA[escolhido] || ICONES_PWA.normal;
+    let escolhido = tipo || localStorage.getItem("iconeWhatisApp") || "normal";
+
+    if (!ICONES_PWA[escolhido]) {
+        escolhido = "normal";
+    }
+
+    const caminho = ICONES_PWA[escolhido];
 
     // Só troca os links se o arquivo realmente existir. Enquanto o usuário
     // ainda não colocou os PNGs em /images, o ícone atual continua intacto.
