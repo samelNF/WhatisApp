@@ -133,6 +133,9 @@
         const track = videoStream.getVideoTracks()[0];
         if (!track) throw new Error('Câmera não retornou vídeo.');
 
+        track.enabled = true;
+        try { track.contentHint = 'motion'; } catch (e) {}
+
         if (!streamLocal) streamLocal = new MediaStream();
         streamLocal.addTrack(track);
         cameraPreparada = true;
@@ -638,7 +641,13 @@
             audio,
             remoteEmail: remoto,
             pendingIce: [],
-            makingOffer: false
+            makingOffer: false,
+            remoteStream: new MediaStream(),
+            remoteAudioStream: new MediaStream(),
+            remoteVideoStream: new MediaStream(),
+            remoteVideoAtivo: false,
+            videoSender: null,
+            videoTransceiver: null
         };
 
         peers.set(remoto, state);
@@ -678,7 +687,6 @@
 
         state.videoTransceiver = videoTransceiver;
         state.videoSender = videoTransceiver.sender;
-        state.remoteStream = new MediaStream();
 
         pc.onicecandidate = event => {
             if (!event.candidate || !chamadaAtual?.id) return;
@@ -690,24 +698,72 @@
         };
 
         pc.ontrack = event => {
-            const sourceStream = event.streams?.[0] || null;
-            const tracks = sourceStream?.getTracks?.() || [event.track];
+            const track = event.track;
+            if (!track) return;
 
-            for (const track of tracks) {
+            if (
+                !state.remoteStream.getTracks().some(
+                    item => item.id === track.id
+                )
+            ) {
+                state.remoteStream.addTrack(track);
+            }
+
+            if (track.kind === 'audio') {
                 if (
-                    track &&
-                    !state.remoteStream.getTracks().some(item => item.id === track.id)
+                    !state.remoteAudioStream.getTracks().some(
+                        item => item.id === track.id
+                    )
                 ) {
-                    state.remoteStream.addTrack(track);
+                    state.remoteAudioStream.addTrack(track);
+                }
+
+                if (audio) {
+                    audio.srcObject = state.remoteAudioStream;
+                    audio.play().catch(() => {});
+                }
+
+                return;
+            }
+
+            if (track.kind === 'video') {
+                if (
+                    !state.remoteVideoStream.getTracks().some(
+                        item => item.id === track.id
+                    )
+                ) {
+                    state.remoteVideoStream.addTrack(track);
+                }
+
+                const ativarVideoRemoto = () => {
+                    if (track.readyState !== 'live') return;
+                    state.remoteVideoAtivo = true;
+                    renderizarParticipantes();
+                };
+
+                track.onunmute = ativarVideoRemoto;
+
+                track.onended = () => {
+                    state.remoteVideoAtivo = false;
+                    renderizarParticipantes();
+                };
+
+                track.onmute = () => {
+                    setTimeout(() => {
+                        if (
+                            track.muted &&
+                            track.readyState === 'live'
+                        ) {
+                            state.remoteVideoAtivo = false;
+                            renderizarParticipantes();
+                        }
+                    }, 500);
+                };
+
+                if (!track.muted) {
+                    ativarVideoRemoto();
                 }
             }
-
-            if (audio) {
-                audio.srcObject = state.remoteStream;
-                audio.play().catch(() => {});
-            }
-
-            renderizarParticipantes();
         };
 
         pc.onconnectionstatechange = () => {
@@ -1050,20 +1106,46 @@
                         : (perfil?.usuario || email);
             }
 
-            if (video && p.camera_ativa === true) {
+            const peerState = peers.get(email);
+
+            const videoLocalPronto =
+                email === meuEmail() &&
+                cameraLigada &&
+                streamLocal?.getVideoTracks?.().some(
+                    track => track.readyState === 'live'
+                );
+
+            const videoRemotoPronto =
+                email !== meuEmail() &&
+                peerState?.remoteVideoAtivo === true &&
+                peerState?.remoteVideoStream?.getVideoTracks?.().some(
+                    track => track.readyState === 'live'
+                );
+
+            if (
+                video &&
+                p.camera_ativa === true &&
+                (videoLocalPronto || videoRemotoPronto)
+            ) {
                 if (email === meuEmail()) {
                     video.srcObject = streamLocal;
                     video.muted = true;
+                    video.style.transform = 'scaleX(-1)';
                 } else {
-                    video.srcObject = peers.get(email)?.remoteStream || null;
-                    video.muted = false;
+                    video.srcObject = peerState.remoteVideoStream;
+                    video.muted = true;
+                    video.style.transform = 'none';
                 }
 
                 video.classList.remove('hidden');
                 video.play().catch(() => {});
                 avatar?.classList.add('hidden');
             } else {
-                video?.classList.add('hidden');
+                if (video) {
+                    video.classList.add('hidden');
+                    video.srcObject = null;
+                    video.style.transform = 'none';
+                }
                 avatar?.classList.remove('hidden');
             }
 
