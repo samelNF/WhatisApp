@@ -821,7 +821,7 @@ async function carregarListaContatos() {
         // 2. Busca os contatos individuais.
         const { data: relacaoContatos, error: erroContatos } = await _supabase
             .from("contatos")
-            .select("contato_usuario")
+            .select("contato_usuario, ultima_leitura")
             .eq("usuario_origem", meuUsuario);
 
         if (erroContatos) throw erroContatos;
@@ -829,6 +829,13 @@ async function carregarListaContatos() {
         const nomesSalvos = relacaoContatos
             ? relacaoContatos.map(item => item.contato_usuario).filter(Boolean)
             : [];
+
+        const leituraPorContato = new Map(
+            (relacaoContatos || []).map(item => [
+                String(item.contato_usuario || ""),
+                item.ultima_leitura || null
+            ])
+        );
 
         let usuarios = [];
 
@@ -846,8 +853,23 @@ async function carregarListaContatos() {
             usuarios.map(async (contato) => {
                 let ultimaMsg = null;
                 let naoLidas = 0;
+                const ultimaLeitura = leituraPorContato.get(String(contato.usuario || "")) || null;
 
                 try {
+                    const consultaNaoLidas = _supabase
+                        .from("mensagens")
+                        .select("id", { count: "exact", head: true })
+                        .eq("remetente_email", contato.email)
+                        .eq("destinatario_email", meuEmail)
+                        .is("grupo_id", null);
+
+                    // A home conta só o que chegou depois da última vez que ESTE
+                    // usuário abriu essa conversa. "visualizada" continua sendo
+                    // usado apenas pelos dois checks dentro do chat.
+                    if (ultimaLeitura) {
+                        consultaNaoLidas.gt("created_at", ultimaLeitura);
+                    }
+
                     const [resultadoUltima, resultadoNaoLidas] = await Promise.all([
                         _supabase
                             .from("mensagens")
@@ -856,13 +878,7 @@ async function carregarListaContatos() {
                             .is("grupo_id", null)
                             .order("created_at", { ascending: false })
                             .limit(1),
-                        _supabase
-                            .from("mensagens")
-                            .select("id", { count: "exact", head: true })
-                            .eq("remetente_email", contato.email)
-                            .eq("destinatario_email", meuEmail)
-                            .is("grupo_id", null)
-                            .eq("visualizada", false)
+                        ultimaLeitura ? consultaNaoLidas : Promise.resolve({ count: 0 })
                     ]);
 
                     ultimaMsg = resultadoUltima.data?.[0] || null;
@@ -1693,6 +1709,43 @@ async function sincronizarVisualizacoesDoChat(emailContato, chaveConversa) {
     }
 }
 
+async function marcarContatoComoLidoNaLista(emailContato) {
+    const meuUsuario = (localStorage.getItem("nomeUsuario") || "").trim();
+    if (!meuUsuario || !emailContato || !_supabase || !navigator.onLine) return;
+
+    let nomeContato =
+        (todosContatos || []).find(item =>
+            item?.tipo === "contato" &&
+            String(item?.identificador || "").toLowerCase() === String(emailContato).toLowerCase()
+        )?.usuario || "";
+
+    if (!nomeContato) {
+        try {
+            const { data } = await _supabase
+                .from("usuarios")
+                .select("usuario")
+                .eq("email", emailContato)
+                .maybeSingle();
+
+            nomeContato = data?.usuario || "";
+        } catch (e) {}
+    }
+
+    if (!nomeContato) return;
+
+    const agora = new Date().toISOString();
+
+    const { error } = await _supabase
+        .from("contatos")
+        .update({ ultima_leitura: agora })
+        .eq("usuario_origem", meuUsuario)
+        .eq("contato_usuario", nomeContato);
+
+    if (error) {
+        console.warn("Não foi possível salvar a leitura da conversa:", error.message);
+    }
+}
+
 async function marcarMensagensComoVisualizadas(emailContato, chaveConversa) {
     const meuEmail = (localStorage.getItem("usuarioLogado") || "").trim();
     const telaChat = document.getElementById("tela-chat");
@@ -1719,7 +1772,9 @@ async function marcarMensagensComoVisualizadas(emailContato, chaveConversa) {
         await window.WhatisCache.salvarMensagens(chaveConversa, atualizadas);
     }
 
-    // O chat aberto já foi lido: some com a bolinha da home imediatamente.
+    // O chat aberto já foi lido: salva uma leitura própria da home.
+    // Isso evita que mensagens antigas com visualizada=false reapareçam como novas.
+    await marcarContatoComoLidoNaLista(emailContato);
     await limparNaoLidasNaHome("contato", emailContato);
 }
 
