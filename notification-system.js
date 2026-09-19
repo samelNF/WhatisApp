@@ -416,7 +416,7 @@
 
         const remetente = await obterUsuario(msg.remetente_email);
         const nomeRemetente = remetente?.usuario || msg.remetente_email || 'Contato';
-        const corpo = textoNotificacao(msg.texto);
+        let corpo = textoNotificacao(msg.texto);
 
         if (ehGrupo) {
             const grupo = await obterGrupo(msg.grupo_id);
@@ -425,6 +425,14 @@
             const ehChamadaGrupo =
                 msg.tipo === 'chamada_grupo' ||
                 msg.texto === '[CHAMADA_GRUPO]';
+
+            if (ehChamadaGrupo) {
+                corpo =
+                    (msg?.meta?.modo === 'video' ||
+                     msg?.meta?.tipo_chamada === 'video_grupo')
+                        ? '🎥 Ligação de vídeo em grupo'
+                        : '📞 Ligação de voz em grupo';
+            }
 
             await mostrarNotificacao(nomeGrupo, {
                 body: ehChamadaGrupo
@@ -448,6 +456,14 @@
         }
 
         const ehChamada = msg.tipo === 'chamada' || msg.texto === '[CHAMADA]';
+
+        if (ehChamada) {
+            corpo =
+                (msg?.meta?.modo === 'video' ||
+                 msg?.meta?.tipo_chamada === 'video')
+                    ? '🎥 Ligação de vídeo'
+                    : '📞 Ligação de voz';
+        }
 
         await mostrarNotificacao(nomeRemetente, {
             body: corpo,
