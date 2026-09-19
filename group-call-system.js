@@ -809,13 +809,15 @@
 
         const { data: participante, error: erroParticipante } = await supabase
             .from('chamadas_grupo_participantes')
-            .update({
+            .upsert([{
+                chamada_id: callId,
+                usuario_email: meuEmail(),
                 status: 'joined',
                 joined_at: new Date().toISOString(),
                 left_at: null
+            }], {
+                onConflict: 'chamada_id,usuario_email'
             })
-            .eq('chamada_id', callId)
-            .eq('usuario_email', meuEmail())
             .select('*')
             .single();
 
