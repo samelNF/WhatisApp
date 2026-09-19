@@ -306,6 +306,28 @@ Deno.serve(async (req) => {
     let titulo = nomeRemetente;
     let corpo = textoNotificacao(mensagem.texto);
 
+    const ehChamada =
+      mensagem.tipo === "chamada" ||
+      mensagem.texto === "[CHAMADA]";
+
+    const ehChamadaGrupo =
+      mensagem.tipo === "chamada_grupo" ||
+      mensagem.texto === "[CHAMADA_GRUPO]";
+
+    if (ehChamadaGrupo) {
+      corpo =
+        mensagem?.meta?.modo === "video" ||
+        mensagem?.meta?.tipo_chamada === "video_grupo"
+          ? "🎥 Ligação de vídeo em grupo"
+          : "📞 Ligação de voz em grupo";
+    } else if (ehChamada) {
+      corpo =
+        mensagem?.meta?.modo === "video" ||
+        mensagem?.meta?.tipo_chamada === "video"
+          ? "🎥 Ligação de vídeo"
+          : "📞 Ligação de voz";
+    }
+
     if (mensagem.grupo_id) {
       const { data: grupo } = await supabase
         .from("grupos")
@@ -314,7 +336,9 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       titulo = grupo?.nome || "Grupo";
-      corpo = nomeRemetente + ": " + corpo;
+      if (!ehChamadaGrupo) {
+        corpo = nomeRemetente + ": " + corpo;
+      }
     }
 
     const listaDestinatarios = Array.from(destinatarios);
@@ -349,14 +373,6 @@ Deno.serve(async (req) => {
       config.vapid_public_key,
       config.vapid_private_key,
     );
-
-    const ehChamada =
-      mensagem.tipo === "chamada" ||
-      mensagem.texto === "[CHAMADA]";
-
-    const ehChamadaGrupo =
-      mensagem.tipo === "chamada_grupo" ||
-      mensagem.texto === "[CHAMADA_GRUPO]";
 
     let urlDestino = "/WhatisApp/";
 
