@@ -257,6 +257,7 @@
         if (texto.startsWith('[VIDEO]:')) return '🎥 Vídeo';
         if (texto.startsWith('[AUDIO]:')) return '🎤 Áudio';
         if (texto.startsWith('[CHAMADA]')) return '📞 Ligação de voz';
+        if (texto.startsWith('[CHAMADA_GRUPO]')) return '📞 Ligação de voz em grupo';
 
         const limpo = texto.trim();
         return limpo.length > 140 ? limpo.slice(0, 137) + '...' : limpo;
@@ -421,12 +422,25 @@
             const grupo = await obterGrupo(msg.grupo_id);
             const nomeGrupo = grupo?.nome || 'Grupo';
 
+            const ehChamadaGrupo =
+                msg.tipo === 'chamada_grupo' ||
+                msg.texto === '[CHAMADA_GRUPO]';
+
             await mostrarNotificacao(nomeGrupo, {
-                body: nomeRemetente + ': ' + corpo,
-                tag: 'grupo-' + msg.grupo_id + '-' + (msg.id ?? Date.now()),
+                body: ehChamadaGrupo
+                    ? corpo
+                    : (nomeRemetente + ': ' + corpo),
+                tag: (ehChamadaGrupo ? 'chamada-grupo-' : 'grupo-') +
+                    msg.grupo_id + '-' + (msg.id ?? Date.now()),
                 data: {
-                    url: './index.html',
-                    tipo: 'grupo',
+                    url: ehChamadaGrupo && msg.chamada_id
+                        ? './index.html?groupCall=' +
+                            encodeURIComponent(msg.chamada_id) +
+                            '&group=' +
+                            encodeURIComponent(msg.grupo_id)
+                        : './index.html',
+                    tipo: ehChamadaGrupo ? 'chamada_grupo' : 'grupo',
+                    chamada_id: ehChamadaGrupo ? (msg.chamada_id || null) : null,
                     grupo_id: msg.grupo_id
                 }
             });
