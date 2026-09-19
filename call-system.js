@@ -1406,6 +1406,21 @@
 
                 track.onunmute = mostrarVideoRemoto;
 
+                // Há navegadores que criam o receiver ainda muted e não
+                // disparam onunmute de forma confiável. Rechecamos por alguns
+                // segundos sem depender exclusivamente desse evento.
+                [120, 350, 800, 1600, 3000].forEach(delay => {
+                    setTimeout(() => {
+                        if (
+                            peer &&
+                            track.readyState === 'live' &&
+                            !track.muted
+                        ) {
+                            mostrarVideoRemoto();
+                        }
+                    }, delay);
+                });
+
                 track.onended = () => {
                     videoRemotoRecebendo = false;
                     atualizarTipoTela();
@@ -1575,9 +1590,11 @@
 
             criarPeer();
 
-            const offer = await peer.createOffer({
-                offerToReceiveAudio: true
-            });
+            // O peer já nasce com transceiver de vídeo sendrecv. Não usamos
+            // offerToReceive* legado aqui: em alguns Safari/Chromium ele fazia
+            // a m-line de vídeo voltar numa direção inconsistente para o chamador.
+            await sincronizarTracksNoPeer();
+            const offer = await peer.createOffer();
 
             await peer.setLocalDescription(offer);
 
@@ -1827,6 +1844,39 @@
             await peer.setRemoteDescription(
                 new RTCSessionDescription(chamada.answer)
             );
+
+            // Depois da answer, revalida o receiver de vídeo. Em especial no
+            // chamador, alguns navegadores entregam a track pelo transceiver
+            // antes/de forma diferente do evento ontrack.
+            const transceiverVideo = transceiverPorKind('video');
+            const trackVideo = transceiverVideo?.receiver?.track || null;
+            if (
+                trackVideo &&
+                trackVideo.readyState === 'live' &&
+                !streamRemotoVideo?.getTracks?.().some(t => t.id === trackVideo.id)
+            ) {
+                streamRemotoVideo.addTrack(trackVideo);
+            }
+
+            const videoRemoto = document.getElementById('chamada-video-remoto');
+            if (videoRemoto && streamRemotoVideo?.getVideoTracks?.().length) {
+                videoRemoto.srcObject = streamRemotoVideo;
+                videoRemoto.autoplay = true;
+                videoRemoto.playsInline = true;
+                videoRemoto.muted = true;
+                videoRemoto.play().catch(() => {});
+            }
+
+            if (trackVideo && trackVideo.readyState === 'live' && !trackVideo.muted) {
+                videoRemotoRecebendo = true;
+                atualizarTipoTela();
+            }
+
+            registrarDiagnostico('answer_aplicada_chamador', {
+                videoDirection: transceiverVideo?.currentDirection || '',
+                videoTrackState: trackVideo?.readyState || '',
+                videoTrackMuted: trackVideo?.muted === true
+            });
 
             await flushCandidatesRemotos();
 
