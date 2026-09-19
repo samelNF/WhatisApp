@@ -275,15 +275,9 @@
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        ctx.save();
-
-        if (cameraFrontal) {
-            ctx.translate(largura, 0);
-            ctx.scale(-1, 1);
-        }
-
+        // O preview frontal continua espelhado, como câmera de celular.
+        // A foto salva usa o frame real da câmera para não sair invertida.
         ctx.drawImage(video, 0, 0, largura, altura);
-        ctx.restore();
 
         const blob = await new Promise(resolve => {
             canvas.toBlob(resolve, 'image/jpeg', 0.92);
