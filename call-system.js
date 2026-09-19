@@ -57,6 +57,10 @@
     let cameraLigada = false;
     let pedidoVideoMostrado = null;
     let timerDowngradeVideo = null;
+    let ultimaNegociacaoIniciada = 0;
+    let ultimaNegociacaoRespondida = 0;
+    let ultimaAnswerAplicada = 0;
+    let renegociacaoEmCurso = false;
     let diagnosticosPendentes = [];
 
     function supabaseAtual() {
@@ -465,6 +469,16 @@
 
         try {
             await obterCameraLigacao(true);
+            await sincronizarTracksNoPeer();
+
+            const videoTransceiver = transceiverPorKind('video');
+            if (
+                videoTransceiver &&
+                videoTransceiver.currentDirection !== 'sendrecv' &&
+                euSouChamador(chamadaAtual)
+            ) {
+                await iniciarRenegociacaoVideoPrivado();
+            }
         } catch (erro) {
             console.warn('[Ligação] Não foi possível ligar a câmera:', erro);
             alert('Não foi possível acessar a câmera.');
@@ -849,6 +863,10 @@
 
         candidatosPendentesRemotos = [];
         candidatosPendentesLocais = [];
+        ultimaNegociacaoIniciada = 0;
+        ultimaNegociacaoRespondida = 0;
+        ultimaAnswerAplicada = 0;
+        renegociacaoEmCurso = false;
         mutado = false;
     }
 
@@ -960,6 +978,220 @@
         for (const linha of (data || [])) {
             if (normalizarEmail(linha.remetente_email) !== meuEmail()) {
                 await adicionarCandidateRemoto(linha.candidate);
+            }
+        }
+    }
+
+    function transceiverPorKind(kind) {
+        if (!peer) return null;
+
+        return peer.getTransceivers().find(transceiver => {
+            return (
+                transceiver?.sender?.track?.kind === kind ||
+                transceiver?.receiver?.track?.kind === kind
+            );
+        }) || null;
+    }
+
+    async function sincronizarTracksNoPeer() {
+        if (!peer) return;
+
+        const audioTrack = streamLocal?.getAudioTracks?.()[0] || null;
+        let audioTransceiver = transceiverPorKind('audio');
+
+        if (audioTrack) {
+            if (!audioTransceiver) {
+                audioTransceiver = peer.addTransceiver(audioTrack, {
+                    direction: 'sendrecv',
+                    streams: [streamLocal]
+                });
+            } else {
+                await audioTransceiver.sender.replaceTrack(audioTrack);
+                audioTransceiver.direction = 'sendrecv';
+            }
+        }
+
+        const videoTrack =
+            cameraLigada
+                ? (streamLocal?.getVideoTracks?.()[0] || null)
+                : null;
+
+        let videoTransceiver = transceiverPorKind('video');
+
+        if (!videoTransceiver) {
+            videoTransceiver = videoTrack
+                ? peer.addTransceiver(videoTrack, {
+                    direction: 'sendrecv',
+                    streams: [streamLocal]
+                })
+                : peer.addTransceiver('video', {
+                    direction: 'recvonly'
+                });
+        } else if (videoTrack) {
+            await videoTransceiver.sender.replaceTrack(videoTrack);
+            videoTransceiver.direction = 'sendrecv';
+        } else {
+            try {
+                await videoTransceiver.sender.replaceTrack(null);
+            } catch (e) {}
+
+            if (videoTransceiver.direction !== 'inactive') {
+                videoTransceiver.direction = 'recvonly';
+            }
+        }
+
+        videoSender = videoTransceiver.sender;
+    }
+
+    async function iniciarRenegociacaoVideoPrivado() {
+        if (
+            renegociacaoEmCurso ||
+            !peer ||
+            !chamadaAtual?.id ||
+            chamadaAtual.status !== 'active' ||
+            chamadaAtual.modo !== 'video' ||
+            !euSouChamador(chamadaAtual) ||
+            !cameraLigada
+        ) {
+            return;
+        }
+
+        if (peer.signalingState !== 'stable') return;
+
+        renegociacaoEmCurso = true;
+
+        try {
+            await sincronizarTracksNoPeer();
+
+            const offer = await peer.createOffer();
+            await peer.setLocalDescription(offer);
+
+            const versao =
+                Math.max(
+                    Number(chamadaAtual.negociacao_versao || 0),
+                    ultimaNegociacaoIniciada,
+                    ultimaAnswerAplicada
+                ) + 1;
+
+            const atualizada = await atualizarChamada(chamadaAtual.id, {
+                offer: peer.localDescription.toJSON(),
+                answer: null,
+                negociacao_versao: versao,
+                negociacao_por: meuEmail(),
+                answer_versao: null
+            });
+
+            if (atualizada) {
+                chamadaAtual = atualizada;
+                ultimaNegociacaoIniciada = versao;
+
+                registrarDiagnostico('video_renegotiation_offer', {
+                    versao,
+                    signalingState: peer.signalingState
+                });
+            }
+        } catch (erro) {
+            console.warn('[Ligação] Falha ao renegociar vídeo:', erro);
+
+            registrarDiagnostico('video_renegotiation_error', {
+                etapa: 'offer',
+                name: erro?.name || '',
+                message: erro?.message || ''
+            });
+        } finally {
+            renegociacaoEmCurso = false;
+        }
+    }
+
+    async function processarRenegociacaoPrivada(chamada) {
+        if (!peer || !chamada?.id || chamada.status !== 'active') return;
+
+        const versao = Number(chamada.negociacao_versao || 0);
+        if (versao <= 0) return;
+
+        const negociador = normalizarEmail(chamada.negociacao_por);
+
+        // Outro lado enviou uma nova offer.
+        if (
+            negociador &&
+            negociador !== meuEmail() &&
+            chamada.offer &&
+            versao > ultimaNegociacaoRespondida
+        ) {
+            try {
+                if (peer.signalingState === 'have-local-offer') {
+                    try {
+                        await peer.setLocalDescription({ type: 'rollback' });
+                    } catch (e) {}
+                }
+
+                await peer.setRemoteDescription(
+                    new RTCSessionDescription(chamada.offer)
+                );
+
+                await sincronizarTracksNoPeer();
+                await flushCandidatesRemotos();
+
+                const answer = await peer.createAnswer();
+                await peer.setLocalDescription(answer);
+
+                ultimaNegociacaoRespondida = versao;
+
+                const atualizada = await atualizarChamada(chamada.id, {
+                    answer: peer.localDescription.toJSON(),
+                    answer_versao: versao
+                });
+
+                if (atualizada) chamadaAtual = atualizada;
+
+                registrarDiagnostico('video_renegotiation_answer', {
+                    versao,
+                    signalingState: peer.signalingState
+                });
+            } catch (erro) {
+                console.warn('[Ligação] Falha respondendo renegociação:', erro);
+
+                registrarDiagnostico('video_renegotiation_error', {
+                    etapa: 'answer',
+                    versao,
+                    name: erro?.name || '',
+                    message: erro?.message || ''
+                });
+            }
+
+            return;
+        }
+
+        // A offer foi nossa e chegou a answer da mesma versão.
+        if (
+            negociador === meuEmail() &&
+            chamada.answer &&
+            Number(chamada.answer_versao || -1) === versao &&
+            versao > ultimaAnswerAplicada
+        ) {
+            try {
+                if (peer.signalingState === 'have-local-offer') {
+                    await peer.setRemoteDescription(
+                        new RTCSessionDescription(chamada.answer)
+                    );
+                }
+
+                ultimaAnswerAplicada = versao;
+                await flushCandidatesRemotos();
+
+                registrarDiagnostico('video_renegotiation_complete', {
+                    versao,
+                    signalingState: peer.signalingState
+                });
+            } catch (erro) {
+                console.warn('[Ligação] Answer da renegociação inválida:', erro);
+
+                registrarDiagnostico('video_renegotiation_error', {
+                    etapa: 'apply_answer',
+                    versao,
+                    name: erro?.name || '',
+                    message: erro?.message || ''
+                });
             }
         }
     }
@@ -1359,6 +1591,10 @@
                 new RTCSessionDescription(chamadaAtual.offer)
             );
 
+            // Especialmente no desktop, o transceiver de vídeo criado antes da
+            // remoteDescription podia responder como recvonly. Reencaixamos a
+            // câmera no m-line recebido antes de gerar a answer.
+            await sincronizarTracksNoPeer();
             await flushCandidatesRemotos();
 
             const answer = await peer.createAnswer();
@@ -1536,6 +1772,11 @@
         if (chamadaAtual?.id !== chamada.id) return;
 
         const modoAnterior = chamadaAtual?.modo || chamadaAtual?.tipo || 'voz';
+        const virouVideo =
+            chamada.status === 'active' &&
+            modoAnterior !== 'video' &&
+            chamada.modo === 'video';
+
         chamadaAtual = chamada;
 
         atualizarTipoTela(chamada);
@@ -1570,9 +1811,17 @@
 
         if (chamada.status === 'active' && chamada.modo === 'video') {
             agendarVerificacaoDowngradeVideo(2200);
+
+            // Em chamada iniciada só com voz, replaceTrack sozinho não muda
+            // uma negociação recvonly para sendrecv. O chamador original faz
+            // uma única renegociação SDP e o outro lado responde.
+            if (virouVideo && euSouChamador(chamadaAtual)) {
+                await iniciarRenegociacaoVideoPrivado();
+            }
         }
 
         if (chamada.status === 'active') {
+            await processarRenegociacaoPrivada(chamadaAtual);
             pararTimers();
             await aplicarAnswerSePreciso(chamada);
             await abrirTelaParaChamada(chamada, 'ativa');
