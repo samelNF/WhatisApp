@@ -4612,3 +4612,270 @@ body.chamada-grupo-aberta {
 .chamada-ativar-audio.hidden {
     display: none !important;
 }
+
+
+/* ==========================================
+   VIDEO NAS LIGACOES - CONSENSO DINAMICO
+   ========================================== */
+.chamada-video-stage {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+    background: #090909;
+}
+
+.chamada-video-remoto {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: #090909;
+}
+
+.chamada-video-local {
+    position: absolute;
+    top: max(74px, calc(env(safe-area-inset-top, 0px) + 62px));
+    right: 16px;
+    width: min(31vw, 138px);
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
+    border-radius: 18px;
+    background: #171719;
+    border: 1px solid rgba(255,255,255,.16);
+    box-shadow: 0 10px 28px rgba(0,0,0,.32);
+    transform: scaleX(-1);
+}
+
+.chamada-video-remoto.hidden,
+.chamada-video-local.hidden {
+    display: none !important;
+}
+
+.tela-chamada .chamada-topo,
+.tela-chamada .chamada-centro,
+.tela-chamada .chamada-controles,
+.tela-chamada .chamada-pedido-video,
+.tela-chamada .chamada-ativar-audio {
+    position: relative;
+    z-index: 2;
+}
+
+.tela-chamada.chamada-modo-video {
+    background: #090909;
+}
+
+.tela-chamada.chamada-modo-video .chamada-centro {
+    margin-top: auto;
+    margin-bottom: 18px;
+    padding: 18px;
+    align-self: center;
+    border-radius: 22px;
+    background: linear-gradient(
+        180deg,
+        rgba(0,0,0,0),
+        rgba(0,0,0,.34)
+    );
+}
+
+.tela-chamada.chamada-modo-video .chamada-avatar-com-video {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    margin: 0;
+}
+
+.tela-chamada.chamada-modo-video #chamada-nome {
+    text-shadow: 0 2px 12px rgba(0,0,0,.62);
+}
+
+.chamada-video-toggle.ativo .chamada-acao-icone,
+.grupo-chamada-video-toggle.ativo .grupo-chamada-acao-icone {
+    background: rgba(255,255,255,.94);
+}
+
+.chamada-pedido-video,
+.grupo-chamada-pedido-video {
+    position: absolute;
+    z-index: 5;
+    left: 50%;
+    bottom: max(154px, calc(env(safe-area-inset-bottom, 0px) + 146px));
+    transform: translateX(-50%);
+    width: min(calc(100% - 30px), 430px);
+    padding: 15px;
+    border: 1px solid rgba(255,255,255,.13);
+    border-radius: 20px;
+    background: rgba(34,34,37,.94);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 16px 42px rgba(0,0,0,.36);
+}
+
+.chamada-pedido-video.hidden,
+.grupo-chamada-pedido-video.hidden {
+    display: none !important;
+}
+
+.chamada-pedido-video p,
+.grupo-chamada-pedido-video p {
+    margin: 0;
+    color: #fff;
+    font-size: 14px;
+    line-height: 1.35;
+    text-align: center;
+}
+
+.chamada-pedido-video-acoes,
+.grupo-chamada-pedido-video-acoes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+    margin-top: 13px;
+}
+
+.chamada-pedido-video-acoes.hidden,
+.grupo-chamada-pedido-video-acoes.hidden {
+    display: none !important;
+}
+
+.chamada-pedido-video-acoes button,
+.grupo-chamada-pedido-video-acoes button {
+    min-height: 42px;
+    padding: 8px 12px;
+    border: 0;
+    border-radius: 13px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.chamada-pedido-video-nao,
+.grupo-chamada-pedido-video-nao {
+    color: #fff;
+    background: rgba(255,255,255,.10);
+}
+
+.chamada-pedido-video-sim,
+.grupo-chamada-pedido-video-sim {
+    color: #fff;
+    background: #33c767;
+}
+
+/* Vídeo em grupo */
+.grupo-chamada-participante-midia {
+    position: relative;
+    width: 66px;
+    height: 66px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    background: #2c2c2f;
+}
+
+.grupo-chamada-participante-video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: #111;
+}
+
+.grupo-chamada-participante-video.hidden {
+    display: none !important;
+}
+
+.grupo-chamada-participante.com-video .grupo-chamada-participante-midia {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 3 / 4;
+    border-radius: 16px;
+}
+
+.grupo-chamada-participante.com-video .grupo-chamada-participante-avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    object-fit: cover;
+}
+
+.grupo-chamada-participante.com-video .grupo-chamada-participante-video {
+    border-radius: 16px;
+}
+
+.grupo-chamada-modo-video .grupo-chamada-cabecalho {
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+.grupo-chamada-modo-video .grupo-chamada-avatar {
+    width: 58px;
+    height: 58px;
+}
+
+.grupo-chamada-modo-video .grupo-chamada-cabecalho h2 {
+    margin-top: 8px;
+    font-size: 20px;
+}
+
+.grupo-chamada-modo-video .grupo-chamada-participantes {
+    width: min(100%, 920px);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: center;
+    gap: 8px;
+    padding-top: 8px;
+}
+
+.grupo-chamada-modo-video .grupo-chamada-participante {
+    min-height: 0;
+    padding: 6px;
+    border-radius: 18px;
+}
+
+.grupo-chamada-modo-video .grupo-chamada-participante-midia {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    border-radius: 14px;
+}
+
+.grupo-chamada-modo-video .grupo-chamada-participante-video,
+.grupo-chamada-modo-video .grupo-chamada-participante-avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 14px;
+}
+
+@media (min-width: 720px) {
+    .chamada-video-local {
+        width: 150px;
+        right: 28px;
+    }
+
+    .grupo-chamada-modo-video .grupo-chamada-participantes {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1050px) {
+    .grupo-chamada-modo-video .grupo-chamada-participantes {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 390px) {
+    .chamada-pedido-video,
+    .grupo-chamada-pedido-video {
+        width: calc(100% - 20px);
+        bottom: max(142px, calc(env(safe-area-inset-bottom, 0px) + 136px));
+    }
+
+    .chamada-pedido-video-acoes,
+    .grupo-chamada-pedido-video-acoes {
+        grid-template-columns: 1fr;
+    }
+
+    .grupo-chamada-modo-video .grupo-chamada-participantes {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
