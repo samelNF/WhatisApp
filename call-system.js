@@ -15,11 +15,31 @@
 
     const RTC_CONFIG = {
         iceServers: [
+            // STUN para tentativa P2P direta.
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun.cloudflare.com:3478' }
+            { urls: 'stun:stun.cloudflare.com:3478' },
+            { urls: 'stun:openrelay.metered.ca:80' },
+
+            // TURN de fallback: necessário quando os dois aparelhos ficam
+            // atrás de NAT/CGNAT que não aceita conexão direta.
+            {
+                urls: 'turn:openrelay.metered.ca:80',
+                username: 'openrelayproject',
+                credential: 'openrelayproject'
+            },
+            {
+                urls: 'turn:openrelay.metered.ca:443',
+                username: 'openrelayproject',
+                credential: 'openrelayproject'
+            },
+            {
+                urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+                username: 'openrelayproject',
+                credential: 'openrelayproject'
+            }
         ],
-        iceCandidatePoolSize: 4
+        iceCandidatePoolSize: 6
     };
 
     let chamadaAtual = null;
@@ -559,6 +579,13 @@
         peer.onconnectionstatechange = () => {
             if (!peer || !chamadaAtual) return;
 
+            console.log(
+                '[Ligação] connectionState:',
+                peer.connectionState,
+                'iceConnectionState:',
+                peer.iceConnectionState
+            );
+
             if (peer.connectionState === 'connected') {
                 atualizarStatusTela('Conectado');
                 setTimeout(() => {
@@ -571,7 +598,21 @@
             }
 
             if (peer.connectionState === 'failed') {
+                atualizarStatusTela('Falha ao conectar');
                 window.finalizarLigacaoVoz('failed');
+            }
+        };
+
+        peer.oniceconnectionstatechange = () => {
+            if (!peer) return;
+
+            console.log('[Ligação] ICE:', peer.iceConnectionState);
+
+            if (
+                peer.iceConnectionState === 'checking' &&
+                chamadaAtual?.status === 'active'
+            ) {
+                atualizarStatusTela('Conectando áudio...');
             }
         };
 
