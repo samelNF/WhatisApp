@@ -10,29 +10,26 @@
 
     const RTC_CONFIG_GRUPO = {
         iceServers: [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun.cloudflare.com:3478' },
-            { urls: 'stun:openrelay.metered.ca:80' },
+            { urls: 'stun:stun.relay.metered.ca:80' },
             {
-                urls: 'turn:openrelay.metered.ca:80',
-                username: 'openrelayproject',
-                credential: 'openrelayproject'
+                urls: 'turn:global.relay.metered.ca:80',
+                username: '76885336b576177095cc6d73',
+                credential: 'HjAdex+s0tRaVbs/'
             },
             {
-                urls: 'turn:openrelay.metered.ca:443',
-                username: 'openrelayproject',
-                credential: 'openrelayproject'
+                urls: 'turn:global.relay.metered.ca:80?transport=tcp',
+                username: '76885336b576177095cc6d73',
+                credential: 'HjAdex+s0tRaVbs/'
             },
             {
-                urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-                username: 'openrelayproject',
-                credential: 'openrelayproject'
+                urls: 'turn:global.relay.metered.ca:443',
+                username: '76885336b576177095cc6d73',
+                credential: 'HjAdex+s0tRaVbs/'
             },
             {
-                urls: 'turns:openrelay.metered.ca:443?transport=tcp',
-                username: 'openrelayproject',
-                credential: 'openrelayproject'
+                urls: 'turns:global.relay.metered.ca:443?transport=tcp',
+                username: '76885336b576177095cc6d73',
+                credential: 'HjAdex+s0tRaVbs/'
             }
         ],
         iceCandidatePoolSize: 6
