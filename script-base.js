@@ -1715,6 +1715,9 @@ async function marcarMensagensComoVisualizadas(emailContato, chaveConversa) {
     if (atualizadas.length && window.WhatisCache) {
         await window.WhatisCache.salvarMensagens(chaveConversa, atualizadas);
     }
+
+    // O chat aberto já foi lido: some com a bolinha da home imediatamente.
+    await limparNaoLidasNaHome("contato", emailContato);
 }
 
 async function carregarMensagens() {
@@ -1870,6 +1873,52 @@ async function checarStatusContato(emailContato) {
         } else {
             spanStatus.style.color = "#8696a0";
         }
+    }
+}
+
+async function marcarGrupoComoLido(idGrupo, ultimaMensagemEm = null) {
+    const meuEmail = (localStorage.getItem("usuarioLogado") || "").trim();
+    const meuUsuario = (localStorage.getItem("nomeUsuario") || "").trim();
+    const telaChat = document.getElementById("tela-chat");
+
+    if (!idGrupo || !meuEmail) return;
+    if (document.visibilityState !== "visible") return;
+    if (!telaChat?.classList.contains("ativa")) return;
+    if (String(window.grupoAtualId || "") !== String(idGrupo)) return;
+
+    const lidoAte = ultimaMensagemEm || new Date().toISOString();
+
+    // Limpa a interface de imediato, mesmo se estiver temporariamente offline.
+    await limparNaoLidasNaHome("grupo", idGrupo);
+
+    if (!_supabase || !navigator.onLine) return;
+
+    try {
+        let { data, error } = await _supabase
+            .from("grupo_membros")
+            .update({ ultima_leitura: lidoAte })
+            .eq("grupo_id", idGrupo)
+            .eq("usuario_email", meuEmail)
+            .select("id");
+
+        // Compatibilidade com membros antigos cadastrados pelo nome.
+        if ((error || !data?.length) && meuUsuario) {
+            const fallback = await _supabase
+                .from("grupo_membros")
+                .update({ ultima_leitura: lidoAte })
+                .eq("grupo_id", idGrupo)
+                .eq("usuario_nome", meuUsuario)
+                .select("id");
+
+            error = fallback.error;
+            data = fallback.data;
+        }
+
+        if (error) {
+            console.warn("Não foi possível marcar o grupo como lido:", error.message);
+        }
+    } catch (e) {
+        console.warn("Falha ao salvar leitura do grupo:", e);
     }
 }
 
@@ -2095,6 +2144,20 @@ async function carregarMensagensGrupo(idGrupo) {
         const combinadas = mensagensCache.concat(apenasNovas);
         await renderizarMensagensGrupoDoCache(combinadas, idGrupo, chaveConversa, false);
     }
+
+    const todasConhecidas = mensagensCache.concat(recebidas);
+    const ultimaConhecida = todasConhecidas.reduce((maisNova, msg) => {
+        if (!msg?.created_at) return maisNova;
+        if (!maisNova?.created_at) return msg;
+        return new Date(msg.created_at).getTime() > new Date(maisNova.created_at).getTime()
+            ? msg
+            : maisNova;
+    }, null);
+
+    await marcarGrupoComoLido(
+        idGrupo,
+        ultimaConhecida?.created_at || new Date().toISOString()
+    );
 
     containerChat.scrollTop = containerChat.scrollHeight;
 }
