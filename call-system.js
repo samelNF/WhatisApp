@@ -1542,7 +1542,7 @@
         await mostrarPedidoVideo(chamada);
 
         if (chamada.modo === 'voz' && cameraLigada) {
-            await desligarCameraLigacao(false);
+            await desligarCameraLigacao(true);
         }
 
         if (
