@@ -6,7 +6,7 @@ const APP_URL = new URL('./index.html', self.registration.scope).href;
 const ICON_URL = new URL('./images/icon-192.png', self.registration.scope).href;
 const BADGE_URL = ICON_URL;
 
-const APP_SHELL_CACHE = 'whatisapp-shell-v5';
+const APP_SHELL_CACHE = 'whatisapp-shell-v6';
 const RUNTIME_MEDIA_CACHE = 'whatisapp-media-v1';
 
 const APP_SHELL = [
@@ -18,6 +18,7 @@ const APP_SHELL = [
     './audio-system.js',
     './camera-system.js',
     './call-system.js',
+    './group-call-system.js',
     './script.js',
     './script-base.js',
     './chat-visual.js',
