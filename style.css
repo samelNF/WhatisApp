@@ -3719,7 +3719,7 @@ body.camera-whatisapp-aberta {
 }
 
 .camera-preview.camera-frontal {
-    transform: scaleX(-1);
+    transform: none;
 }
 
 .camera-canvas {
@@ -4644,7 +4644,7 @@ body.chamada-grupo-aberta {
     background: #171719;
     border: 1px solid rgba(255,255,255,.16);
     box-shadow: 0 10px 28px rgba(0,0,0,.32);
-    transform: scaleX(-1);
+    transform: none;
 }
 
 .chamada-video-remoto.hidden,
