@@ -29,6 +29,7 @@
             document.getElementById('painel-dados-contato'),
             document.getElementById('painel-dados-grupo'),
             document.getElementById('painel-dados-usuario'),
+            document.getElementById('painel-aparencia'),
             document.getElementById('tela-criar-grupo-membros'),
             document.getElementById('tela-criar-grupo-detalhes'),
             document.getElementById('modal-novo-contato'),
@@ -46,6 +47,7 @@
             document.getElementById('painel-dados-contato'),
             document.getElementById('painel-dados-grupo'),
             document.getElementById('painel-dados-usuario'),
+            document.getElementById('painel-aparencia'),
             document.getElementById('tela-criar-grupo-membros'),
             document.getElementById('tela-criar-grupo-detalhes'),
             document.getElementById('modal-novo-contato'),
@@ -167,6 +169,7 @@
             document.querySelector('#painel-dados-grupo:not(.hidden) .grupo-dados-topo'),
             document.querySelector('#painel-dados-contato:not(.hidden) .painel-contato-header'),
             document.querySelector('#painel-dados-usuario[style*="flex"] .dados-usuario-header'),
+            document.querySelector('#painel-aparencia:not(.hidden) .aparencia-header'),
             document.querySelector('#tela-chat.ativa .chat-header'),
             document.querySelector('#tela-conversas .topo-conversas')
         ].filter(Boolean);
