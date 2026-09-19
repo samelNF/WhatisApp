@@ -81,6 +81,56 @@
         return STATUS_FINAIS.has(String(status || ''));
     }
 
+    async function registrarDiagnostico(evento, dados = {}) {
+        const supabase = supabaseAtual();
+        const chamadaId = chamadaAtual?.id;
+
+        if (!supabase || !chamadaId || !meuEmail()) return;
+
+        try {
+            await supabase
+                .from('chamada_diagnosticos')
+                .insert([{
+                    chamada_id: chamadaId,
+                    usuario_email: meuEmail(),
+                    evento,
+                    dados
+                }]);
+        } catch (e) {}
+    }
+
+    async function tentarTocarAudioRemoto() {
+        const audio = document.getElementById('chamada-audio-remoto');
+        const btn = document.getElementById('chamada-btn-ativar-audio');
+
+        if (!audio) return false;
+
+        audio.autoplay = true;
+        audio.playsInline = true;
+        audio.muted = false;
+        audio.volume = 1;
+
+        try {
+            await audio.play();
+            btn?.classList.add('hidden');
+            registrarDiagnostico('audio_play_ok', {});
+            return true;
+        } catch (erro) {
+            console.warn('[Ligação] Reprodução de áudio bloqueada:', erro);
+            btn?.classList.remove('hidden');
+            registrarDiagnostico('audio_play_bloqueado', {
+                name: erro?.name || '',
+                message: erro?.message || ''
+            });
+            return false;
+        }
+    }
+
+    window.ativarAudioLigacao = function () {
+        return tentarTocarAudioRemoto();
+    };
+
+
     function outroParticipante(chamada) {
         const meu = meuEmail();
         const chamador = normalizarEmail(chamada?.chamador_email);
@@ -548,6 +598,8 @@
             audio.srcObject = streamRemoto;
             audio.autoplay = true;
             audio.playsInline = true;
+            audio.muted = false;
+            audio.volume = 1;
         }
 
         if (streamLocal) {
@@ -557,7 +609,27 @@
         }
 
         peer.onicecandidate = event => {
-            if (!event.candidate) return;
+            if (!event.candidate) {
+                registrarDiagnostico('ice_gathering_complete', {
+                    iceGatheringState: peer?.iceGatheringState || ''
+                });
+                return;
+            }
+
+            const candidateText = event.candidate.candidate || '';
+            const tipo =
+                candidateText.includes(' typ relay ')
+                    ? 'relay'
+                    : (candidateText.includes(' typ srflx ')
+                        ? 'srflx'
+                        : (candidateText.includes(' typ host ') ? 'host' : 'outro'));
+
+            registrarDiagnostico('ice_candidate', {
+                tipo,
+                protocol: event.candidate.protocol || '',
+                address: event.candidate.address || '',
+                port: event.candidate.port || null
+            });
 
             if (!chamadaAtual?.id) {
                 candidatosPendentesLocais.push(event.candidate);
@@ -565,6 +637,23 @@
             }
 
             inserirCandidateLocal(event.candidate);
+        };
+
+        peer.onicecandidateerror = event => {
+            console.warn(
+                '[Ligação] ICE candidate error:',
+                event.errorCode,
+                event.errorText,
+                event.url
+            );
+
+            registrarDiagnostico('ice_candidate_error', {
+                errorCode: event.errorCode || null,
+                errorText: event.errorText || '',
+                url: event.url || '',
+                address: event.address || '',
+                port: event.port || null
+            });
         };
 
         peer.ontrack = event => {
@@ -579,8 +668,17 @@
                 }
             }
 
+            registrarDiagnostico('remote_track', {
+                tracks: tracks.map(track => ({
+                    kind: track?.kind || '',
+                    enabled: track?.enabled !== false,
+                    muted: track?.muted === true,
+                    readyState: track?.readyState || ''
+                }))
+            });
+
             if (audio) {
-                audio.play().catch(() => {});
+                tentarTocarAudioRemoto();
             }
         };
 
@@ -593,6 +691,12 @@
                 'iceConnectionState:',
                 peer.iceConnectionState
             );
+
+            registrarDiagnostico('connection_state', {
+                connectionState: peer.connectionState,
+                iceConnectionState: peer.iceConnectionState,
+                signalingState: peer.signalingState
+            });
 
             if (peer.connectionState === 'connected') {
                 atualizarStatusTela('Conectado');
@@ -615,6 +719,11 @@
             if (!peer) return;
 
             console.log('[Ligação] ICE:', peer.iceConnectionState);
+
+            registrarDiagnostico('ice_state', {
+                iceConnectionState: peer.iceConnectionState,
+                iceGatheringState: peer.iceGatheringState
+            });
 
             if (
                 peer.iceConnectionState === 'checking' &&
@@ -787,6 +896,7 @@
             chamadaAtual = atualizada;
             await flushCandidatesLocais();
             await abrirTelaParaChamada(atualizada, 'ativa');
+            await tentarTocarAudioRemoto();
             await manterTelaAcordada();
         } catch (erro) {
             console.error('[Ligação] Erro ao atender:', erro);
@@ -905,8 +1015,7 @@
 
             await flushCandidatesRemotos();
 
-            const audio = document.getElementById('chamada-audio-remoto');
-            audio?.play?.().catch(() => {});
+            await tentarTocarAudioRemoto();
         } catch (erro) {
             console.warn('[Ligação] Answer remoto inválido:', erro);
         }
