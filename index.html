@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="icon" href="svg/mini-logo.svg">
+    <link rel="icon" id="favicon-whatisapp" href="svg/mini-logo.svg">
     <title>WhatisApp</title>
 
     <link rel="stylesheet" href="style.css">
@@ -28,7 +28,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="WhatisApp">
-    <link rel="apple-touch-icon" href="./images/icon-192.png">
+    <link rel="apple-touch-icon" id="apple-touch-icon-whatisapp" href="./images/icon-192.png">
     <link rel="manifest" href="manifest.json">
     <style>
         /* INICIO SEM FLASH DE LOGIN */
@@ -280,7 +280,7 @@
                 </label>
             </div>
 
-            <div class="voce-config-row">
+            <button class="voce-config-row" type="button" onclick="abrirAparencia()">
                 <span class="voce-config-icon">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M12 3a9 9 0 1 0 9 9c0-.7-.1-1.4-.2-2.1A6.5 6.5 0 0 1 12 3Z"></path>
@@ -288,12 +288,85 @@
                 </span>
                 <span class="voce-config-texto">
                     <strong>Aparência</strong>
-                    <small>Tema do aplicativo</small>
+                    <small>Fundo dos chats e ícone do aplicativo</small>
                 </span>
-                <label class="switch voce-config-switch" onclick="event.stopPropagation()">
-                    <input type="checkbox" id="check-tema-escuro" onchange="alternarTema()">
-                    <span class="slider round"></span>
-                </label>
+                <span class="voce-config-seta">›</span>
+            </button>
+        </div>
+
+        <!-- SUBTELA: APARÊNCIA -->
+        <div id="painel-aparencia" class="painel-aparencia hidden">
+            <div class="aparencia-header">
+                <button type="button" class="aparencia-voltar" onclick="fecharAparencia()" aria-label="Voltar">‹</button>
+                <h3>Aparência</h3>
+            </div>
+
+            <div class="aparencia-conteudo">
+                <section class="aparencia-card">
+                    <div class="aparencia-titulo-bloco">
+                        <strong>Plano de fundo padrão</strong>
+                        <small>Usado em conversas e grupos que ainda não possuem um fundo próprio.</small>
+                    </div>
+
+                    <div id="aparencia-fundo-preview" class="aparencia-fundo-preview">
+                        <div class="aparencia-preview-balao esquerda">E aí 👀</div>
+                        <div class="aparencia-preview-balao direita">Fundo novo 😈</div>
+                    </div>
+
+                    <div class="aparencia-acoes-fundo">
+                        <button type="button" class="aparencia-btn-principal" onclick="acionarTrocaFundoGlobal()">
+                            Escolher imagem
+                        </button>
+                        <button type="button" id="aparencia-remover-fundo" class="aparencia-btn-secundario" onclick="removerFundoGlobal()">
+                            Remover
+                        </button>
+                    </div>
+
+                    <input
+                        type="file"
+                        id="input-fundo-global"
+                        accept="image/*"
+                        onchange="alterarFundoGlobal(event)"
+                        hidden
+                    >
+                </section>
+
+                <section class="aparencia-card">
+                    <div class="aparencia-titulo-bloco">
+                        <strong>Ícone do aplicativo</strong>
+                        <small>Escolha qual versão do ícone o WhatisApp deve usar.</small>
+                    </div>
+
+                    <div class="aparencia-icones">
+                        <button type="button" class="aparencia-icone-opcao" data-icone-pwa="normal" onclick="selecionarIconePWA('normal')">
+                            <span class="aparencia-icone-preview">
+                                <img src="./images/icon-normal.png" alt="Ícone normal" onerror="this.onerror=null;this.src='./images/icon-192.png';">
+                            </span>
+                            <span>Normal</span>
+                            <span class="aparencia-icone-check">✓</span>
+                        </button>
+
+                        <button type="button" class="aparencia-icone-opcao" data-icone-pwa="dark" onclick="selecionarIconePWA('dark')">
+                            <span class="aparencia-icone-preview escuro">
+                                <img src="./images/icon-dark.png" alt="Ícone escuro" onerror="this.onerror=null;this.src='./images/icon-192.png';">
+                            </span>
+                            <span>Escuro</span>
+                            <span class="aparencia-icone-check">✓</span>
+                        </button>
+
+                        <button type="button" class="aparencia-icone-opcao" data-icone-pwa="clear" onclick="selecionarIconePWA('clear')">
+                            <span class="aparencia-icone-preview translucido">
+                                <img src="./images/icon-clear.png" alt="Ícone translúcido" onerror="this.onerror=null;this.src='./images/icon-192.png';">
+                            </span>
+                            <span>Translúcido</span>
+                            <span class="aparencia-icone-check">✓</span>
+                        </button>
+                    </div>
+
+                    <p class="aparencia-aviso-icone">
+                        No iOS, o ícone da Tela de Início pode demorar para ser atualizado. A preferência fica salva no WhatisApp.
+                    </p>
+                </section>
             </div>
         </div>
 
