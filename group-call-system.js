@@ -854,6 +854,26 @@
                 new RTCSessionDescription(sinal.payload)
             );
 
+            // Realtime da sala e sinalização usam canais diferentes. A offer
+            // pode chegar alguns ms antes do UPDATE "modo=video". Se a câmera
+            // já foi preparada pelo aceite, consulta a sala antes da answer
+            // para não responder recvonly por causa dessa corrida.
+            if (!cameraLigada && cameraPreparada && chamadaAtual?.id) {
+                const supabase = supabaseAtual();
+                const { data: salaAtual } = await supabase
+                    .from('chamadas_grupo')
+                    .select('*')
+                    .eq('id', chamadaAtual.id)
+                    .maybeSingle();
+
+                if (salaAtual?.status === 'active' && salaAtual?.modo === 'video') {
+                    chamadaAtual = salaAtual;
+                    cameraLigada = true;
+                    await atualizarCameraParticipante(true);
+                    atualizarTipoTelaGrupo(salaAtual);
+                }
+            }
+
             // Garante que a câmera local vá na answer. Sem isso alguns
             // navegadores respondiam o vídeo como recvonly.
             await sincronizarVideoNoPeerGrupo(state);
