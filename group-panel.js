@@ -607,7 +607,10 @@
         const meuEmail = localStorage.getItem('usuarioLogado');
         if (!grupoId || !meuEmail) return;
 
-        const fundo = localStorage.getItem(`fundo_grupo_${meuEmail}_${grupoId}`);
-        window.aplicarFundoGrupoNaTela(fundo);
+        const fundoProprio = localStorage.getItem(`fundo_grupo_${meuEmail}_${grupoId}`);
+        const fundoGlobal = localStorage.getItem(`fundo_chat_global_${meuEmail}`);
+
+        // Fundo do grupo tem prioridade; o padrão entra só se não houver um próprio.
+        window.aplicarFundoGrupoNaTela(fundoProprio || fundoGlobal || '');
     };
 })();
