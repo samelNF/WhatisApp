@@ -4586,3 +4586,29 @@ body.chamada-grupo-aberta {
         height: 54px;
     }
 }
+
+
+/* DESBLOQUEIO DE ÁUDIO NO NAVEGADOR DESKTOP */
+.chamada-ativar-audio {
+    position: absolute;
+    z-index: 4;
+    left: 50%;
+    bottom: max(172px, calc(env(safe-area-inset-bottom, 0px) + 164px));
+    transform: translateX(-50%);
+    min-width: 210px;
+    padding: 11px 18px;
+    border: 1px solid rgba(255,255,255,.16);
+    border-radius: 999px;
+    color: #fff;
+    background: rgba(255,255,255,.13);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 650;
+    box-shadow: 0 7px 24px rgba(0,0,0,.2);
+}
+
+.chamada-ativar-audio.hidden {
+    display: none !important;
+}
