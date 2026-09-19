@@ -731,6 +731,54 @@ async function conectarConta() {
 // ==========================================
 // GERENCIAMENTO DE CONTATOS
 // ==========================================
+function ordenarConversasPorRecencia(lista) {
+    return [...(lista || [])].sort((a, b) => {
+        const dataA = a?.ultimaMsgEm ? new Date(a.ultimaMsgEm).getTime() : 0;
+        const dataB = b?.ultimaMsgEm ? new Date(b.ultimaMsgEm).getTime() : 0;
+
+        if (dataA !== dataB) return dataB - dataA;
+
+        const nomeA = String(a?.usuario || a?.nome || "");
+        const nomeB = String(b?.usuario || b?.nome || "");
+        return nomeA.localeCompare(nomeB, "pt-BR");
+    });
+}
+
+async function salvarHomeConversasNoCache() {
+    const meuEmail = localStorage.getItem("usuarioLogado");
+    const cache = window.WhatisCache || null;
+
+    if (!meuEmail || !cache?.salvarListaConversas) return;
+
+    try {
+        await cache.salvarListaConversas(meuEmail, todosContatos || []);
+    } catch (e) {
+        console.warn("Não foi possível atualizar o cache da home:", e);
+    }
+}
+
+async function limparNaoLidasNaHome(tipo, identificador) {
+    let mudou = false;
+
+    todosContatos = (todosContatos || []).map(item => {
+        const mesmoTipo = item?.tipo === tipo;
+        const mesmoId = String(item?.identificador ?? item?.id ?? "") === String(identificador ?? "");
+
+        if (mesmoTipo && mesmoId && Number(item.naoLidas || 0) > 0) {
+            mudou = true;
+            return { ...item, naoLidas: 0 };
+        }
+
+        return item;
+    });
+
+    if (!mudou) return;
+
+    todosContatos = ordenarConversasPorRecencia(todosContatos);
+    renderizarContatos(todosContatos);
+    await salvarHomeConversasNoCache();
+}
+
 async function carregarListaContatos() {
     const meuEmail = localStorage.getItem("usuarioLogado");
     const meuUsuario = localStorage.getItem("nomeUsuario");
@@ -750,7 +798,7 @@ async function carregarListaContatos() {
     }
 
     if (listaCache.length) {
-        todosContatos = listaCache;
+        todosContatos = ordenarConversasPorRecencia(listaCache);
         renderizarContatos(todosContatos);
     }
 
@@ -797,17 +845,31 @@ async function carregarListaContatos() {
         const contatosComMensagens = await Promise.all(
             usuarios.map(async (contato) => {
                 let ultimaMsg = null;
+                let naoLidas = 0;
 
                 try {
-                    const { data: ultimasMsgs } = await _supabase
-                        .from("mensagens")
-                        .select("texto, tipo, audio_url, audio_duracao, created_at")
-                        .or(`and(remetente_email.eq.${meuEmail},destinatario_email.eq.${contato.email}),and(remetente_email.eq.${contato.email},destinatario_email.eq.${meuEmail})`)
-                        .order("created_at", { ascending: false })
-                        .limit(1);
+                    const [resultadoUltima, resultadoNaoLidas] = await Promise.all([
+                        _supabase
+                            .from("mensagens")
+                            .select("texto, tipo, audio_url, audio_duracao, created_at")
+                            .or(`and(remetente_email.eq.${meuEmail},destinatario_email.eq.${contato.email}),and(remetente_email.eq.${contato.email},destinatario_email.eq.${meuEmail})`)
+                            .is("grupo_id", null)
+                            .order("created_at", { ascending: false })
+                            .limit(1),
+                        _supabase
+                            .from("mensagens")
+                            .select("id", { count: "exact", head: true })
+                            .eq("remetente_email", contato.email)
+                            .eq("destinatario_email", meuEmail)
+                            .is("grupo_id", null)
+                            .eq("visualizada", false)
+                    ]);
 
-                    ultimaMsg = ultimasMsgs?.[0] || null;
-                } catch (e) {}
+                    ultimaMsg = resultadoUltima.data?.[0] || null;
+                    naoLidas = Number(resultadoNaoLidas.count || 0);
+                } catch (e) {
+                    console.warn("Falha ao buscar resumo do contato:", contato.email, e);
+                }
 
                 // Se a consulta da prévia falhar, tenta o histórico local.
                 if (!ultimaMsg && cache) {
@@ -820,24 +882,26 @@ async function carregarListaContatos() {
 
                 return {
                     ...contato,
-                    tipo: 'contato',
+                    tipo: "contato",
                     identificador: contato.email,
                     ultimaMsg: ultimaMsg
                         ? (typeof window.formatarPreviewMensagem === "function"
                             ? window.formatarPreviewMensagem(ultimaMsg)
                             : ultimaMsg.texto)
                         : "Nenhuma mensagem ainda",
+                    ultimaMsgEm: ultimaMsg?.created_at || null,
                     horaUltimaMsg: ultimaMsg?.created_at
                         ? formatarHora(ultimaMsg.created_at)
-                        : ""
+                        : "",
+                    naoLidas
                 };
             })
         );
 
-        // 3. Busca grupos.
+        // 3. Busca grupos e também a última leitura deste usuário em cada grupo.
         const { data: relacaoGrupos, error: erroRelacaoGrupos } = await _supabase
             .from("grupo_membros")
-            .select("grupo_id")
+            .select("grupo_id, ultima_leitura")
             .eq("usuario_nome", meuUsuario);
 
         if (erroRelacaoGrupos) throw erroRelacaoGrupos;
@@ -845,6 +909,13 @@ async function carregarListaContatos() {
         const idsGrupos = relacaoGrupos
             ? relacaoGrupos.map(g => g.grupo_id).filter(id => id !== null && id !== undefined)
             : [];
+
+        const leituraPorGrupo = new Map(
+            (relacaoGrupos || []).map(item => [
+                String(item.grupo_id),
+                item.ultima_leitura || null
+            ])
+        );
 
         let meusGrupos = [];
 
@@ -861,8 +932,38 @@ async function carregarListaContatos() {
         const gruposFormatados = await Promise.all(
             meusGrupos.map(async grupo => {
                 let ultimaMsg = null;
+                let naoLidas = 0;
+                const ultimaLeitura = leituraPorGrupo.get(String(grupo.id));
 
-                if (cache) {
+                try {
+                    const consultaNaoLidas = _supabase
+                        .from("mensagens")
+                        .select("id", { count: "exact", head: true })
+                        .eq("grupo_id", grupo.id)
+                        .neq("remetente_email", meuEmail);
+
+                    if (ultimaLeitura) {
+                        consultaNaoLidas.gt("created_at", ultimaLeitura);
+                    }
+
+                    const [resultadoUltima, resultadoNaoLidas] = await Promise.all([
+                        _supabase
+                            .from("mensagens")
+                            .select("texto, tipo, audio_url, audio_duracao, created_at, remetente_email")
+                            .eq("grupo_id", grupo.id)
+                            .order("created_at", { ascending: false })
+                            .limit(1),
+                        consultaNaoLidas
+                    ]);
+
+                    ultimaMsg = resultadoUltima.data?.[0] || null;
+                    naoLidas = Number(resultadoNaoLidas.count || 0);
+                } catch (e) {
+                    console.warn("Falha ao buscar resumo do grupo:", grupo.id, e);
+                }
+
+                // Cache é fallback; a ordem online vem da mensagem real mais recente do servidor.
+                if (!ultimaMsg && cache) {
                     ultimaMsg = await cache.ultimaMensagem(
                         cache.conversaGrupo(grupo.id)
                     );
@@ -870,7 +971,7 @@ async function carregarListaContatos() {
 
                 return {
                     ...grupo,
-                    tipo: 'grupo',
+                    tipo: "grupo",
                     identificador: grupo.id,
                     usuario: grupo.nome,
                     foto_url: grupo.foto_url || "svg/group-placeholder.svg",
@@ -879,17 +980,19 @@ async function carregarListaContatos() {
                             ? window.formatarPreviewMensagem(ultimaMsg)
                             : ultimaMsg.texto)
                         : "Toque para ver o grupo",
+                    ultimaMsgEm: ultimaMsg?.created_at || null,
                     horaUltimaMsg: ultimaMsg?.created_at
                         ? formatarHora(ultimaMsg.created_at)
-                        : ""
+                        : "",
+                    naoLidas
                 };
             })
         );
 
-        const listaAtualizada = [
+        const listaAtualizada = ordenarConversasPorRecencia([
             ...contatosComMensagens,
             ...gruposFormatados
-        ];
+        ]);
 
         todosContatos = listaAtualizada;
         renderizarContatos(todosContatos);
@@ -920,7 +1023,9 @@ function renderizarContatos(lista) {
 
     container.innerHTML = "";
 
-    if (lista.length === 0) {
+    const listaOrdenada = ordenarConversasPorRecencia(lista);
+
+    if (listaOrdenada.length === 0) {
         container.innerHTML = `
             <li style="color: #888; text-align: center; margin-top: 20px; font-family: sans-serif;">
                 Nenhum contato ou grupo encontrado.
@@ -929,21 +1034,30 @@ function renderizarContatos(lista) {
         return;
     }
 
-    lista.forEach(item => {
+    listaOrdenada.forEach(item => {
         const li = document.createElement("li");
         li.classList.add("item-contato");
 
         const foto = item.foto_url || "";
         const nome = item.usuario || item.nome;
+        const naoLidas = Math.max(0, Number(item.naoLidas || 0));
+        const textoBadge = naoLidas > 99 ? "99+" : String(naoLidas);
+
+        li.classList.toggle("tem-nao-lidas", naoLidas > 0);
 
         li.innerHTML = `
             <img src="" class="foto-contato" alt="">
             <div class="info-contato">
                 <div class="info-contato-topo">
-                    <span class="nome-contato">${nome} ${item.tipo === 'grupo' ? ' ' : ''}</span>
-                    <span class="hora-contato">${item.horaUltimaMsg || ''}</span>
+                    <span class="nome-contato">${nome} ${item.tipo === "grupo" ? " " : ""}</span>
+                    <span class="hora-contato">${item.horaUltimaMsg || ""}</span>
                 </div>
-                <span class="ultima-msg">${item.ultimaMsg}</span>
+                <div class="info-contato-rodape">
+                    <span class="ultima-msg">${item.ultimaMsg}</span>
+                    ${naoLidas > 0
+                        ? `<span class="badge-nao-lidas" aria-label="${naoLidas} mensagem${naoLidas === 1 ? "" : "s"} não lida${naoLidas === 1 ? "" : "s"}">${textoBadge}</span>`
+                        : ""}
+                </div>
             </div>
         `;
 
@@ -954,9 +1068,9 @@ function renderizarContatos(lista) {
             aplicarAvatarUsuario(avatarLista, foto, item.cor);
         }
 
-        // Ao clicar, verifica se é um grupo ou um chat normal
+        // Ao clicar, verifica se é um grupo ou um chat normal.
         li.onclick = () => {
-            if (item.tipo === 'grupo') {
+            if (item.tipo === "grupo") {
                 abrirChatGrupo(item.id, item.nome, item.foto_url || "svg/user-placeholder.svg");
             } else {
                 abrirChatCom(item.identificador, nome, foto, item.cor);
