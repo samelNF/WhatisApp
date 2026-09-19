@@ -39,6 +39,40 @@
         body.classList.toggle('subtela-aberta', temSubtelaAberta);
     }
 
+    function corFixaDaTelaAtual() {
+        // Algumas telas principais têm uma cor de fundo definida manualmente.
+        // Subtelas/painéis continuam usando a detecção dinâmica logo abaixo.
+        const subtelasQueUsamFundoProprio = [
+            document.getElementById('painel-dados-contato'),
+            document.getElementById('painel-dados-grupo'),
+            document.getElementById('painel-dados-usuario'),
+            document.getElementById('tela-criar-grupo-membros'),
+            document.getElementById('tela-criar-grupo-detalhes'),
+            document.getElementById('modal-novo-contato'),
+            document.getElementById('modal-solicitacoes'),
+            document.getElementById('tela-chamada'),
+            document.getElementById('tela-chamada-grupo')
+        ];
+
+        if (subtelasQueUsamFundoProprio.some(elementoEstaAberto)) {
+            return null;
+        }
+
+        if (elementoEstaAberto(document.getElementById('tela-chat'))) {
+            return '#292929';
+        }
+
+        if (elementoEstaAberto(document.getElementById('tela-voce'))) {
+            return '#0A0A0A';
+        }
+
+        if (elementoEstaAberto(document.getElementById('tela-conversas'))) {
+            return '#0B0B0C';
+        }
+
+        return null;
+    }
+
     function bloquearArrastoNativoIOS() {
         const ehIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
             (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -164,6 +198,15 @@
         agendado = false;
         atualizarAlturaViewport();
         atualizarEstadoTopoHome();
+
+        const corFixa = corFixaDaTelaAtual();
+        if (corFixa) {
+            root.style.setProperty('--safe-area-bg-color', corFixa);
+            root.style.setProperty('--safe-area-bg-image', 'none');
+            root.style.setProperty('--safe-area-backdrop', 'none');
+            atualizarThemeColor(corFixa);
+            return;
+        }
 
         const alvo = elementoComFundoNoTopo();
         const bodyStyle = getComputedStyle(document.body);
