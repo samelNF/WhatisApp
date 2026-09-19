@@ -2229,6 +2229,15 @@ function inscreverRealtime() {
                             if (status && msg.meta?.status !== 'active') {
                                 status.textContent = 'Encerrada';
                             }
+
+                            const titulo = existente.querySelector('.chamada-bolha-titulo');
+                            if (titulo) {
+                                titulo.textContent =
+                                    (msg.meta?.modo === 'video' ||
+                                     msg.meta?.tipo_chamada === 'video_grupo')
+                                        ? 'Ligação de vídeo em grupo'
+                                        : 'Ligação de voz em grupo';
+                            }
                         } else {
                             await carregarMensagensGrupo(window.grupoAtualId);
                         }
