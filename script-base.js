@@ -1699,7 +1699,10 @@ async function marcarMensagensComoVisualizadas(emailContato, chaveConversa) {
 
     if (!meuEmail || !emailContato) return;
     if (document.visibilityState !== "visible") return;
-    if (!telaChat?.classList.contains("ativa")) return;
+    if (
+        !telaChat?.classList.contains("ativa") &&
+        telaChat?.style.display !== "flex"
+    ) return;
 
     if (typeof window.marcarMensagensVistasServidor !== "function") {
         console.warn("Sistema de visualização ainda não está disponível.");
@@ -1883,7 +1886,10 @@ async function marcarGrupoComoLido(idGrupo, ultimaMensagemEm = null) {
 
     if (!idGrupo || !meuEmail) return;
     if (document.visibilityState !== "visible") return;
-    if (!telaChat?.classList.contains("ativa")) return;
+    if (
+        !telaChat?.classList.contains("ativa") &&
+        telaChat?.style.display !== "flex"
+    ) return;
     if (String(window.grupoAtualId || "") !== String(idGrupo)) return;
 
     const lidoAte = ultimaMensagemEm || new Date().toISOString();
