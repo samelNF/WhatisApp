@@ -2740,7 +2740,7 @@ async function trocarFotoPerfil(event) {
 // ==========================================
 const ICONES_PWA = {
     normal: './images/icon-normal.png',
-    dark: './images/icon-dark.png',
+    dark: './images/icon-dark.png?v=8aeba4f8',
     clear: './images/icon-clear.png'
 };
 
