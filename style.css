@@ -1882,13 +1882,19 @@ body {
     margin: 0 !important;
     padding: 0 !important;
     box-sizing: border-box;
-    background: #050505;
     overflow-x: hidden;
+}
+
+/* IMPORTANTE: o fundo visível atrás do app é o do próprio HTML.
+   O safe-area.js troca --safe-area-bg-color conforme a tela atual. */
+html {
+    background: var(--safe-area-bg-color, #0A0A0A) !important;
 }
 
 body {
     min-height: 100vh;
     min-height: 100dvh;
+    background: transparent !important;
 }
 
 *,
