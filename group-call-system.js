@@ -39,6 +39,10 @@
     let participanteAtual = null;
     let streamLocal = null;
     let mutado = false;
+    let cameraLigada = false;
+    let cameraPreparada = false;
+    let pedidoVideoAtual = null;
+    let timerDowngradeVideo = null;
 
     const peers = new Map();
     const sinaisProcessados = new Set();
@@ -47,6 +51,8 @@
     let canalParticipantes = null;
     let canalSinais = null;
     let canalChamada = null;
+    let canalVideoPedidos = null;
+    let canalVideoRespostas = null;
 
     let intervaloReconciliar = null;
     let inicializadoParaEmail = null;
@@ -83,6 +89,333 @@
         const n = new Date(valor || 0).getTime();
         return Number.isFinite(n) ? n : 0;
     }
+
+    function modoVideoGrupo(call = chamadaAtual) {
+        return String(call?.modo || 'voz') === 'video';
+    }
+
+    function atualizarTipoTelaGrupo(call = chamadaAtual) {
+        const video = modoVideoGrupo(call);
+        const tela = document.getElementById('tela-chamada-grupo');
+        const tipo = document.querySelector('#tela-chamada-grupo .grupo-chamada-tipo');
+        const btn = document.getElementById('grupo-chamada-btn-video');
+
+        if (tela) tela.classList.toggle('grupo-chamada-modo-video', video);
+        if (tipo) tipo.textContent = video
+            ? 'Ligação de vídeo em grupo'
+            : 'Ligação de voz em grupo';
+        if (btn) btn.classList.toggle('ativo', video && cameraLigada);
+    }
+
+    async function prepararCameraGrupo() {
+        if (
+            streamLocal?.getVideoTracks?.().some(
+                track => track.readyState === 'live'
+            )
+        ) {
+            cameraPreparada = true;
+            return streamLocal.getVideoTracks()[0];
+        }
+
+        if (!navigator.mediaDevices?.getUserMedia) {
+            throw new Error('Câmera não disponível neste navegador.');
+        }
+
+        const videoStream = await navigator.mediaDevices.getUserMedia({
+            audio: false,
+            video: {
+                facingMode: 'user',
+                width: { ideal: 960 },
+                height: { ideal: 540 }
+            }
+        });
+
+        const track = videoStream.getVideoTracks()[0];
+        if (!track) throw new Error('Câmera não retornou vídeo.');
+
+        if (!streamLocal) streamLocal = new MediaStream();
+        streamLocal.addTrack(track);
+        cameraPreparada = true;
+
+        return track;
+    }
+
+    async function atualizarCameraParticipante(ativa) {
+        const supabase = supabaseAtual();
+        if (!supabase || !chamadaAtual?.id || !meuEmail()) return;
+
+        const { data } = await supabase
+            .from('chamadas_grupo_participantes')
+            .update({ camera_ativa: !!ativa })
+            .eq('chamada_id', chamadaAtual.id)
+            .eq('usuario_email', meuEmail())
+            .select('*')
+            .maybeSingle();
+
+        if (data) participanteAtual = data;
+    }
+
+    async function ativarCameraGrupo(atualizarBanco = true) {
+        const track = await prepararCameraGrupo();
+
+        for (const state of peers.values()) {
+            if (state.videoSender) {
+                try { await state.videoSender.replaceTrack(track); } catch (e) {}
+            }
+        }
+
+        cameraLigada = true;
+        cameraPreparada = true;
+
+        if (atualizarBanco) await atualizarCameraParticipante(true);
+
+        atualizarTipoTelaGrupo();
+        await renderizarParticipantes();
+    }
+
+    async function desligarCameraGrupo(atualizarBanco = true, pararTrack = true) {
+        for (const state of peers.values()) {
+            if (state.videoSender) {
+                try { await state.videoSender.replaceTrack(null); } catch (e) {}
+            }
+        }
+
+        cameraLigada = false;
+
+        if (pararTrack) {
+            const tracks = streamLocal?.getVideoTracks?.() || [];
+            for (const track of tracks) {
+                try { track.stop(); } catch (e) {}
+                try { streamLocal.removeTrack(track); } catch (e) {}
+            }
+            cameraPreparada = false;
+        }
+
+        if (atualizarBanco) await atualizarCameraParticipante(false);
+
+        atualizarTipoTelaGrupo();
+        await renderizarParticipantes();
+
+        if (modoVideoGrupo()) agendarDowngradeVideoGrupo();
+    }
+
+    async function verificarDowngradeVideoGrupo() {
+        const supabase = supabaseAtual();
+        if (!supabase || !chamadaAtual?.id || !modoVideoGrupo()) return;
+
+        const { data: participantes } = await supabase
+            .from('chamadas_grupo_participantes')
+            .select('usuario_email, status, camera_ativa')
+            .eq('chamada_id', chamadaAtual.id)
+            .eq('status', 'joined');
+
+        const alguemComCamera = (participantes || []).some(
+            p => p.camera_ativa === true
+        );
+
+        if (!alguemComCamera) {
+            const { data: call } = await supabase
+                .from('chamadas_grupo')
+                .update({ modo: 'voz' })
+                .eq('id', chamadaAtual.id)
+                .eq('status', 'active')
+                .select('*')
+                .maybeSingle();
+
+            if (call) {
+                chamadaAtual = call;
+                atualizarTipoTelaGrupo(call);
+            }
+        }
+    }
+
+    function agendarDowngradeVideoGrupo(delay = 1200) {
+        if (timerDowngradeVideo) clearTimeout(timerDowngradeVideo);
+
+        timerDowngradeVideo = setTimeout(() => {
+            timerDowngradeVideo = null;
+            verificarDowngradeVideoGrupo();
+        }, delay);
+    }
+
+    function esconderPedidoVideoGrupo() {
+        document.getElementById('grupo-chamada-pedido-video')?.classList.add('hidden');
+        pedidoVideoAtual = null;
+    }
+
+    async function mostrarPedidoVideoGrupo(pedido) {
+        if (!pedido || pedido.status !== 'pending') {
+            esconderPedidoVideoGrupo();
+            return;
+        }
+
+        const supabase = supabaseAtual();
+        if (!supabase || !chamadaAtual?.id) return;
+
+        const { data: minhaResposta } = await supabase
+            .from('chamadas_grupo_video_respostas')
+            .select('*')
+            .eq('pedido_id', pedido.id)
+            .eq('usuario_email', meuEmail())
+            .maybeSingle();
+
+        if (!minhaResposta) return;
+
+        pedidoVideoAtual = pedido;
+
+        const painel = document.getElementById('grupo-chamada-pedido-video');
+        const texto = document.getElementById('grupo-chamada-pedido-video-texto');
+        const acoes = document.getElementById('grupo-chamada-pedido-video-acoes');
+
+        if (!painel) return;
+        painel.classList.remove('hidden');
+
+        if (minhaResposta.resposta === 'accepted') {
+            if (texto) {
+                texto.textContent =
+                    normalizarEmail(pedido.solicitado_por) === meuEmail()
+                        ? 'Esperando todo mundo aceitar o vídeo...'
+                        : 'Você aceitou. Esperando os outros participantes...';
+            }
+            acoes?.classList.add('hidden');
+            return;
+        }
+
+        if (minhaResposta.resposta !== 'pending') {
+            esconderPedidoVideoGrupo();
+            return;
+        }
+
+        const perfil = await obterPerfil(pedido.solicitado_por);
+        if (texto) {
+            texto.textContent =
+                (perfil?.usuario || 'Alguém') +
+                ' quer transformar a ligação em vídeo. Ativar sua câmera?';
+        }
+
+        acoes?.classList.remove('hidden');
+    }
+
+    async function buscarPedidoVideoPendente() {
+        const supabase = supabaseAtual();
+        if (!supabase || !chamadaAtual?.id) return null;
+
+        const { data } = await supabase
+            .from('chamadas_grupo_video_pedidos')
+            .select('*')
+            .eq('chamada_id', chamadaAtual.id)
+            .eq('status', 'pending')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        return data || null;
+    }
+
+    async function solicitarVideoGrupo() {
+        const supabase = supabaseAtual();
+        if (!supabase || !chamadaAtual?.id || chamadaAtual.status !== 'active') return;
+
+        if (modoVideoGrupo()) {
+            try {
+                await ativarCameraGrupo(true);
+            } catch (erro) {
+                alert('Não foi possível acessar a câmera.');
+            }
+            return;
+        }
+
+        const pendente = await buscarPedidoVideoPendente();
+        if (pendente) {
+            await mostrarPedidoVideoGrupo(pendente);
+            return;
+        }
+
+        try {
+            await prepararCameraGrupo();
+        } catch (erro) {
+            console.warn('[Ligação grupo] Câmera indisponível:', erro);
+            alert('Não foi possível acessar a câmera.');
+            return;
+        }
+
+        const { data: pedido, error } = await supabase
+            .from('chamadas_grupo_video_pedidos')
+            .insert([{
+                chamada_id: chamadaAtual.id,
+                solicitado_por: meuEmail()
+            }])
+            .select('*')
+            .single();
+
+        if (error || !pedido) {
+            console.warn('[Ligação grupo] Pedido de vídeo falhou:', error);
+            await desligarCameraGrupo(false, true);
+            return;
+        }
+
+        await mostrarPedidoVideoGrupo(pedido);
+    }
+
+    window.responderPedidoVideoGrupo = async function (aceitar) {
+        const supabase = supabaseAtual();
+        const pedido = pedidoVideoAtual;
+
+        if (!supabase || !pedido?.id) {
+            esconderPedidoVideoGrupo();
+            return;
+        }
+
+        if (aceitar) {
+            try {
+                await prepararCameraGrupo();
+            } catch (erro) {
+                console.warn('[Ligação grupo] Câmera indisponível:', erro);
+                alert('Não foi possível acessar a câmera.');
+                return;
+            }
+        }
+
+        const resposta = aceitar ? 'accepted' : 'rejected';
+
+        await supabase
+            .from('chamadas_grupo_video_respostas')
+            .update({ resposta })
+            .eq('pedido_id', pedido.id)
+            .eq('usuario_email', meuEmail());
+
+        if (!aceitar) {
+            await desligarCameraGrupo(false, true);
+            esconderPedidoVideoGrupo();
+        } else {
+            const atualizado = {
+                ...pedido,
+                status: 'pending'
+            };
+            await mostrarPedidoVideoGrupo(atualizado);
+        }
+    };
+
+    window.alternarCameraLigacaoGrupo = async function () {
+        if (!chamadaAtual?.id || chamadaAtual.status !== 'active') return;
+
+        if (!modoVideoGrupo()) {
+            await solicitarVideoGrupo();
+            return;
+        }
+
+        if (cameraLigada) {
+            await desligarCameraGrupo(true, true);
+            return;
+        }
+
+        try {
+            await ativarCameraGrupo(true);
+        } catch (erro) {
+            console.warn('[Ligação grupo] Não foi possível ligar a câmera:', erro);
+            alert('Não foi possível acessar a câmera.');
+        }
+    };
 
     async function obterPerfil(email) {
         const chave = normalizarEmail(email);
@@ -127,6 +460,8 @@
             foto.src = temFoto ? grupo.foto_url : 'svg/group-placeholder.svg';
             foto.style.backgroundColor = temFoto ? 'transparent' : '#3a3a3c';
         }
+
+        atualizarTipoTelaGrupo(call);
     }
 
     function abrirTela(modo) {
@@ -162,13 +497,19 @@
     }
 
     async function obterMicrofone() {
-        if (streamLocal?.active) return streamLocal;
+        if (
+            streamLocal?.getAudioTracks?.().some(
+                track => track.readyState === 'live'
+            )
+        ) {
+            return streamLocal;
+        }
 
         if (!navigator.mediaDevices?.getUserMedia) {
             throw new Error('Microfone não disponível neste navegador.');
         }
 
-        streamLocal = await navigator.mediaDevices.getUserMedia({
+        const audioStream = await navigator.mediaDevices.getUserMedia({
             audio: {
                 echoCancellation: true,
                 noiseSuppression: true,
@@ -176,6 +517,12 @@
                 channelCount: 1
             },
             video: false
+        });
+
+        if (!streamLocal) streamLocal = new MediaStream();
+
+        audioStream.getAudioTracks().forEach(track => {
+            streamLocal.addTrack(track);
         });
 
         return streamLocal;
@@ -189,6 +536,8 @@
         }
         streamLocal = null;
         mutado = false;
+        cameraLigada = false;
+        cameraPreparada = false;
     }
 
     function removerAudioRemoto(email) {
@@ -277,14 +626,12 @@
         peers.set(remoto, state);
 
         if (streamLocal) {
-            streamLocal.getTracks().forEach(track => {
+            streamLocal.getAudioTracks().forEach(track => {
                 try { track.contentHint = 'speech'; } catch (e) {}
 
                 const sender = pc.addTrack(track, streamLocal);
 
-                // Voz em grupo precisa ser econômica: 14 conexões de áudio no
-                // limite máximo não podem usar bitrate de chamada 1x1.
-                if (track.kind === 'audio' && sender?.getParameters) {
+                if (sender?.getParameters) {
                     try {
                         const params = sender.getParameters();
                         params.encodings = params.encodings?.length
@@ -297,6 +644,23 @@
             });
         }
 
+        const localVideo =
+            cameraLigada
+                ? (streamLocal?.getVideoTracks?.()[0] || null)
+                : null;
+
+        const videoTransceiver = localVideo
+            ? pc.addTransceiver(localVideo, {
+                direction: 'sendrecv',
+                streams: [streamLocal]
+            })
+            : pc.addTransceiver('video', {
+                direction: 'sendrecv'
+            });
+
+        state.videoSender = videoTransceiver.sender;
+        state.remoteStream = new MediaStream();
+
         pc.onicecandidate = event => {
             if (!event.candidate || !chamadaAtual?.id) return;
             enviarSinal(
@@ -307,15 +671,24 @@
         };
 
         pc.ontrack = event => {
-            if (!audio) return;
+            const sourceStream = event.streams?.[0] || null;
+            const tracks = sourceStream?.getTracks?.() || [event.track];
 
-            const remoteStream = event.streams?.[0] || new MediaStream([event.track]);
-
-            if (audio.srcObject !== remoteStream) {
-                audio.srcObject = remoteStream;
+            for (const track of tracks) {
+                if (
+                    track &&
+                    !state.remoteStream.getTracks().some(item => item.id === track.id)
+                ) {
+                    state.remoteStream.addTrack(track);
+                }
             }
 
-            audio.play().catch(() => {});
+            if (audio) {
+                audio.srcObject = state.remoteStream;
+                audio.play().catch(() => {});
+            }
+
+            renderizarParticipantes();
         };
 
         pc.onconnectionstatechange = () => {
@@ -476,7 +849,13 @@
         const supabase = supabaseAtual();
         if (!supabase) return;
 
-        for (const canal of [canalParticipantes, canalSinais, canalChamada]) {
+        for (const canal of [
+            canalParticipantes,
+            canalSinais,
+            canalChamada,
+            canalVideoPedidos,
+            canalVideoRespostas
+        ]) {
             if (canal) {
                 try { await supabase.removeChannel(canal); } catch (e) {}
             }
@@ -485,6 +864,8 @@
         canalParticipantes = null;
         canalSinais = null;
         canalChamada = null;
+        canalVideoPedidos = null;
+        canalVideoRespostas = null;
     }
 
     async function participantesDaChamada() {
@@ -493,7 +874,7 @@
 
         const { data } = await supabase
             .from('chamadas_grupo_participantes')
-            .select('usuario_email, status, joined_at, left_at, updated_at')
+            .select('usuario_email, status, joined_at, left_at, camera_ativa, updated_at')
             .eq('chamada_id', chamadaAtual.id);
 
         return data || [];
@@ -545,12 +926,19 @@
             const item = document.createElement('div');
             item.className = 'grupo-chamada-participante';
 
+            item.dataset.email = email;
+            item.classList.toggle('com-video', p.camera_ativa === true);
+
             item.innerHTML = `
-                <img class="grupo-chamada-participante-avatar" src="svg/user-placeholder.svg" alt="">
+                <div class="grupo-chamada-participante-midia">
+                    <img class="grupo-chamada-participante-avatar" src="svg/user-placeholder.svg" alt="">
+                    <video class="grupo-chamada-participante-video hidden" autoplay playsinline></video>
+                </div>
                 <span class="grupo-chamada-participante-nome"></span>
             `;
 
             const avatar = item.querySelector('.grupo-chamada-participante-avatar');
+            const video = item.querySelector('.grupo-chamada-participante-video');
             const nome = item.querySelector('.grupo-chamada-participante-nome');
 
             if (typeof window.aplicarAvatarUsuario === 'function') {
@@ -573,8 +961,27 @@
                         : (perfil?.usuario || email);
             }
 
+            if (video && p.camera_ativa === true) {
+                if (email === meuEmail()) {
+                    video.srcObject = streamLocal;
+                    video.muted = true;
+                } else {
+                    video.srcObject = peers.get(email)?.remoteStream || null;
+                    video.muted = false;
+                }
+
+                video.classList.remove('hidden');
+                video.play().catch(() => {});
+                avatar?.classList.add('hidden');
+            } else {
+                video?.classList.add('hidden');
+                avatar?.classList.remove('hidden');
+            }
+
             lista.appendChild(item);
         }
+
+        atualizarTipoTelaGrupo();
     }
 
     function euDevoOfertar(meuParticipante, remotoParticipante) {
@@ -664,6 +1071,15 @@
                     await renderizarParticipantes();
                     await reconciliarPeers();
                     await atualizarBolhaVisivel(callId);
+
+                    if (
+                        payload.eventType === 'UPDATE' &&
+                        payload.old?.camera_ativa === true &&
+                        payload.new?.camera_ativa === false &&
+                        modoVideoGrupo()
+                    ) {
+                        agendarDowngradeVideoGrupo();
+                    }
                 }
             )
             .subscribe();
@@ -694,16 +1110,95 @@
                 },
                 async payload => {
                     if (!payload.new) return;
+                    const modoAnterior = chamadaAtual?.modo || 'voz';
                     chamadaAtual = payload.new;
+
+                    atualizarTipoTelaGrupo(payload.new);
 
                     if (payload.new.status === 'ended') {
                         await limparChamadaLocal(false);
+                        return;
+                    }
+
+                    if (
+                        modoAnterior !== 'video' &&
+                        payload.new.modo === 'video'
+                    ) {
+                        try {
+                            await ativarCameraGrupo(true);
+                        } catch (erro) {
+                            console.warn('[Ligação grupo] Câmera não ativou após consenso:', erro);
+                        }
+
+                        agendarDowngradeVideoGrupo(2600);
+                    }
+
+                    if (
+                        modoAnterior === 'video' &&
+                        payload.new.modo === 'voz'
+                    ) {
+                        await desligarCameraGrupo(true, true);
+                    }
+
+                    await renderizarParticipantes();
+                    await atualizarBolhaVisivel(callId);
+                }
+            )
+            .subscribe();
+
+        canalVideoPedidos = supabase
+            .channel('group-call-video-requests-' + callId + '-' + Date.now())
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'chamadas_grupo_video_pedidos',
+                    filter: 'chamada_id=eq.' + callId
+                },
+                async payload => {
+                    const pedido = payload.new || payload.old;
+                    if (!pedido) return;
+
+                    if (pedido.status === 'pending') {
+                        await mostrarPedidoVideoGrupo(pedido);
                     } else {
-                        await atualizarBolhaVisivel(callId);
+                        if (
+                            pedido.status === 'rejected' &&
+                            !modoVideoGrupo() &&
+                            cameraPreparada
+                        ) {
+                            await desligarCameraGrupo(false, true);
+                        }
+                        esconderPedidoVideoGrupo();
                     }
                 }
             )
             .subscribe();
+
+        canalVideoRespostas = supabase
+            .channel('group-call-video-answers-' + callId + '-' + Date.now())
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'chamadas_grupo_video_respostas'
+                },
+                async payload => {
+                    if (!pedidoVideoAtual?.id) return;
+                    if (String(payload.new?.pedido_id) !== String(pedidoVideoAtual.id)) return;
+
+                    const pedido = await buscarPedidoVideoPendente();
+                    if (pedido) await mostrarPedidoVideoGrupo(pedido);
+                }
+            )
+            .subscribe();
+
+        const pedidoPendente = await buscarPedidoVideoPendente();
+        if (pedidoPendente) {
+            await mostrarPedidoVideoGrupo(pedidoPendente);
+        }
 
         const desde = participanteAtual?.joined_at;
 
@@ -752,7 +1247,7 @@
 
             await supabase
                 .from('chamadas_grupo_participantes')
-                .update({ status: 'left' })
+                .update({ status: 'left', camera_ativa: false })
                 .eq('chamada_id', chamadaAtual.id)
                 .eq('usuario_email', meuEmail());
         }
@@ -761,6 +1256,13 @@
 
         fecharTodosPeers();
         pararMicrofone();
+
+        if (timerDowngradeVideo) {
+            clearTimeout(timerDowngradeVideo);
+            timerDowngradeVideo = null;
+        }
+
+        esconderPedidoVideoGrupo();
 
         chamadaAtual = null;
         participanteAtual = null;
@@ -798,6 +1300,16 @@
 
         try {
             await obterMicrofone();
+
+            if (modoVideoGrupo(call)) {
+                try {
+                    await prepararCameraGrupo();
+                    cameraLigada = true;
+                } catch (erroCamera) {
+                    console.warn('[Ligação grupo] Entrou no vídeo sem câmera:', erroCamera);
+                    cameraLigada = false;
+                }
+            }
         } catch (erro) {
             console.error('[Ligação grupo] Microfone:', erro);
             alert('Não foi possível acessar o microfone.');
@@ -810,6 +1322,7 @@
                 chamada_id: callId,
                 usuario_email: meuEmail(),
                 status: 'joined',
+                camera_ativa: modoVideoGrupo(call) && cameraLigada,
                 joined_at: new Date().toISOString(),
                 left_at: null
             }], {
@@ -836,6 +1349,7 @@
 
         await preencherCabecalho(call);
         abrirTela('dentro');
+        atualizarTipoTelaGrupo(call);
         atualizarStatus('Conectando...');
 
         await assinarCanaisDaChamada();
@@ -850,7 +1364,7 @@
         return true;
     }
 
-    window.iniciarLigacaoGrupo = async function () {
+    async function iniciarLigacaoGrupoBase(comVideo = false) {
         const supabase = supabaseAtual();
         const grupoId = grupoAtualId();
         const email = meuEmail();
@@ -879,12 +1393,43 @@
             .maybeSingle();
 
         if (existente) {
+            chamadaAtual = existente;
+
+            if (comVideo && existente.modo !== 'video') {
+                const { data: meuParticipante } = await supabase
+                    .from('chamadas_grupo_participantes')
+                    .select('*')
+                    .eq('chamada_id', existente.id)
+                    .eq('usuario_email', email)
+                    .maybeSingle();
+
+                if (meuParticipante?.status === 'joined') {
+                    participanteAtual = meuParticipante;
+                    await preencherCabecalho(existente);
+                    abrirTela('dentro');
+                    await assinarCanaisDaChamada();
+                    await solicitarVideoGrupo();
+                    return;
+                }
+            }
+
             await entrarNaChamada(existente.id);
             return;
         }
 
         try {
             await obterMicrofone();
+
+            if (comVideo) {
+                try {
+                    await prepararCameraGrupo();
+                    cameraLigada = true;
+                } catch (erroCamera) {
+                    console.warn('[Ligação grupo] Vídeo indisponível; iniciando por voz:', erroCamera);
+                    comVideo = false;
+                    cameraLigada = false;
+                }
+            }
         } catch (erro) {
             console.error('[Ligação grupo] Microfone:', erro);
             alert('Não foi possível acessar o microfone.');
@@ -896,6 +1441,7 @@
             .insert([{
                 grupo_id: grupoId,
                 criado_por: email,
+                modo: comVideo ? 'video' : 'voz',
                 status: 'active'
             }])
             .select('*')
@@ -938,8 +1484,21 @@
             chamada_id: nova.id,
             usuario_email: email,
             status: 'joined',
+            camera_ativa: false,
             joined_at: new Date().toISOString()
         };
+
+        if (comVideo && cameraLigada) {
+            const { data: atualizado } = await supabase
+                .from('chamadas_grupo_participantes')
+                .update({ camera_ativa: true })
+                .eq('chamada_id', nova.id)
+                .eq('usuario_email', email)
+                .select('*')
+                .maybeSingle();
+
+            if (atualizado) participanteAtual = atualizado;
+        }
 
         await preencherCabecalho(nova);
         abrirTela('dentro');
@@ -952,6 +1511,14 @@
         intervaloReconciliar = setInterval(() => {
             reconciliarPeers();
         }, 4500);
+    }
+
+    window.iniciarLigacaoGrupo = function () {
+        return iniciarLigacaoGrupoBase(false);
+    };
+
+    window.iniciarVideoGrupo = function () {
+        return iniciarLigacaoGrupoBase(true);
     };
 
     window.atenderLigacaoGrupo = async function () {
@@ -1044,7 +1611,12 @@
 
         await preencherCabecalho(call);
         abrirTela('recebendo');
-        atualizarStatus('Ligação de voz em grupo');
+        atualizarTipoTelaGrupo(call);
+        atualizarStatus(
+            modoVideoGrupo(call)
+                ? 'Ligação de vídeo em grupo'
+                : 'Ligação de voz em grupo'
+        );
         await renderizarParticipantes();
     }
 
@@ -1165,7 +1737,7 @@
         const [{ data: call }, { data: participantes }] = await Promise.all([
             supabase
                 .from('chamadas_grupo')
-                .select('id, status')
+                .select('id, status, modo')
                 .eq('id', callId)
                 .maybeSingle(),
             supabase
@@ -1183,6 +1755,14 @@
         balao.classList.toggle('chamada-status-neutro', call?.status !== 'active');
 
         const status = balao.querySelector('.chamada-bolha-status');
+        const titulo = balao.querySelector('.chamada-bolha-titulo');
+
+        if (titulo) {
+            titulo.textContent =
+                call?.modo === 'video'
+                    ? 'Ligação de vídeo em grupo'
+                    : 'Ligação de voz em grupo';
+        }
 
         if (!status) return;
 
@@ -1245,7 +1825,7 @@
                 </div>
 
                 <div class="chamada-bolha-info">
-                    <strong class="chamada-bolha-titulo">Ligação de voz em grupo</strong>
+                    <strong class="chamada-bolha-titulo">${(msg?.meta?.modo === 'video' || msg?.meta?.tipo_chamada === 'video_grupo') ? 'Ligação de vídeo em grupo' : 'Ligação de voz em grupo'}</strong>
                     <span class="chamada-bolha-status">Carregando...</span>
                 </div>
 
