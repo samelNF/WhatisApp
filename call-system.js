@@ -44,6 +44,9 @@
     let peer = null;
     let streamLocal = null;
     let streamRemoto = null;
+    let streamRemotoAudio = null;
+    let streamRemotoVideo = null;
+    let videoRemotoRecebendo = false;
     let canalChamadas = null;
     let canalIce = null;
     let candidatosPendentesRemotos = [];
@@ -194,24 +197,37 @@
         const local = document.getElementById('chamada-video-local');
         const avatar = document.getElementById('chamada-avatar');
 
+        const temVideoLocal =
+            !!streamLocal?.getVideoTracks?.().some(
+                track => track.readyState === 'live'
+            );
+
+        const temVideoRemoto =
+            videoRemotoRecebendo ||
+            !!streamRemotoVideo?.getVideoTracks?.().some(
+                track =>
+                    track.readyState === 'live' &&
+                    track.muted !== true
+            );
+
         if (remoto) {
             remoto.classList.toggle(
                 'hidden',
-                !video || !cameraOutroAtiva(chamada)
+                !video || !temVideoRemoto
             );
         }
 
         if (local) {
             local.classList.toggle(
                 'hidden',
-                !video || !minhaCameraAtiva(chamada)
+                !video || !temVideoLocal
             );
         }
 
         if (avatar) {
             avatar.classList.toggle(
                 'chamada-avatar-com-video',
-                video && cameraOutroAtiva(chamada)
+                video && temVideoRemoto
             );
         }
     }
@@ -257,6 +273,9 @@
 
         const track = videoStream.getVideoTracks()[0];
         if (!track) throw new Error('Câmera não retornou vídeo.');
+
+        track.enabled = true;
+        try { track.contentHint = 'motion'; } catch (e) {}
 
         if (!streamLocal) streamLocal = new MediaStream();
         streamLocal.addTrack(track);
@@ -838,13 +857,20 @@
         streamLocal = null;
         cameraLigada = false;
 
-        if (streamRemoto) {
-            streamRemoto.getTracks().forEach(track => {
+        for (const remoto of [
+            streamRemoto,
+            streamRemotoAudio,
+            streamRemotoVideo
+        ]) {
+            remoto?.getTracks?.().forEach(track => {
                 try { track.stop(); } catch (e) {}
             });
         }
 
         streamRemoto = null;
+        streamRemotoAudio = null;
+        streamRemotoVideo = null;
+        videoRemotoRecebendo = false;
 
         const audio = document.getElementById('chamada-audio-remoto');
         if (audio) audio.srcObject = null;
@@ -1210,10 +1236,13 @@
 
         peer = new RTCPeerConnection(RTC_CONFIG);
         streamRemoto = new MediaStream();
+        streamRemotoAudio = new MediaStream();
+        streamRemotoVideo = new MediaStream();
+        videoRemotoRecebendo = false;
 
         const audio = document.getElementById('chamada-audio-remoto');
         if (audio) {
-            audio.srcObject = streamRemoto;
+            audio.srcObject = streamRemotoAudio;
             audio.autoplay = true;
             audio.playsInline = true;
             audio.muted = false;
@@ -1250,9 +1279,10 @@
         }
 
         if (videoRemoto) {
-            videoRemoto.srcObject = streamRemoto;
+            videoRemoto.srcObject = streamRemotoVideo;
             videoRemoto.autoplay = true;
             videoRemoto.playsInline = true;
+            videoRemoto.muted = true;
         }
 
         peer.onicecandidate = event => {
@@ -1304,39 +1334,104 @@
         };
 
         peer.ontrack = event => {
-            const tracks = event.streams?.[0]?.getTracks?.() || [event.track];
+            const track = event.track;
+            if (!track) return;
 
-            for (const track of tracks) {
-                if (
-                    track &&
-                    !streamRemoto.getTracks().some(item => item.id === track.id)
-                ) {
-                    streamRemoto.addTrack(track);
-                }
+            if (
+                !streamRemoto.getTracks().some(
+                    item => item.id === track.id
+                )
+            ) {
+                streamRemoto.addTrack(track);
             }
 
             registrarDiagnostico('remote_track', {
-                tracks: tracks.map(track => ({
-                    kind: track?.kind || '',
-                    enabled: track?.enabled !== false,
-                    muted: track?.muted === true,
-                    readyState: track?.readyState || ''
-                }))
+                tracks: [{
+                    kind: track.kind || '',
+                    enabled: track.enabled !== false,
+                    muted: track.muted === true,
+                    readyState: track.readyState || ''
+                }]
             });
 
-            const videoRemoto = document.getElementById('chamada-video-remoto');
-            if (videoRemoto) {
-                videoRemoto.srcObject = streamRemoto;
-                videoRemoto.playsInline = true;
-                videoRemoto.autoplay = true;
-                videoRemoto.play().catch(() => {});
+            if (track.kind === 'audio') {
+                if (
+                    !streamRemotoAudio.getTracks().some(
+                        item => item.id === track.id
+                    )
+                ) {
+                    streamRemotoAudio.addTrack(track);
+                }
+
+                if (audio) {
+                    audio.srcObject = streamRemotoAudio;
+                    tentarTocarAudioRemoto();
+                }
+
+                return;
             }
 
-            if (audio) {
-                tentarTocarAudioRemoto();
-            }
+            if (track.kind === 'video') {
+                if (
+                    !streamRemotoVideo.getTracks().some(
+                        item => item.id === track.id
+                    )
+                ) {
+                    streamRemotoVideo.addTrack(track);
+                }
 
-            atualizarTipoTela();
+                const videoRemoto =
+                    document.getElementById('chamada-video-remoto');
+
+                const mostrarVideoRemoto = () => {
+                    if (!peer || track.readyState !== 'live') return;
+
+                    videoRemotoRecebendo = true;
+
+                    if (videoRemoto) {
+                        videoRemoto.srcObject = streamRemotoVideo;
+                        videoRemoto.playsInline = true;
+                        videoRemoto.autoplay = true;
+                        videoRemoto.muted = true;
+                        videoRemoto.play().catch(() => {});
+                    }
+
+                    registrarDiagnostico('remote_video_unmuted', {
+                        trackId: track.id,
+                        readyState: track.readyState
+                    });
+
+                    atualizarTipoTela();
+                };
+
+                track.onunmute = mostrarVideoRemoto;
+
+                track.onended = () => {
+                    videoRemotoRecebendo = false;
+                    atualizarTipoTela();
+                };
+
+                track.onmute = () => {
+                    setTimeout(() => {
+                        if (
+                            track.muted &&
+                            track.readyState === 'live'
+                        ) {
+                            videoRemotoRecebendo = false;
+                            atualizarTipoTela();
+                        }
+                    }, 500);
+                };
+
+                if (!track.muted) {
+                    mostrarVideoRemoto();
+                } else {
+                    registrarDiagnostico('remote_video_track_muted', {
+                        trackId: track.id,
+                        readyState: track.readyState
+                    });
+                }
+            }
         };
 
         peer.onconnectionstatechange = () => {
