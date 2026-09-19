@@ -149,7 +149,10 @@
     }
 
     window.ehMensagemChamada = function (msg) {
-        return !!msg && (msg.tipo === 'chamada' || msg.texto === '[CHAMADA]' || !!msg.chamada_id);
+        return !!msg && (
+            msg.tipo === 'chamada' ||
+            msg.texto === '[CHAMADA]'
+        );
     };
 
     window.renderizarBalaoChamada = async function (msg, ehMinha) {
@@ -660,7 +663,11 @@
         if (!supabase || !meu) return;
 
         if (window.grupoAtualId) {
-            alert('Ligação de grupo fica pra próxima etapa.');
+            if (typeof window.iniciarLigacaoGrupo === 'function') {
+                return window.iniciarLigacaoGrupo();
+            }
+
+            alert('O sistema de ligação em grupo ainda não carregou.');
             return;
         }
 
