@@ -40,9 +40,12 @@
     window.formatarPreviewMensagem = function (msg) {
         if (!msg) return '';
         if (
+            msg.tipo === 'chamada_grupo' ||
+            msg.texto === '[CHAMADA_GRUPO]'
+        ) return '📞 Ligação de voz em grupo';
+        if (
             msg.tipo === 'chamada' ||
-            msg.texto === '[CHAMADA]' ||
-            msg.chamada_id
+            msg.texto === '[CHAMADA]'
         ) return '📞 Ligação de voz';
         if (ehMensagemAudio(msg)) return '🎤 Áudio';
 
