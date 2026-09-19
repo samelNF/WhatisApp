@@ -371,7 +371,16 @@
                 await prepararCameraGrupo();
             } catch (erro) {
                 console.warn('[Ligação grupo] Câmera indisponível:', erro);
-                alert('Não foi possível acessar a câmera.');
+
+                await supabase
+                    .from('chamadas_grupo_video_respostas')
+                    .update({ resposta: 'rejected' })
+                    .eq('pedido_id', pedido.id)
+                    .eq('usuario_email', meuEmail());
+
+                await desligarCameraGrupo(false, true);
+                esconderPedidoVideoGrupo();
+                alert('Não foi possível acessar a câmera. A ligação continua por voz.');
                 return;
             }
         }
