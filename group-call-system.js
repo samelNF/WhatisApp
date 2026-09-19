@@ -175,7 +175,8 @@
             audio: {
                 echoCancellation: true,
                 noiseSuppression: true,
-                autoGainControl: true
+                autoGainControl: true,
+                channelCount: 1
             },
             video: false
         });
@@ -280,7 +281,22 @@
 
         if (streamLocal) {
             streamLocal.getTracks().forEach(track => {
-                pc.addTrack(track, streamLocal);
+                try { track.contentHint = 'speech'; } catch (e) {}
+
+                const sender = pc.addTrack(track, streamLocal);
+
+                // Voz em grupo precisa ser econômica: 14 conexões de áudio no
+                // limite máximo não podem usar bitrate de chamada 1x1.
+                if (track.kind === 'audio' && sender?.getParameters) {
+                    try {
+                        const params = sender.getParameters();
+                        params.encodings = params.encodings?.length
+                            ? params.encodings
+                            : [{}];
+                        params.encodings[0].maxBitrate = 32000;
+                        sender.setParameters(params).catch(() => {});
+                    } catch (e) {}
+                }
             });
         }
 
