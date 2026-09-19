@@ -53,6 +53,10 @@
     let wakeLock = null;
     let inicializadoParaEmail = null;
     let mutado = false;
+    let videoSender = null;
+    let cameraLigada = false;
+    let pedidoVideoMostrado = null;
+    let timerDowngradeVideo = null;
     let diagnosticosPendentes = [];
 
     function supabaseAtual() {
@@ -143,6 +147,322 @@
         return tentarTocarAudioRemoto();
     };
 
+
+    function modoVideo(chamada = chamadaAtual) {
+        return String(chamada?.modo || chamada?.tipo || 'voz') === 'video';
+    }
+
+    function campoMinhaCamera(chamada = chamadaAtual) {
+        if (!chamada) return null;
+        return euSouChamador(chamada)
+            ? 'chamador_camera_ativa'
+            : 'receptor_camera_ativa';
+    }
+
+    function campoCameraOutro(chamada = chamadaAtual) {
+        if (!chamada) return null;
+        return euSouChamador(chamada)
+            ? 'receptor_camera_ativa'
+            : 'chamador_camera_ativa';
+    }
+
+    function minhaCameraAtiva(chamada = chamadaAtual) {
+        const campo = campoMinhaCamera(chamada);
+        return campo ? chamada?.[campo] === true : false;
+    }
+
+    function cameraOutroAtiva(chamada = chamadaAtual) {
+        const campo = campoCameraOutro(chamada);
+        return campo ? chamada?.[campo] === true : false;
+    }
+
+    function atualizarTipoTela(chamada = chamadaAtual) {
+        const video = modoVideo(chamada);
+        const label = document.querySelector('#tela-chamada .chamada-tipo-label');
+        const tela = document.getElementById('tela-chamada');
+        const btn = document.getElementById('chamada-btn-video');
+
+        if (label) label.textContent = video ? 'Ligação de vídeo' : 'Ligação de voz';
+        if (tela) tela.classList.toggle('chamada-modo-video', video);
+        if (btn) btn.classList.toggle('ativo', video && minhaCameraAtiva(chamada));
+
+        const remoto = document.getElementById('chamada-video-remoto');
+        const local = document.getElementById('chamada-video-local');
+        const avatar = document.getElementById('chamada-avatar');
+
+        if (remoto) {
+            remoto.classList.toggle(
+                'hidden',
+                !video || !cameraOutroAtiva(chamada)
+            );
+        }
+
+        if (local) {
+            local.classList.toggle(
+                'hidden',
+                !video || !minhaCameraAtiva(chamada)
+            );
+        }
+
+        if (avatar) {
+            avatar.classList.toggle(
+                'chamada-avatar-com-video',
+                video && cameraOutroAtiva(chamada)
+            );
+        }
+    }
+
+    async function atualizarMinhaCameraNoBanco(ativa) {
+        const supabase = supabaseAtual();
+        if (!supabase || !chamadaAtual?.id) return;
+
+        const campo = campoMinhaCamera(chamadaAtual);
+        if (!campo) return;
+
+        const atualizada = await atualizarChamada(
+            chamadaAtual.id,
+            { [campo]: !!ativa }
+        );
+
+        if (atualizada) {
+            chamadaAtual = atualizada;
+            atualizarTipoTela(atualizada);
+        }
+    }
+
+    async function obterCameraLigacao(atualizarBanco = true) {
+        if (streamLocal?.getVideoTracks?.().some(track => track.readyState === 'live')) {
+            cameraLigada = true;
+            if (atualizarBanco) await atualizarMinhaCameraNoBanco(true);
+            atualizarTipoTela();
+            return streamLocal.getVideoTracks()[0];
+        }
+
+        if (!navigator.mediaDevices?.getUserMedia) {
+            throw new Error('Câmera não disponível neste navegador.');
+        }
+
+        const videoStream = await navigator.mediaDevices.getUserMedia({
+            audio: false,
+            video: {
+                facingMode: 'user',
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            }
+        });
+
+        const track = videoStream.getVideoTracks()[0];
+        if (!track) throw new Error('Câmera não retornou vídeo.');
+
+        if (!streamLocal) streamLocal = new MediaStream();
+        streamLocal.addTrack(track);
+        cameraLigada = true;
+
+        if (videoSender) {
+            await videoSender.replaceTrack(track);
+        }
+
+        const local = document.getElementById('chamada-video-local');
+        if (local) {
+            local.srcObject = streamLocal;
+            local.muted = true;
+            local.playsInline = true;
+            local.autoplay = true;
+            local.play().catch(() => {});
+        }
+
+        if (atualizarBanco) await atualizarMinhaCameraNoBanco(true);
+        atualizarTipoTela();
+
+        return track;
+    }
+
+    async function desligarCameraLigacao(atualizarBanco = true) {
+        const tracks = streamLocal?.getVideoTracks?.() || [];
+
+        for (const track of tracks) {
+            try { track.stop(); } catch (e) {}
+            try { streamLocal.removeTrack(track); } catch (e) {}
+        }
+
+        cameraLigada = false;
+
+        if (videoSender) {
+            try { await videoSender.replaceTrack(null); } catch (e) {}
+        }
+
+        const local = document.getElementById('chamada-video-local');
+        if (local) local.srcObject = null;
+
+        if (atualizarBanco && chamadaAtual?.id) {
+            await atualizarMinhaCameraNoBanco(false);
+        }
+
+        atualizarTipoTela();
+        agendarVerificacaoDowngradeVideo();
+    }
+
+    async function verificarDowngradeVideo() {
+        const supabase = supabaseAtual();
+        if (!supabase || !chamadaAtual?.id || !modoVideo(chamadaAtual)) return;
+
+        const { data } = await supabase
+            .from('chamadas')
+            .select('*')
+            .eq('id', chamadaAtual.id)
+            .maybeSingle();
+
+        if (!data || data.status !== 'active' || data.modo !== 'video') return;
+
+        if (
+            data.chamador_camera_ativa !== true &&
+            data.receptor_camera_ativa !== true
+        ) {
+            const atualizada = await atualizarChamada(data.id, {
+                modo: 'voz'
+            });
+
+            if (atualizada) {
+                chamadaAtual = atualizada;
+                atualizarTipoTela(atualizada);
+            }
+        }
+    }
+
+    function agendarVerificacaoDowngradeVideo(delay = 900) {
+        if (timerDowngradeVideo) clearTimeout(timerDowngradeVideo);
+
+        timerDowngradeVideo = setTimeout(() => {
+            timerDowngradeVideo = null;
+            verificarDowngradeVideo();
+        }, delay);
+    }
+
+    function esconderPedidoVideo() {
+        const painel = document.getElementById('chamada-pedido-video');
+        if (painel) painel.classList.add('hidden');
+        pedidoVideoMostrado = null;
+    }
+
+    async function mostrarPedidoVideo(chamada) {
+        if (!chamada?.video_pedido_id || chamada.video_pedido_status !== 'pending') {
+            esconderPedidoVideo();
+            return;
+        }
+
+        const painel = document.getElementById('chamada-pedido-video');
+        const texto = document.getElementById('chamada-pedido-video-texto');
+        const acoes = document.getElementById('chamada-pedido-video-acoes');
+
+        if (!painel) return;
+
+        pedidoVideoMostrado = chamada.video_pedido_id;
+        painel.classList.remove('hidden');
+
+        const fuiEu =
+            normalizarEmail(chamada.video_pedido_por) === meuEmail();
+
+        if (fuiEu) {
+            if (texto) texto.textContent = 'Esperando a outra pessoa aceitar o vídeo...';
+            acoes?.classList.add('hidden');
+            return;
+        }
+
+        const perfil = await obterPerfil(chamada.video_pedido_por);
+        if (texto) {
+            texto.textContent =
+                (perfil?.usuario || 'A outra pessoa') +
+                ' quer ativar o vídeo. Ativar sua câmera também?';
+        }
+        acoes?.classList.remove('hidden');
+    }
+
+    window.responderPedidoVideoLigacao = async function (aceitar) {
+        if (
+            !chamadaAtual?.id ||
+            !pedidoVideoMostrado ||
+            chamadaAtual.video_pedido_status !== 'pending'
+        ) {
+            esconderPedidoVideo();
+            return;
+        }
+
+        if (!aceitar) {
+            const atualizada = await atualizarChamada(chamadaAtual.id, {
+                video_pedido_status: 'rejected'
+            });
+
+            if (atualizada) chamadaAtual = atualizada;
+            esconderPedidoVideo();
+            return;
+        }
+
+        try {
+            await obterCameraLigacao(false);
+        } catch (erro) {
+            console.warn('[Ligação] Câmera recusada/indisponível:', erro);
+            alert('Não foi possível ativar a câmera.');
+            return;
+        }
+
+        const campo = campoMinhaCamera(chamadaAtual);
+        const atualizada = await atualizarChamada(chamadaAtual.id, {
+            video_pedido_status: 'approved',
+            modo: 'video',
+            [campo]: true
+        });
+
+        if (atualizada) {
+            chamadaAtual = atualizada;
+            atualizarTipoTela(atualizada);
+        }
+
+        esconderPedidoVideo();
+    };
+
+    async function solicitarVideoNaLigacao() {
+        if (!chamadaAtual?.id || chamadaAtual.status !== 'active') return;
+
+        if (modoVideo(chamadaAtual)) {
+            return obterCameraLigacao(true);
+        }
+
+        const pedidoId =
+            globalThis.crypto?.randomUUID?.() ||
+            (Date.now().toString(36) + Math.random().toString(36).slice(2));
+
+        const atualizada = await atualizarChamada(chamadaAtual.id, {
+            video_pedido_id: pedidoId,
+            video_pedido_por: meuEmail(),
+            video_pedido_status: 'pending'
+        });
+
+        if (atualizada) {
+            chamadaAtual = atualizada;
+            await mostrarPedidoVideo(atualizada);
+        }
+    }
+
+    window.alternarCameraLigacao = async function () {
+        if (!chamadaAtual?.id || chamadaAtual.status !== 'active') return;
+
+        if (!modoVideo(chamadaAtual)) {
+            await solicitarVideoNaLigacao();
+            return;
+        }
+
+        if (minhaCameraAtiva(chamadaAtual) || cameraLigada) {
+            await desligarCameraLigacao(true);
+            return;
+        }
+
+        try {
+            await obterCameraLigacao(true);
+        } catch (erro) {
+            console.warn('[Ligação] Não foi possível ligar a câmera:', erro);
+            alert('Não foi possível acessar a câmera.');
+        }
+    };
 
     function outroParticipante(chamada) {
         const meu = meuEmail();
@@ -254,7 +574,7 @@
             </div>
 
             <div class="chamada-bolha-info">
-                <strong class="chamada-bolha-titulo">Ligação de voz</strong>
+                <strong class="chamada-bolha-titulo">${(msg?.meta?.modo === 'video' || msg?.meta?.tipo_chamada === 'video') ? 'Ligação de vídeo' : 'Ligação de voz'}</strong>
                 <span class="chamada-bolha-status">${statusDaBolha(msg, ehMinha)}</span>
             </div>
 
@@ -292,13 +612,25 @@
 
         const statusEl = balao.querySelector('.chamada-bolha-status');
         if (statusEl) statusEl.textContent = statusDaBolha(msg, ehMinha);
+
+        const tituloEl = balao.querySelector('.chamada-bolha-titulo');
+        if (tituloEl) {
+            tituloEl.textContent =
+                (msg?.meta?.modo === 'video' || msg?.meta?.tipo_chamada === 'video')
+                    ? 'Ligação de vídeo'
+                    : 'Ligação de voz';
+        }
     };
 
     function atualizarPreviewGlobal() {
         const anterior = window.formatarPreviewMensagem;
 
         window.formatarPreviewMensagem = function (msg) {
-            if (window.ehMensagemChamada(msg)) return '📞 Ligação de voz';
+            if (window.ehMensagemChamada(msg)) {
+                return (msg?.meta?.modo === 'video' || msg?.meta?.tipo_chamada === 'video')
+                    ? '🎥 Ligação de vídeo'
+                    : '📞 Ligação de voz';
+            }
             return typeof anterior === 'function'
                 ? anterior(msg)
                 : String(msg?.texto || '');
@@ -419,25 +751,45 @@
         await preencherTelaChamada(chamada);
         definirModoTela(modo);
 
+        atualizarTipoTela(chamada);
+
         if (modo === 'recebendo') {
-            atualizarStatusTela('Ligação de voz recebida');
+            atualizarStatusTela(
+                modoVideo(chamada)
+                    ? 'Ligação de vídeo recebida'
+                    : 'Ligação de voz recebida'
+            );
         } else if (modo === 'ligando') {
             atualizarStatusTela('Ligando...');
         } else if (modo === 'ativa') {
             iniciarTimerDuracao();
         }
+
+        await mostrarPedidoVideo(chamada);
     }
 
     async function obterMicrofone() {
-        if (streamLocal?.active) return streamLocal;
+        if (
+            streamLocal?.getAudioTracks?.().some(
+                track => track.readyState === 'live'
+            )
+        ) {
+            return streamLocal;
+        }
 
-        streamLocal = await navigator.mediaDevices.getUserMedia({
+        const audioStream = await navigator.mediaDevices.getUserMedia({
             audio: {
                 echoCancellation: true,
                 noiseSuppression: true,
                 autoGainControl: true
             },
             video: false
+        });
+
+        if (!streamLocal) streamLocal = new MediaStream();
+
+        audioStream.getAudioTracks().forEach(track => {
+            streamLocal.addTrack(track);
         });
 
         return streamLocal;
@@ -454,6 +806,7 @@
         }
 
         peer = null;
+        videoSender = null;
 
         if (streamLocal) {
             streamLocal.getTracks().forEach(track => {
@@ -462,6 +815,7 @@
         }
 
         streamLocal = null;
+        cameraLigada = false;
 
         if (streamRemoto) {
             streamRemoto.getTracks().forEach(track => {
@@ -473,6 +827,18 @@
 
         const audio = document.getElementById('chamada-audio-remoto');
         if (audio) audio.srcObject = null;
+
+        const videoLocal = document.getElementById('chamada-video-local');
+        const videoRemoto = document.getElementById('chamada-video-remoto');
+        if (videoLocal) videoLocal.srcObject = null;
+        if (videoRemoto) videoRemoto.srcObject = null;
+
+        if (timerDowngradeVideo) {
+            clearTimeout(timerDowngradeVideo);
+            timerDowngradeVideo = null;
+        }
+
+        esconderPedidoVideo();
 
         candidatosPendentesRemotos = [];
         candidatosPendentesLocais = [];
@@ -616,9 +982,38 @@
         }
 
         if (streamLocal) {
-            streamLocal.getTracks().forEach(track => {
+            streamLocal.getAudioTracks().forEach(track => {
                 peer.addTrack(track, streamLocal);
             });
+        }
+
+        const videoTrack = streamLocal?.getVideoTracks?.()[0] || null;
+        const videoTransceiver = videoTrack
+            ? peer.addTransceiver(videoTrack, {
+                direction: 'sendrecv',
+                streams: [streamLocal]
+            })
+            : peer.addTransceiver('video', {
+                direction: 'sendrecv'
+            });
+
+        videoSender = videoTransceiver.sender;
+
+        const videoLocal = document.getElementById('chamada-video-local');
+        const videoRemoto = document.getElementById('chamada-video-remoto');
+
+        if (videoLocal) {
+            videoLocal.srcObject = streamLocal;
+            videoLocal.autoplay = true;
+            videoLocal.playsInline = true;
+            videoLocal.muted = true;
+            videoLocal.play().catch(() => {});
+        }
+
+        if (videoRemoto) {
+            videoRemoto.srcObject = streamRemoto;
+            videoRemoto.autoplay = true;
+            videoRemoto.playsInline = true;
         }
 
         peer.onicecandidate = event => {
@@ -690,9 +1085,19 @@
                 }))
             });
 
+            const videoRemoto = document.getElementById('chamada-video-remoto');
+            if (videoRemoto) {
+                videoRemoto.srcObject = streamRemoto;
+                videoRemoto.playsInline = true;
+                videoRemoto.autoplay = true;
+                videoRemoto.play().catch(() => {});
+            }
+
             if (audio) {
                 tentarTocarAudioRemoto();
             }
+
+            atualizarTipoTela();
         };
 
         peer.onconnectionstatechange = () => {
@@ -778,18 +1183,22 @@
         return window.iniciarLigacaoVoz();
     };
 
-    window.iniciarLigacaoVoz = async function () {
+    async function iniciarLigacaoPrivada(comVideo = false) {
         const supabase = supabaseAtual();
         const meu = meuEmail();
 
         if (!supabase || !meu) return;
 
         if (window.grupoAtualId) {
-            if (typeof window.iniciarLigacaoGrupo === 'function') {
+            if (comVideo && typeof window.iniciarVideoGrupo === 'function') {
+                return window.iniciarVideoGrupo();
+            }
+
+            if (!comVideo && typeof window.iniciarLigacaoGrupo === 'function') {
                 return window.iniciarLigacaoGrupo();
             }
 
-            alert('O sistema de ligação em grupo ainda não carregou.');
+            alert('O sistema de ligação do grupo ainda não carregou.');
             return;
         }
 
@@ -800,16 +1209,36 @@
         if (!contato) return;
 
         if (chamadaAtual && !ehFinal(chamadaAtual.status)) {
+            if (
+                comVideo &&
+                chamadaAtual.status === 'active' &&
+                !modoVideo(chamadaAtual)
+            ) {
+                await solicitarVideoNaLigacao();
+                return;
+            }
+
             definirModoTela(
                 chamadaAtual.status === 'ringing' && !euSouChamador(chamadaAtual)
                     ? 'recebendo'
                     : (chamadaAtual.status === 'active' ? 'ativa' : 'ligando')
             );
+            atualizarTipoTela(chamadaAtual);
             return;
         }
 
         try {
             await obterMicrofone();
+
+            if (comVideo) {
+                try {
+                    await obterCameraLigacao(false);
+                } catch (erroCamera) {
+                    console.warn('[Ligação] Vídeo indisponível; iniciando por voz:', erroCamera);
+                    comVideo = false;
+                }
+            }
+
             criarPeer();
 
             const offer = await peer.createOffer({
@@ -821,10 +1250,13 @@
             const { data: chamada, error } = await supabase
                 .from('chamadas')
                 .insert([{
-                    tipo: 'voz',
+                    tipo: comVideo ? 'video' : 'voz',
+                    modo: comVideo ? 'video' : 'voz',
                     status: 'ringing',
                     chamador_email: meu,
                     receptor_email: contato,
+                    chamador_camera_ativa: comVideo && cameraLigada,
+                    receptor_camera_ativa: false,
                     offer: peer.localDescription.toJSON()
                 }])
                 .select('*')
@@ -863,6 +1295,24 @@
                 alert('Não foi possível iniciar a ligação.');
             }
         }
+    }
+
+    window.iniciarLigacaoVoz = function () {
+        return iniciarLigacaoPrivada(false);
+    };
+
+    window.iniciarLigacaoVideo = function () {
+        return iniciarLigacaoPrivada(true);
+    };
+
+    window.iniciarVideoContato = function () {
+        try {
+            if (typeof window.fecharPainelDadosContato === 'function') {
+                window.fecharPainelDadosContato();
+            }
+        } catch (e) {}
+
+        return iniciarLigacaoPrivada(true);
     };
 
     window.atenderLigacaoVoz = async function () {
@@ -886,6 +1336,15 @@
             await flushDiagnosticosPendentes();
 
             await obterMicrofone();
+
+            if (modoVideo(chamadaAtual)) {
+                try {
+                    await obterCameraLigacao(false);
+                } catch (erroCamera) {
+                    console.warn('[Ligação] Entrou na chamada de vídeo sem câmera:', erroCamera);
+                }
+            }
+
             criarPeer();
             await assinarIce(chamadaAtual.id);
 
@@ -901,6 +1360,7 @@
             const atualizada = await atualizarChamada(chamadaAtual.id, {
                 status: 'active',
                 answer: peer.localDescription.toJSON(),
+                receptor_camera_ativa: modoVideo(chamadaAtual) && cameraLigada,
                 answered_at: new Date().toISOString()
             });
 
@@ -958,6 +1418,8 @@
         await atualizarChamada(chamada.id, {
             status,
             ended_by: meu,
+            chamador_camera_ativa: false,
+            receptor_camera_ativa: false,
             ended_at: new Date().toISOString()
         });
 
@@ -1066,7 +1528,32 @@
 
         if (chamadaAtual?.id !== chamada.id) return;
 
+        const modoAnterior = chamadaAtual?.modo || chamadaAtual?.tipo || 'voz';
         chamadaAtual = chamada;
+
+        atualizarTipoTela(chamada);
+        await mostrarPedidoVideo(chamada);
+
+        if (chamada.modo === 'voz' && cameraLigada) {
+            await desligarCameraLigacao(false);
+        }
+
+        if (
+            chamada.status === 'active' &&
+            modoAnterior !== 'video' &&
+            chamada.modo === 'video' &&
+            !minhaCameraAtiva(chamada)
+        ) {
+            try {
+                await obterCameraLigacao(true);
+            } catch (erroCamera) {
+                console.warn('[Ligação] Não foi possível ativar câmera após consenso:', erroCamera);
+            }
+        }
+
+        if (chamada.status === 'active' && chamada.modo === 'video') {
+            agendarVerificacaoDowngradeVideo(2200);
+        }
 
         if (chamada.status === 'active') {
             pararTimers();
