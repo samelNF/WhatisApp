@@ -171,12 +171,21 @@
 
         atualizarTipoTelaGrupo();
         await renderizarParticipantes();
+
+        // Uma conexão criada originalmente só com voz normalmente negociou
+        // vídeo como recvonly. Para começar a enviar câmera de verdade,
+        // renegociamos os pares já existentes.
+        await reconciliarPeers(true);
     }
 
     async function desligarCameraGrupo(atualizarBanco = true, pararTrack = true) {
         for (const state of peers.values()) {
             if (state.videoSender) {
                 try { await state.videoSender.replaceTrack(null); } catch (e) {}
+            }
+
+            if (state.videoTransceiver && state.videoTransceiver.direction !== 'inactive') {
+                state.videoTransceiver.direction = 'recvonly';
             }
         }
 
@@ -667,6 +676,7 @@
                 direction: 'sendrecv'
             });
 
+        state.videoTransceiver = videoTransceiver;
         state.videoSender = videoTransceiver.sender;
         state.remoteStream = new MediaStream();
 
@@ -744,6 +754,51 @@
         }
     }
 
+    async function sincronizarVideoNoPeerGrupo(state) {
+        if (!state?.pc) return;
+
+        const pc = state.pc;
+        const track =
+            cameraLigada
+                ? (streamLocal?.getVideoTracks?.()[0] || null)
+                : null;
+
+        let transceiver =
+            state.videoTransceiver ||
+            pc.getTransceivers().find(item => {
+                return (
+                    item?.sender?.track?.kind === 'video' ||
+                    item?.receiver?.track?.kind === 'video'
+                );
+            }) ||
+            null;
+
+        if (!transceiver) {
+            transceiver = track
+                ? pc.addTransceiver(track, {
+                    direction: 'sendrecv',
+                    streams: [streamLocal]
+                })
+                : pc.addTransceiver('video', {
+                    direction: 'recvonly'
+                });
+        } else if (track) {
+            await transceiver.sender.replaceTrack(track);
+            transceiver.direction = 'sendrecv';
+        } else {
+            try {
+                await transceiver.sender.replaceTrack(null);
+            } catch (e) {}
+
+            if (transceiver.direction !== 'inactive') {
+                transceiver.direction = 'recvonly';
+            }
+        }
+
+        state.videoTransceiver = transceiver;
+        state.videoSender = transceiver.sender;
+    }
+
     async function criarOfertaPara(emailRemoto) {
         const state = criarPeerPara(emailRemoto);
         if (!state) return;
@@ -754,6 +809,8 @@
 
         try {
             state.makingOffer = true;
+
+            await sincronizarVideoNoPeerGrupo(state);
 
             const offer = await pc.createOffer({
                 offerToReceiveAudio: true
@@ -797,6 +854,9 @@
                 new RTCSessionDescription(sinal.payload)
             );
 
+            // Garante que a câmera local vá na answer. Sem isso alguns
+            // navegadores respondiam o vídeo como recvonly.
+            await sincronizarVideoNoPeerGrupo(state);
             await flushIce(state);
 
             const answer = await pc.createAnswer();
@@ -1005,7 +1065,7 @@
         ) > 0;
     }
 
-    async function reconciliarPeers() {
+    async function reconciliarPeers(forcarRenegociacaoVideo = false) {
         if (!callAtiva(chamadaAtual) || !participanteAtual || participanteAtual.status !== 'joined') {
             return;
         }
@@ -1033,9 +1093,19 @@
         for (const remoto of juntos) {
             const email = normalizarEmail(remoto.usuario_email);
             if (!email || email === meuEmail()) continue;
-            if (peers.has(email)) continue;
 
-            if (euDevoOfertar(meu, remoto)) {
+            const existe = peers.has(email);
+            const devoOfertar = euDevoOfertar(meu, remoto);
+
+            if (existe) {
+                if (forcarRenegociacaoVideo && devoOfertar) {
+                    await criarOfertaPara(email);
+                    await esperar(90);
+                }
+                continue;
+            }
+
+            if (devoOfertar) {
                 await criarOfertaPara(email);
                 await esperar(70);
             }
