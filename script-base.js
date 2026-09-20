@@ -1921,6 +1921,14 @@ async function marcarMensagensComoVisualizadas(emailContato, chaveConversa) {
         telaChat?.style.display !== "flex"
     ) return;
 
+    // A bolinha da HOME não depende do servidor de Push/visto.
+    // Se o usuário abriu esta conversa, ela já deve sumir imediatamente.
+    await limparNaoLidasNaHome("contato", emailContato);
+    await marcarContatoComoLidoNaLista(emailContato);
+
+    // Os dois checks da mensagem continuam sendo sincronizados pelo servidor,
+    // mas uma falha nessa parte não pode fazer a bolinha de "nova mensagem"
+    // reaparecer na lista de conversas.
     if (typeof window.marcarMensagensVistasServidor !== "function") {
         console.warn("Sistema de visualização ainda não está disponível.");
         return;
@@ -1928,18 +1936,16 @@ async function marcarMensagensComoVisualizadas(emailContato, chaveConversa) {
 
     const resultado = await window.marcarMensagensVistasServidor(emailContato);
 
-    if (!resultado?.ok) return;
+    if (!resultado?.ok) {
+        console.warn("Não foi possível sincronizar os checks de visualização.");
+        return;
+    }
 
     const atualizadas = resultado.mensagens || [];
 
     if (atualizadas.length && window.WhatisCache) {
         await window.WhatisCache.salvarMensagens(chaveConversa, atualizadas);
     }
-
-    // O chat aberto já foi lido: salva uma leitura própria da home.
-    // Isso evita que mensagens antigas com visualizada=false reapareçam como novas.
-    await marcarContatoComoLidoNaLista(emailContato);
-    await limparNaoLidasNaHome("contato", emailContato);
 }
 
 async function carregarMensagens() {
@@ -2569,6 +2575,10 @@ function abrirChatCom(emailDestinatario, nomeDestinatario, fotoDestinatario, cor
     if (chatActionBar) chatActionBar.classList.add('hidden');
 
     checarStatusContato(emailDestinatario);
+
+    // Ao entrar no chat privado, remove imediatamente o contador de novas.
+    // A persistência da leitura é confirmada durante carregarMensagens().
+    limparNaoLidasNaHome("contato", emailDestinatario);
 
     if (intervaloChecarStatusContato) clearInterval(intervaloChecarStatusContato);
 
