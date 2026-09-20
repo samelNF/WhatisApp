@@ -2523,6 +2523,17 @@ body {
     border-bottom-left-radius: 8px;
 }
 
+/* Agrupamento visual dos balões:
+   só a última mensagem de cada sequência mantém o rabinho. */
+#tela-chat .balao-msg.sem-rabinho::after {
+    content: none !important;
+    display: none !important;
+}
+
+#tela-chat .nome-remetente.nome-remetente-oculto {
+    display: none !important;
+}
+
 /* Linha da mensagem: conteúdo + hora/check */
 #tela-chat .balao-linha {
     display: flex;
