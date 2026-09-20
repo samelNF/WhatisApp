@@ -980,6 +980,8 @@ async function carregarListaContatos() {
     }
 
     try {
+        await carregarMensagensOcultasDoUsuario();
+
         // 2. Busca os contatos individuais.
         const { data: relacaoContatos, error: erroContatos } = await _supabase
             .from("contatos")
@@ -1020,7 +1022,7 @@ async function carregarListaContatos() {
                 try {
                     const consultaNaoLidas = _supabase
                         .from("mensagens")
-                        .select("id", { count: "exact", head: true })
+                        .select("id")
                         .eq("remetente_email", contato.email)
                         .eq("destinatario_email", meuEmail)
                         .is("grupo_id", null);
@@ -1035,16 +1037,20 @@ async function carregarListaContatos() {
                     const [resultadoUltima, resultadoNaoLidas] = await Promise.all([
                         _supabase
                             .from("mensagens")
-                            .select("texto, tipo, audio_url, audio_duracao, created_at")
+                            .select("id, texto, tipo, audio_url, audio_duracao, created_at")
                             .or(`and(remetente_email.eq.${meuEmail},destinatario_email.eq.${contato.email}),and(remetente_email.eq.${contato.email},destinatario_email.eq.${meuEmail})`)
                             .is("grupo_id", null)
                             .order("created_at", { ascending: false })
-                            .limit(1),
+                            .limit(30),
                         ultimaLeitura ? consultaNaoLidas : Promise.resolve({ count: 0 })
                     ]);
 
-                    ultimaMsg = resultadoUltima.data?.[0] || null;
-                    naoLidas = Number(resultadoNaoLidas.count || 0);
+                    ultimaMsg = (resultadoUltima.data || [])
+                        .find(msg => !mensagemEstaOculta(msg.id)) || null;
+
+                    naoLidas = (resultadoNaoLidas.data || [])
+                        .filter(msg => !mensagemEstaOculta(msg.id))
+                        .length;
                 } catch (e) {
                     console.warn("Falha ao buscar resumo do contato:", contato.email, e);
                 }
@@ -1055,7 +1061,7 @@ async function carregarListaContatos() {
                         cache.conversaPrivada(contato.email)
                     );
 
-                    if (local) ultimaMsg = local;
+                    if (local && !mensagemEstaOculta(local.id)) ultimaMsg = local;
                 }
 
                 return {
@@ -1116,7 +1122,7 @@ async function carregarListaContatos() {
                 try {
                     const consultaNaoLidas = _supabase
                         .from("mensagens")
-                        .select("id", { count: "exact", head: true })
+                        .select("id")
                         .eq("grupo_id", grupo.id)
                         .neq("remetente_email", meuEmail);
 
@@ -1127,24 +1133,29 @@ async function carregarListaContatos() {
                     const [resultadoUltima, resultadoNaoLidas] = await Promise.all([
                         _supabase
                             .from("mensagens")
-                            .select("texto, tipo, audio_url, audio_duracao, created_at, remetente_email")
+                            .select("id, texto, tipo, audio_url, audio_duracao, created_at, remetente_email")
                             .eq("grupo_id", grupo.id)
                             .order("created_at", { ascending: false })
-                            .limit(1),
+                            .limit(30),
                         consultaNaoLidas
                     ]);
 
-                    ultimaMsg = resultadoUltima.data?.[0] || null;
-                    naoLidas = Number(resultadoNaoLidas.count || 0);
+                    ultimaMsg = (resultadoUltima.data || [])
+                        .find(msg => !mensagemEstaOculta(msg.id)) || null;
+
+                    naoLidas = (resultadoNaoLidas.data || [])
+                        .filter(msg => !mensagemEstaOculta(msg.id))
+                        .length;
                 } catch (e) {
                     console.warn("Falha ao buscar resumo do grupo:", grupo.id, e);
                 }
 
                 // Cache é fallback; a ordem online vem da mensagem real mais recente do servidor.
                 if (!ultimaMsg && cache) {
-                    ultimaMsg = await cache.ultimaMensagem(
+                    const local = await cache.ultimaMensagem(
                         cache.conversaGrupo(grupo.id)
                     );
+                    if (local && !mensagemEstaOculta(local.id)) ultimaMsg = local;
                 }
 
                 return {
