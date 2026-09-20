@@ -2120,6 +2120,63 @@ input:checked + .slider {
     -webkit-overflow-scrolling: touch;
 }
 
+#tela-chat .chat-ir-para-baixo {
+    position: absolute;
+    z-index: 18;
+    right: 16px;
+    bottom: 16px;
+    width: 46px;
+    height: 46px;
+    min-width: 46px;
+    min-height: 46px;
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,.14);
+    display: grid;
+    place-items: center;
+    color: #f7f7f8;
+    background:
+        linear-gradient(
+            145deg,
+            rgba(72,72,74,.90),
+            rgba(38,38,40,.84)
+        );
+    box-shadow:
+        0 7px 22px rgba(0,0,0,.32),
+        inset 0 1px 0 rgba(255,255,255,.14);
+    -webkit-backdrop-filter: blur(20px) saturate(165%);
+    backdrop-filter: blur(20px) saturate(165%);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px) scale(.94);
+    pointer-events: none;
+    transition:
+        opacity .16s ease,
+        transform .16s ease,
+        visibility .16s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+#tela-chat .chat-ir-para-baixo.visivel {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+#tela-chat .chat-ir-para-baixo:active {
+    transform: scale(.94);
+}
+
+#tela-chat .chat-ir-para-baixo img {
+    width: 23px;
+    height: 23px;
+    object-fit: contain;
+    transform: rotate(-90deg);
+    pointer-events: none;
+}
+
+
 #tela-chat .chat-data-separador {
     align-self: center;
     width: max-content;
