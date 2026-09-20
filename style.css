@@ -6531,3 +6531,185 @@ body.chamada-grupo-aberta {
         min-width: 230px !important;
     }
 }
+
+
+/* ==========================================
+   DADOS DO CONTATO - ESCALA REFERÊNCIA WHATSAPP IOS
+   ========================================== */
+#painel-dados-contato .painel-contato-header {
+    min-height: calc(72px + env(safe-area-inset-top, 0px)) !important;
+    padding:
+        max(env(safe-area-inset-top), 8px)
+        14px
+        8px !important;
+}
+
+#painel-dados-contato .painel-contato-header h3 {
+    margin-bottom: 12px !important;
+    font-size: 18px !important;
+    line-height: 22px !important;
+}
+
+#painel-dados-contato .painel-contato-btn-voltar {
+    left: 14px !important;
+    bottom: 8px !important;
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+}
+
+#painel-dados-contato .painel-contato-btn-voltar svg {
+    width: 26px !important;
+    height: 26px !important;
+}
+
+#painel-dados-contato .painel-contato-btn-editar {
+    right: 14px !important;
+    bottom: 8px !important;
+    height: 48px !important;
+    min-width: 82px !important;
+    padding: 0 17px !important;
+    font-size: 17px !important;
+}
+
+#painel-dados-contato .painel-contato-body {
+    padding: 14px 14px max(28px, env(safe-area-inset-bottom)) !important;
+}
+
+#painel-dados-contato .painel-contato-perfil {
+    padding: 14px 0 18px !important;
+}
+
+#painel-dados-contato .painel-contato-foto,
+#painel-dados-contato .painel-contato-foto.avatar-sem-foto {
+    width: 126px !important;
+    height: 126px !important;
+    min-width: 126px !important;
+    min-height: 126px !important;
+    max-width: 126px !important;
+    max-height: 126px !important;
+    margin-bottom: 15px !important;
+}
+
+#painel-dados-contato .painel-contato-foto.avatar-sem-foto {
+    padding: 30px !important;
+}
+
+#painel-dados-contato #painel-nome-contato {
+    font-size: 30px !important;
+    line-height: 34px !important;
+    letter-spacing: -.35px !important;
+}
+
+#painel-dados-contato #painel-subtitulo-contato {
+    margin-top: 4px !important;
+    font-size: 18px !important;
+    line-height: 22px !important;
+}
+
+#painel-dados-contato .painel-contato-acoes {
+    margin-bottom: 18px !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 9px !important;
+}
+
+#painel-dados-contato .painel-acao-card {
+    min-height: 84px !important;
+    padding: 10px 6px !important;
+    border-radius: 23px !important;
+    gap: 8px !important;
+}
+
+#painel-dados-contato .painel-acao-icone {
+    width: 29px !important;
+    height: 29px !important;
+}
+
+#painel-dados-contato .painel-acao-icone svg,
+#painel-dados-contato .painel-acao-icone img {
+    width: 29px !important;
+    height: 29px !important;
+    object-fit: contain !important;
+}
+
+#painel-dados-contato .painel-acao-icone img {
+    filter:
+        brightness(0)
+        saturate(100%)
+        invert(63%)
+        sepia(95%)
+        saturate(2050%)
+        hue-rotate(342deg)
+        brightness(103%)
+        contrast(102%);
+}
+
+#painel-dados-contato .painel-acao-card > span:last-child {
+    font-size: 15px !important;
+    line-height: 18px !important;
+}
+
+#painel-dados-contato .painel-contato-card {
+    border-radius: 24px !important;
+}
+
+#painel-dados-contato .painel-contato-row {
+    min-height: 66px !important;
+    padding: 9px 16px !important;
+    gap: 13px !important;
+}
+
+#painel-dados-contato .painel-row-icone {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+}
+
+#painel-dados-contato .painel-row-icone svg {
+    width: 26px !important;
+    height: 26px !important;
+}
+
+#painel-dados-contato .painel-row-texto strong {
+    font-size: 17px !important;
+    line-height: 21px !important;
+}
+
+#painel-dados-contato .painel-row-texto small {
+    font-size: 12px !important;
+    line-height: 15px !important;
+}
+
+#painel-dados-contato .painel-row-seta {
+    font-size: 31px !important;
+}
+
+#tela-chat .balao-msg.pesquisa-chat-destaque {
+    outline: 2px solid rgba(255,138,31,.92) !important;
+    box-shadow: 0 0 0 4px rgba(255,138,31,.16) !important;
+}
+
+@media (max-width: 430px) {
+    #painel-dados-contato .painel-contato-body {
+        padding-left: 13px !important;
+        padding-right: 13px !important;
+    }
+
+    #painel-dados-contato .painel-contato-foto,
+    #painel-dados-contato .painel-contato-foto.avatar-sem-foto {
+        width: 126px !important;
+        height: 126px !important;
+        min-width: 126px !important;
+        min-height: 126px !important;
+        max-width: 126px !important;
+        max-height: 126px !important;
+    }
+
+    #painel-dados-contato #painel-nome-contato {
+        font-size: 30px !important;
+    }
+
+    #painel-dados-contato .painel-acao-card {
+        min-height: 82px !important;
+    }
+}
