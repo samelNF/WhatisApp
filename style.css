@@ -7220,3 +7220,148 @@ body.chamada-grupo-aberta {
         min-height: 56px !important;
     }
 }
+
+
+/* ==========================================
+   MENU DE MENSAGEM - ESCALA REFERÊNCIA WHATSAPP IOS
+   ========================================== */
+.menu-acoes-mensagem-overlay {
+    background: rgba(0,0,0,.31) !important;
+    -webkit-backdrop-filter: blur(7px) saturate(105%) !important;
+    backdrop-filter: blur(7px) saturate(105%) !important;
+}
+
+.menu-acoes-mensagem {
+    width: min(252px, calc(100vw - 24px)) !important;
+    max-height: min(430px, calc(100vh - 24px)) !important;
+    padding: 5px !important;
+    border-radius: 24px !important;
+    background:
+        linear-gradient(
+            145deg,
+            rgba(78,78,80,.84),
+            rgba(46,46,48,.79)
+        ) !important;
+    border: 1px solid rgba(255,255,255,.17) !important;
+    box-shadow:
+        0 18px 48px rgba(0,0,0,.43),
+        inset 0 1px 0 rgba(255,255,255,.17) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(165%) !important;
+    backdrop-filter: blur(28px) saturate(165%) !important;
+}
+
+/* Cada ação deixa de parecer um card independente. */
+.menu-msg-item {
+    position: relative;
+    min-height: 44px !important;
+    height: 44px !important;
+    padding: 0 11px !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    gap: 12px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    font-size: 16px !important;
+    line-height: 20px !important;
+    font-weight: 450 !important;
+}
+
+.menu-msg-item:first-child {
+    border-radius: 18px 18px 0 0 !important;
+}
+
+.menu-msg-item:active {
+    background: rgba(255,255,255,.10) !important;
+    border-radius: 12px !important;
+}
+
+.menu-msg-rotulo {
+    min-width: 0;
+    flex: 1;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.menu-msg-icone {
+    flex: 0 0 24px !important;
+    width: 24px !important;
+    height: 24px !important;
+}
+
+.menu-msg-icone svg,
+.menu-msg-svg-asset {
+    width: 23px !important;
+    height: 23px !important;
+}
+
+.menu-msg-item.destrutivo {
+    color: #ff7185 !important;
+}
+
+.menu-msg-divisor {
+    height: 1px !important;
+    margin: 5px 10px !important;
+    background: rgba(255,255,255,.13) !important;
+}
+
+/* "Mais..." forma o fechamento visual do bloco. */
+.menu-msg-divisor + .menu-msg-item {
+    border-radius: 0 0 18px 18px !important;
+}
+
+.menu-msg-subtitulo {
+    padding: 8px 11px 6px !important;
+    font-size: 12px !important;
+    line-height: 16px !important;
+}
+
+.menu-msg-info {
+    min-height: 40px !important;
+    padding: 7px 11px !important;
+    font-size: 14px !important;
+    line-height: 18px !important;
+}
+
+.menu-msg-cancelar {
+    width: calc(100% - 8px) !important;
+    min-height: 42px !important;
+    margin: 6px 4px 1px !important;
+    border-radius: 13px !important;
+    font-size: 15px !important;
+}
+
+/* O balão selecionado fica visível, mas sem um contorno pesado. */
+#tela-chat .balao-msg.mensagem-menu-ativa {
+    outline: 1px solid rgba(255,255,255,.13) !important;
+    box-shadow: 0 6px 22px rgba(0,0,0,.26) !important;
+}
+
+@media (max-width: 430px) {
+    .menu-acoes-mensagem {
+        width: min(250px, calc(100vw - 20px)) !important;
+        padding: 5px !important;
+        border-radius: 23px !important;
+    }
+
+    .menu-msg-item {
+        min-height: 43px !important;
+        height: 43px !important;
+        padding-inline: 10px !important;
+        gap: 11px !important;
+        font-size: 16px !important;
+    }
+
+    .menu-msg-icone {
+        width: 23px !important;
+        height: 23px !important;
+        flex-basis: 23px !important;
+    }
+
+    .menu-msg-icone svg,
+    .menu-msg-svg-asset {
+        width: 22px !important;
+        height: 22px !important;
+    }
+}
