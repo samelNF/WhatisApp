@@ -478,7 +478,7 @@
 
         if (foto) {
             const temFoto = !!grupo?.foto_url;
-            foto.src = temFoto ? grupo.foto_url : 'svg/group-placeholder.svg';
+            foto.src = temFoto ? grupo.foto_url : 'svg/group-placeholder.svg?v=6c29b606';
             foto.style.backgroundColor = temFoto ? 'transparent' : '#3a3a3c';
         }
 
@@ -2003,11 +2003,7 @@
                 : ''}
             <div class="chamada-grupo-bolha-layout">
                 <div class="chamada-bolha-icone">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M6.8 3.7 9 7.8 7.1 9.3c1.3 2.8 3 4.5 5.8 5.8l1.5-1.9 4.1 2.2c.6.3.8.9.7 1.5-.5 1.6-1.9 2.7-3.6 2.7C9.3 19.6 4 14.3 4 8c0-1.7 1.1-3.1 2.7-3.6.6-.2 1.2.1 1.5.7Z"></path>
-                        <circle cx="17.8" cy="6.2" r="2.1"></circle>
-                        <path d="M14.9 10.1c.7-1.2 1.7-1.8 2.9-1.8 1.1 0 2.1.6 2.8 1.8"></path>
-                    </svg>
+                    <span class="chamada-bolha-asset ${(msg?.meta?.modo === 'video' || msg?.meta?.tipo_chamada === 'video_grupo') ? 'video' : 'voz'}" aria-hidden="true"></span>
                 </div>
 
                 <div class="chamada-bolha-info">
