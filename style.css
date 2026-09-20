@@ -2788,12 +2788,12 @@ body {
 /* Avatar do participante ao lado das mensagens de grupo.
    Fica visível apenas na última mensagem de cada sequência do mesmo remetente. */
 #tela-chat .balao-msg.grupo-msg-recebida {
-    margin-left: 48px;
+    margin-left: 42px;
 }
 
 #tela-chat .grupo-msg-avatar {
     position: absolute;
-    left: -43px;
+    left: -37px;
     bottom: 0;
     width: 32px;
     height: 32px;
