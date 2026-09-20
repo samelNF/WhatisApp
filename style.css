@@ -6713,3 +6713,352 @@ body.chamada-grupo-aberta {
         min-height: 82px !important;
     }
 }
+
+
+/* ==========================================
+   DADOS DO GRUPO - ESCALA REFERÊNCIA WHATSAPP IOS
+   ========================================== */
+#painel-dados-grupo .grupo-dados-topo {
+    min-height: calc(78px + env(safe-area-inset-top, 0px)) !important;
+    padding:
+        max(env(safe-area-inset-top), 8px)
+        14px
+        8px !important;
+}
+
+#painel-dados-grupo .grupo-voltar-btn {
+    width: 50px !important;
+    height: 50px !important;
+    min-width: 50px !important;
+}
+
+#painel-dados-grupo .grupo-voltar-btn svg {
+    width: 27px !important;
+    height: 27px !important;
+}
+
+#painel-dados-grupo .grupo-topo-acoes {
+    height: 50px !important;
+    padding: 0 5px !important;
+}
+
+#painel-dados-grupo .grupo-topo-acao {
+    width: 42px !important;
+    height: 42px !important;
+}
+
+#painel-dados-grupo .grupo-panel-conteudo {
+    padding: 8px 14px max(30px, env(safe-area-inset-bottom)) !important;
+}
+
+#painel-dados-grupo .grupo-perfil-resumo {
+    padding: 0 0 24px !important;
+}
+
+#painel-dados-grupo .grupo-info-foto {
+    width: 112px !important;
+    height: 112px !important;
+    min-width: 112px !important;
+    min-height: 112px !important;
+    max-width: 112px !important;
+    max-height: 112px !important;
+    margin-bottom: 15px !important;
+}
+
+#painel-dados-grupo .grupo-info-foto.avatar-sem-foto,
+#painel-dados-grupo .grupo-info-foto[src*="group-placeholder.svg"] {
+    padding: 25px !important;
+}
+
+#painel-dados-grupo #grupo-info-nome {
+    font-size: 30px !important;
+    line-height: 34px !important;
+    letter-spacing: -.4px !important;
+}
+
+#painel-dados-grupo #grupo-info-resumo {
+    margin-top: 5px !important;
+    font-size: 16px !important;
+    line-height: 20px !important;
+}
+
+/* Quatro ações como no WhatsApp. */
+#painel-dados-grupo .grupo-acoes-principais {
+    width: 100% !important;
+    max-width: 760px !important;
+    margin: 0 auto 18px !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+}
+
+#painel-dados-grupo .grupo-acao-card {
+    min-height: 80px !important;
+    padding: 9px 4px !important;
+    border-radius: 23px !important;
+    gap: 7px !important;
+}
+
+#painel-dados-grupo .grupo-acao-icone {
+    width: 28px !important;
+    height: 28px !important;
+    color: #2bd074 !important;
+}
+
+#painel-dados-grupo .grupo-acao-card > span:last-child {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 14px !important;
+    line-height: 17px !important;
+}
+
+/* Abas */
+#painel-dados-grupo .grupo-abas {
+    width: 100%;
+    max-width: 760px;
+    margin: 0 auto 18px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: center;
+    gap: 4px;
+}
+
+#painel-dados-grupo .grupo-aba {
+    min-width: 0;
+    height: 40px;
+    padding: 0 10px !important;
+    border: 0 !important;
+    border-radius: 20px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #8e8e93 !important;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 650;
+    white-space: nowrap;
+}
+
+#painel-dados-grupo .grupo-aba.ativa {
+    color: #fafafa !important;
+    background:
+        linear-gradient(145deg,
+            rgba(255,255,255,.17),
+            rgba(255,255,255,.075)) !important;
+    border: 1px solid rgba(255,255,255,.14) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.12),
+        0 5px 14px rgba(0,0,0,.15) !important;
+}
+
+#painel-dados-grupo .grupo-aba-conteudo {
+    display: none;
+}
+
+#painel-dados-grupo .grupo-aba-conteudo.ativa {
+    display: block;
+}
+
+/* Membros */
+#painel-dados-grupo .grupo-membros-secao {
+    margin-bottom: 24px !important;
+}
+
+#painel-dados-grupo .grupo-membros-titulo-linha {
+    min-height: 44px !important;
+    padding: 0 10px 7px 12px !important;
+}
+
+#painel-dados-grupo .grupo-membros-titulo-linha h3 {
+    font-size: 16px !important;
+}
+
+#painel-dados-grupo .grupo-pesquisar-btn {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+}
+
+#painel-dados-grupo .grupo-membros-card {
+    border-radius: 25px !important;
+}
+
+#painel-dados-grupo .grupo-adicionar-row {
+    min-height: 68px !important;
+    padding: 8px 16px !important;
+    gap: 14px !important;
+    font-size: 17px !important;
+}
+
+#painel-dados-grupo .grupo-add-circulo {
+    width: 46px !important;
+    height: 46px !important;
+    min-width: 46px !important;
+    font-size: 30px !important;
+}
+
+#painel-dados-grupo .grupo-adicionar-row::after {
+    left: 76px !important;
+    right: 16px !important;
+}
+
+#painel-dados-grupo .grupo-membro-item {
+    min-height: 70px !important;
+    padding: 8px 16px !important;
+    gap: 14px !important;
+}
+
+#painel-dados-grupo .grupo-membro-item:not(:last-child)::after {
+    left: 76px !important;
+    right: 16px !important;
+}
+
+#painel-dados-grupo .grupo-membro-avatar {
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    max-width: 48px !important;
+    max-height: 48px !important;
+    flex-basis: 48px !important;
+}
+
+#painel-dados-grupo .grupo-membro-avatar.avatar-sem-foto {
+    padding: 12px !important;
+}
+
+/* Mídia / Configurações */
+#painel-dados-grupo .grupo-midia-secao,
+#painel-dados-grupo .grupo-config-secao {
+    width: 100%;
+    max-width: 760px;
+    margin: 0 auto;
+}
+
+#painel-dados-grupo .grupo-secao-titulo {
+    padding: 5px 12px 10px;
+    color: #8e8e93;
+    font-size: 16px;
+    font-weight: 650;
+}
+
+#painel-dados-grupo .grupo-midia-card,
+#painel-dados-grupo .grupo-config-card {
+    width: 100%;
+    min-height: 68px;
+    padding: 10px 16px;
+    box-sizing: border-box;
+    border-radius: 25px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background:
+        linear-gradient(150deg,
+            rgba(255,255,255,.085),
+            rgba(255,255,255,.04) 58%,
+            rgba(255,255,255,.028));
+    border: 1px solid rgba(255,255,255,.075);
+}
+
+#painel-dados-grupo .grupo-midia-icone,
+#painel-dados-grupo .grupo-config-icone {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    display: grid;
+    place-items: center;
+    color: #f4f4f5;
+}
+
+#painel-dados-grupo .grupo-midia-icone svg,
+#painel-dados-grupo .grupo-config-icone svg {
+    width: 27px;
+    height: 27px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+#painel-dados-grupo .grupo-midia-texto,
+#painel-dados-grupo .grupo-config-texto {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+#painel-dados-grupo .grupo-midia-texto strong,
+#painel-dados-grupo .grupo-config-texto strong {
+    color: #fafafa;
+    font-size: 17px;
+    line-height: 21px;
+    font-weight: 500;
+}
+
+#painel-dados-grupo .grupo-midia-texto small,
+#painel-dados-grupo .grupo-config-texto small {
+    color: #85858a;
+    font-size: 12px;
+    line-height: 15px;
+}
+
+#painel-dados-grupo .grupo-midia-seta,
+#painel-dados-grupo .grupo-config-seta {
+    color: #777;
+    font-size: 31px;
+    line-height: 1;
+}
+
+#painel-dados-grupo .grupo-config-row {
+    width: 100%;
+    min-height: 48px;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    color: #fafafa !important;
+    text-align: left;
+}
+
+#painel-dados-grupo .grupo-sair-card {
+    margin-top: 16px !important;
+    margin-bottom: 14px !important;
+    border-radius: 24px !important;
+}
+
+#painel-dados-grupo .grupo-sair-btn {
+    min-height: 62px !important;
+    padding: 0 20px !important;
+    font-size: 17px !important;
+}
+
+/* Destaque de busca reutilizado do contato. */
+#tela-chat .balao-msg.pesquisa-chat-destaque {
+    outline: 2px solid rgba(255,138,31,.92) !important;
+    box-shadow: 0 0 0 4px rgba(255,138,31,.16) !important;
+}
+
+@media (max-width: 390px) {
+    #painel-dados-grupo .grupo-acoes-principais {
+        gap: 6px !important;
+    }
+
+    #painel-dados-grupo .grupo-acao-card {
+        min-height: 76px !important;
+    }
+
+    #painel-dados-grupo .grupo-acao-card > span:last-child {
+        font-size: 13px !important;
+    }
+
+    #painel-dados-grupo .grupo-aba {
+        padding-inline: 6px !important;
+        font-size: 15px !important;
+    }
+}
