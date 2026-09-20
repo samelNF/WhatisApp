@@ -3862,35 +3862,51 @@ body.subtela-aberta #tela-conversas .topo-conversas {
 
 
 /* ==========================================
-   CHAT - BLOQUEIA SELEÇÃO NATIVA DE TEXTO
+   APP - BLOQUEIA SELEÇÃO / ARRASTO NATIVO
    ========================================== */
-/* O toque longo fica reservado para o menu de ações da mensagem.
-   Inputs continuam normais porque ficam fora de .chat-mensagens. */
-#tela-chat .chat-mensagens,
-#tela-chat .chat-mensagens .balao-msg,
-#tela-chat .chat-mensagens .balao-msg * {
+/* O WhatisApp inteiro se comporta como app: texto, imagens, SVGs e demais
+   mídias não podem ser selecionados ou arrastados pelo navegador. */
+html,
+body,
+body * {
     -webkit-user-select: none !important;
     user-select: none !important;
     -webkit-touch-callout: none !important;
 }
 
-/* ==========================================
-   IOS - BLOQUEIO LEVE DE ARRASTO
-   ========================================== */
+/* Campos editáveis continuam com seleção, cursor, copiar/colar e callout normal. */
+input,
+textarea,
+[contenteditable="true"],
+[contenteditable=""] {
+    -webkit-user-select: text !important;
+    user-select: text !important;
+    -webkit-touch-callout: default !important;
+}
+
+/* Impede o "fantasma" de arrastar imagens/mídias no desktop e no WebKit. */
+img,
+svg,
+video,
+audio,
+canvas,
+picture,
+source {
+    -webkit-user-drag: none !important;
+    user-drag: none !important;
+}
+
 @supports (-webkit-touch-callout: none) {
     img,
     svg,
+    video,
+    audio,
+    canvas,
     button,
     a,
     [role="button"] {
         -webkit-user-drag: none !important;
         -webkit-touch-callout: none !important;
-    }
-
-    img,
-    svg {
-        user-select: none !important;
-        -webkit-user-select: none !important;
     }
 }
 
