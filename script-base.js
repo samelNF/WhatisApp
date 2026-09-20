@@ -1020,9 +1020,27 @@ async function carregarListaContatos() {
             ? relacaoContatos.map(item => item.contato_usuario).filter(Boolean)
             : [];
 
-        const leituraPorContato = new Map(
+        const leituraLegadaPorContato = new Map(
             (relacaoContatos || []).map(item => [
-                String(item.contato_usuario || ""),
+                String(item.contato_usuario || "").trim().toLowerCase(),
+                item.ultima_leitura || null
+            ])
+        );
+
+        // A leitura do chat privado agora é persistida por EMAIL + EMAIL,
+        // sem depender de como o contato foi salvo (nome ou email) na tabela contatos.
+        const { data: leiturasPrivadas, error: erroLeiturasPrivadas } = await _supabase
+            .from("leituras_conversas_privadas")
+            .select("contato_email, ultima_leitura")
+            .eq("usuario_email", meuEmail);
+
+        if (erroLeiturasPrivadas) {
+            console.warn("Não foi possível carregar leituras privadas:", erroLeiturasPrivadas.message);
+        }
+
+        const leituraPorEmailContato = new Map(
+            (leiturasPrivadas || []).map(item => [
+                String(item.contato_email || "").trim().toLowerCase(),
                 item.ultima_leitura || null
             ])
         );
@@ -1043,7 +1061,11 @@ async function carregarListaContatos() {
             usuarios.map(async (contato) => {
                 let ultimaMsg = null;
                 let naoLidas = 0;
-                const ultimaLeitura = leituraPorContato.get(String(contato.usuario || "")) || null;
+                const ultimaLeitura =
+                    leituraPorEmailContato.get(String(contato.email || "").trim().toLowerCase()) ||
+                    leituraLegadaPorContato.get(String(contato.usuario || "").trim().toLowerCase()) ||
+                    leituraLegadaPorContato.get(String(contato.email || "").trim().toLowerCase()) ||
+                    null;
 
                 try {
                     const consultaNaoLidas = _supabase
@@ -2533,40 +2555,30 @@ async function sincronizarVisualizacoesDoChat(emailContato, chaveConversa) {
 }
 
 async function marcarContatoComoLidoNaLista(emailContato) {
-    const meuUsuario = (localStorage.getItem("nomeUsuario") || "").trim();
-    if (!meuUsuario || !emailContato || !_supabase || !navigator.onLine) return;
+    const meuEmail = (localStorage.getItem("usuarioLogado") || "").trim().toLowerCase();
+    const contatoEmail = String(emailContato || "").trim().toLowerCase();
 
-    let nomeContato =
-        (todosContatos || []).find(item =>
-            item?.tipo === "contato" &&
-            String(item?.identificador || "").toLowerCase() === String(emailContato).toLowerCase()
-        )?.usuario || "";
-
-    if (!nomeContato) {
-        try {
-            const { data } = await _supabase
-                .from("usuarios")
-                .select("usuario")
-                .eq("email", emailContato)
-                .maybeSingle();
-
-            nomeContato = data?.usuario || "";
-        } catch (e) {}
-    }
-
-    if (!nomeContato) return;
+    if (!meuEmail || !contatoEmail || !_supabase || !navigator.onLine) return false;
 
     const agora = new Date().toISOString();
 
     const { error } = await _supabase
-        .from("contatos")
-        .update({ ultima_leitura: agora })
-        .eq("usuario_origem", meuUsuario)
-        .eq("contato_usuario", nomeContato);
+        .from("leituras_conversas_privadas")
+        .upsert(
+            {
+                usuario_email: meuEmail,
+                contato_email: contatoEmail,
+                ultima_leitura: agora
+            },
+            { onConflict: "usuario_email,contato_email" }
+        );
 
     if (error) {
         console.warn("Não foi possível salvar a leitura da conversa:", error.message);
+        return false;
     }
+
+    return true;
 }
 
 async function marcarMensagensComoVisualizadas(emailContato, chaveConversa) {
@@ -3654,6 +3666,7 @@ document.addEventListener("visibilitychange", () => {
         carregarListaContatos();
 
         if (destinatarioAtual) {
+            marcarContatoComoLidoNaLista(destinatarioAtual);
             carregarMensagens();
         }
     }
