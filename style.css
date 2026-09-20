@@ -2645,6 +2645,21 @@ body {
     transform: scale(1);
 }
 
+/* Placeholder sem foto: impede o padding percentual global de inflar
+   o avatar do grupo até virar um círculo gigante. */
+#tela-chat .grupo-msg-avatar.avatar-sem-foto {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    max-width: 32px !important;
+    max-height: 32px !important;
+    padding: 7px !important;
+    object-fit: contain !important;
+    object-position: center !important;
+    border-radius: 50% !important;
+}
+
 #tela-chat .grupo-msg-cabecalho {
     width: 100%;
     min-width: 0;
