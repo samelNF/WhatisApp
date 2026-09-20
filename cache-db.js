@@ -214,6 +214,24 @@
         }).catch(erro => console.warn('[Cache] Erro atualizando mensagens:', erro));
     }
 
+    async function removerMensagensPorIds(conversa, ids) {
+        const db = await abrirBanco();
+        if (!db || !conversa || !Array.isArray(ids) || !ids.length) return;
+
+        const chaves = ids.map(id => chaveMensagem(conversa, { id }));
+
+        await new Promise((resolve, reject) => {
+            const tx = db.transaction(STORE_MENSAGENS, 'readwrite');
+            const store = tx.objectStore(STORE_MENSAGENS);
+
+            chaves.forEach(chave => store.delete(chave));
+
+            tx.oncomplete = resolve;
+            tx.onerror = () => reject(tx.error);
+            tx.onabort = () => reject(tx.error);
+        }).catch(erro => console.warn('[Cache] Erro removendo mensagens:', erro));
+    }
+
     async function ultimaMensagem(conversa) {
         const lista = await listarMensagens(conversa);
         return lista.length ? lista[lista.length - 1] : null;
@@ -357,6 +375,7 @@
         ultimaMensagem,
         mensagemPorId,
         atualizarMensagensPorIds,
+        removerMensagensPorIds,
         cachearMidiasDasMensagens,
         salvarSessaoLocal,
         obterSessaoLocal,
