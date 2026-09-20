@@ -232,6 +232,17 @@
         contrast(101%);
 }
 
+#mini-dados-promover-admin .mini-dados-row-icone {
+    display: grid;
+    place-items: center;
+}
+
+#mini-dados-promover-admin .mini-dados-row-icone img {
+    width: 27px;
+    height: 27px;
+    object-fit: contain;
+}
+
 #painel-dados-grupo .grupo-membro-item.grupo-membro-clicavel {
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
@@ -3957,6 +3968,10 @@ body::before {
     white-space: nowrap;
 }
 
+#painel-dados-grupo .grupo-membro-dono {
+    color: #ff9a3c;
+}
+
 #painel-dados-grupo .grupo-membro-item.grupo-membro-removivel {
     cursor: pointer;
 }
@@ -4022,6 +4037,59 @@ body::before {
 
 #painel-dados-grupo .grupo-add-overlay.hidden {
     display: none !important;
+}
+
+#painel-dados-grupo .grupo-transferir-posse-overlay {
+    z-index: 36;
+}
+
+#painel-dados-grupo .grupo-transferir-posse-intro {
+    padding: 22px 20px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    color: #fafafa;
+}
+
+#painel-dados-grupo .grupo-transferir-posse-intro strong {
+    font-size: 20px;
+    line-height: 1.15;
+    font-weight: 700;
+}
+
+#painel-dados-grupo .grupo-transferir-posse-intro span {
+    color: #8b8b90;
+    font-size: 14px;
+    line-height: 1.35;
+}
+
+#painel-dados-grupo .grupo-transferir-candidato {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    font: inherit;
+    cursor: pointer;
+}
+
+#painel-dados-grupo .grupo-transferir-candidato:active {
+    background: rgba(255,255,255,.055);
+}
+
+#painel-dados-grupo .grupo-transferir-candidato .grupo-membro-info small.grupo-transferir-descricao {
+    display: block;
+    color: #7f7f85;
+    font-size: 13px;
+    line-height: 17px;
+}
+
+#painel-dados-grupo .grupo-transferir-seta {
+    flex: 0 0 auto;
+    margin-left: auto;
+    color: #75757a;
+    font-size: 32px;
+    line-height: 1;
 }
 
 #painel-dados-grupo .grupo-add-header {
