@@ -2101,7 +2101,7 @@ function criarBotaoAcaoMensagem(rotulo, icone, acao, destrutivo = false) {
     botao.className = "menu-msg-item" + (destrutivo ? " destrutivo" : "");
     botao.innerHTML = `
         <span class="menu-msg-icone">${iconeAcaoMensagem(icone)}</span>
-        <span>${rotulo}</span>
+        <span class="menu-msg-rotulo">${rotulo}</span>
     `;
     botao.addEventListener("click", acao);
     return botao;
