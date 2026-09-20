@@ -208,6 +208,39 @@
     flex: 0 0 31px;
 }
 
+.mini-dados-row-perigo {
+    color: #ff6677 !important;
+}
+
+.mini-dados-row-perigo .mini-dados-row-icone {
+    display: grid;
+    place-items: center;
+}
+
+.mini-dados-row-perigo .mini-dados-row-icone img {
+    width: 27px;
+    height: 27px;
+    object-fit: contain;
+    filter:
+        brightness(0)
+        saturate(100%)
+        invert(55%)
+        sepia(73%)
+        saturate(1707%)
+        hue-rotate(314deg)
+        brightness(103%)
+        contrast(101%);
+}
+
+#painel-dados-grupo .grupo-membro-item.grupo-membro-clicavel {
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+#painel-dados-grupo .grupo-membro-item.grupo-membro-clicavel:active {
+    background: rgba(255,255,255,.055);
+}
+
 #tela-chat .grupo-msg-avatar,
 #tela-chat .grupo-msg-cabecalho .nome-remetente {
     cursor: pointer;
