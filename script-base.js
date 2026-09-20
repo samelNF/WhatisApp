@@ -4554,14 +4554,15 @@ async function finalizarCriacaoGrupo() {
 
     // 3. Monta a lista de membros inserindo o criador + os selecionados na tabela 'grupo_membros'
     let listaMembrosParaInserir = [
-        { grupo_id: grupoId, usuario_email: meuEmail, usuario_nome: meuUsuario }
+        { grupo_id: grupoId, usuario_email: meuEmail, usuario_nome: meuUsuario, cargo: 'dono' }
     ];
 
     membrosSelecionadosParaGrupo.forEach(m => {
         listaMembrosParaInserir.push({
             grupo_id: grupoId,
             usuario_email: m.email,
-            usuario_nome: m.nome
+            usuario_nome: m.nome,
+            cargo: 'membro'
         });
     });
 
