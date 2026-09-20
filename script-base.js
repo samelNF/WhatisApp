@@ -19,6 +19,13 @@ let realtimeConectando = false;
 // Estado para Solicitações de Chat
 let solicitacaoAtual = null;
 
+// Estado das ações de mensagem
+let idsMensagensOcultas = new Set();
+let ocultasCarregadasPara = "";
+let menuMensagemAtual = null;
+let timerPressaoMensagem = null;
+let pressaoMensagemInicio = null;
+
 // ==========================================
 // INICIALIZAÇÃO E SERVICE WORKER
 // ==========================================
@@ -1757,6 +1764,544 @@ async function enviarFotoChat(event) {
     }
 }
 
+async function carregarMensagensOcultasDoUsuario(forcar = false) {
+    const meuEmail = (localStorage.getItem("usuarioLogado") || "").trim().toLowerCase();
+
+    if (!meuEmail || !_supabase) {
+        idsMensagensOcultas = new Set();
+        ocultasCarregadasPara = "";
+        return idsMensagensOcultas;
+    }
+
+    if (!forcar && ocultasCarregadasPara === meuEmail) {
+        return idsMensagensOcultas;
+    }
+
+    const { data, error } = await _supabase
+        .from("mensagens_ocultas")
+        .select("mensagem_id")
+        .eq("usuario_email", meuEmail);
+
+    if (error) {
+        console.warn("Não foi possível carregar mensagens ocultas:", error.message);
+        return idsMensagensOcultas;
+    }
+
+    idsMensagensOcultas = new Set((data || []).map(item => String(item.mensagem_id)));
+    ocultasCarregadasPara = meuEmail;
+    return idsMensagensOcultas;
+}
+
+function mensagemEstaOculta(idMensagem) {
+    if (idMensagem === null || idMensagem === undefined) return false;
+    return idsMensagensOcultas.has(String(idMensagem));
+}
+
+function localizarBalaoMensagem(idMensagem) {
+    if (idMensagem === null || idMensagem === undefined) return null;
+
+    return document.querySelector(
+        `#chat-mensagens .balao-msg[data-message-id="${String(idMensagem)}"]`
+    );
+}
+
+function prepararBalaoParaAcoes(balao, msg, ehMinha) {
+    if (!balao || !msg) return;
+
+    balao.dataset.messageActions = "true";
+    balao.dataset.messageOwn = ehMinha ? "true" : "false";
+    balao.dataset.messageSender = msg.remetente_email || "";
+    balao.dataset.messageGroupId = msg.grupo_id ?? "";
+    balao.dataset.messageCreatedAt = msg.created_at || "";
+    balao.dataset.messageText = msg.texto || "";
+}
+
+function limparSeparadoresDatasVazios() {
+    const container = document.getElementById("chat-mensagens");
+    if (!container) return;
+
+    const filhos = Array.from(container.children);
+
+    filhos.forEach((elemento, indice) => {
+        if (!elemento.classList?.contains("chat-data-separador")) return;
+
+        let encontrouMensagem = false;
+
+        for (let i = indice + 1; i < filhos.length; i++) {
+            const proximo = filhos[i];
+
+            if (proximo.classList?.contains("chat-data-separador")) break;
+            if (proximo.classList?.contains("balao-msg")) {
+                encontrouMensagem = true;
+                break;
+            }
+        }
+
+        if (!encontrouMensagem) elemento.remove();
+    });
+}
+
+async function removerMensagemDaInterface(idMensagem) {
+    const balao = localizarBalaoMensagem(idMensagem);
+    const container = document.getElementById("chat-mensagens");
+    const chaveConversa = container?.dataset.cacheConversa || "";
+
+    if (chaveConversa && window.WhatisCache?.removerMensagensPorIds) {
+        await window.WhatisCache.removerMensagensPorIds(chaveConversa, [idMensagem]);
+    }
+
+    balao?.remove();
+    limparSeparadoresDatasVazios();
+    atualizarAvataresMensagensGrupo();
+    atualizarAgrupamentoBaloesChat();
+}
+
+async function ocultarMensagemParaMim(idMensagem) {
+    const meuEmail = (localStorage.getItem("usuarioLogado") || "").trim().toLowerCase();
+    if (!meuEmail || !idMensagem || !_supabase) return false;
+
+    const { error } = await _supabase
+        .from("mensagens_ocultas")
+        .upsert(
+            { usuario_email: meuEmail, mensagem_id: idMensagem },
+            { onConflict: "usuario_email,mensagem_id" }
+        );
+
+    if (error) {
+        console.error("Erro ao apagar mensagem para mim:", error);
+        mostrarToastAcoesMensagem("Não foi possível apagar a mensagem.");
+        return false;
+    }
+
+    idsMensagensOcultas.add(String(idMensagem));
+    await removerMensagemDaInterface(idMensagem);
+    return true;
+}
+
+async function usuarioEhAdminGrupo(idGrupo) {
+    const meuEmail = (localStorage.getItem("usuarioLogado") || "").trim().toLowerCase();
+    if (!idGrupo || !meuEmail || !_supabase) return false;
+
+    const { data, error } = await _supabase
+        .from("grupos")
+        .select("criado_por")
+        .eq("id", idGrupo)
+        .maybeSingle();
+
+    if (error) {
+        console.warn("Não foi possível verificar o administrador do grupo:", error.message);
+        return false;
+    }
+
+    return (data?.criado_por || "").trim().toLowerCase() === meuEmail;
+}
+
+async function apagarMensagemParaTodos(idMensagem, contexto = {}) {
+    const meuEmail = (localStorage.getItem("usuarioLogado") || "").trim().toLowerCase();
+    if (!meuEmail || !idMensagem || !_supabase) return false;
+
+    const remetente = String(contexto.remetente_email || "").trim().toLowerCase();
+    const grupoId = contexto.grupo_id || null;
+    const ehMinha = remetente === meuEmail;
+    const podeComoAdmin = grupoId ? await usuarioEhAdminGrupo(grupoId) : false;
+
+    if (!ehMinha && !podeComoAdmin) {
+        mostrarToastAcoesMensagem("Você só pode apagar essa mensagem para você.");
+        return false;
+    }
+
+    const { error } = await _supabase
+        .from("mensagens")
+        .delete()
+        .eq("id", idMensagem);
+
+    if (error) {
+        console.error("Erro ao apagar mensagem para todos:", error);
+        mostrarToastAcoesMensagem("Não foi possível apagar para todos.");
+        return false;
+    }
+
+    await removerMensagemDaInterface(idMensagem);
+    carregarListaContatos();
+    return true;
+}
+
+function textoCopiavelMensagem(texto) {
+    const valor = String(texto || "");
+    if (!valor) return "";
+    if (valor.startsWith("[FOTO]:")) return "";
+    if (valor.startsWith("[VIDEO]:")) return "";
+    if (valor.startsWith("[AUDIO]:")) return "";
+    return valor;
+}
+
+function favoritosMensagemChave() {
+    const email = (localStorage.getItem("usuarioLogado") || "local").trim().toLowerCase();
+    return `mensagens_favoritas_${email}`;
+}
+
+function mensagemEstaFavorita(idMensagem) {
+    try {
+        const lista = JSON.parse(localStorage.getItem(favoritosMensagemChave()) || "[]");
+        return Array.isArray(lista) && lista.map(String).includes(String(idMensagem));
+    } catch (e) {
+        return false;
+    }
+}
+
+function alternarFavoritoMensagem(idMensagem) {
+    let lista = [];
+
+    try {
+        const salva = JSON.parse(localStorage.getItem(favoritosMensagemChave()) || "[]");
+        if (Array.isArray(salva)) lista = salva.map(String);
+    } catch (e) {}
+
+    const id = String(idMensagem);
+    const index = lista.indexOf(id);
+
+    if (index >= 0) {
+        lista.splice(index, 1);
+        localStorage.setItem(favoritosMensagemChave(), JSON.stringify(lista));
+        mostrarToastAcoesMensagem("Removida dos favoritos.");
+        return false;
+    }
+
+    lista.push(id);
+    localStorage.setItem(favoritosMensagemChave(), JSON.stringify(lista));
+    mostrarToastAcoesMensagem("Mensagem favoritada.");
+    return true;
+}
+
+function mostrarToastAcoesMensagem(texto) {
+    let toast = document.getElementById("acoes-msg-toast");
+
+    if (!toast) {
+        toast = document.createElement("div");
+        toast.id = "acoes-msg-toast";
+        toast.className = "acoes-msg-toast";
+        document.body.appendChild(toast);
+    }
+
+    toast.textContent = texto;
+    toast.classList.add("visivel");
+
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => toast.classList.remove("visivel"), 1700);
+}
+
+function iconeAcaoMensagem(tipo) {
+    const icones = {
+        responder: '<svg viewBox="0 0 24 24"><path d="M9.5 7 4 12l5.5 5v-3.2c5.4 0 8.4 1.5 10.5 5.2-.4-6.4-3.4-9.7-10.5-9.8V7Z"/></svg>',
+        encaminhar: '<svg viewBox="0 0 24 24"><path d="m14.5 7 5.5 5-5.5 5v-3.2c-5.4 0-8.4 1.5-10.5 5.2.4-6.4 3.4-9.7 10.5-9.8V7Z"/></svg>',
+        copiar: '<svg viewBox="0 0 24 24"><rect x="8" y="5" width="10" height="14" rx="2"/><rect x="4" y="9" width="10" height="11" rx="2"/></svg>',
+        dados: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 10.5v6"/><circle cx="12" cy="7.2" r=".7" fill="currentColor" stroke="none"/></svg>',
+        favorito: '<svg viewBox="0 0 24 24"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z"/></svg>',
+        apagar: '<svg viewBox="0 0 24 24"><path d="M5 7h14M9 7V4h6v3m-8 0 1 13h8l1-13M10 10v7m4-7v7"/></svg>',
+        mais: '<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="9"/></svg>'
+    };
+    return icones[tipo] || "";
+}
+
+function fecharMenuAcoesMensagem() {
+    document.getElementById("menu-acoes-mensagem-overlay")?.remove();
+    document.querySelectorAll("#chat-mensagens .balao-msg.mensagem-menu-ativa")
+        .forEach(el => el.classList.remove("mensagem-menu-ativa"));
+    menuMensagemAtual = null;
+}
+
+function criarBotaoAcaoMensagem(rotulo, icone, acao, destrutivo = false) {
+    const botao = document.createElement("button");
+    botao.type = "button";
+    botao.className = "menu-msg-item" + (destrutivo ? " destrutivo" : "");
+    botao.innerHTML = `
+        <span class="menu-msg-icone">${iconeAcaoMensagem(icone)}</span>
+        <span>${rotulo}</span>
+    `;
+    botao.addEventListener("click", acao);
+    return botao;
+}
+
+function dadosMensagemDoBalao(balao) {
+    return {
+        id: balao?.dataset.messageId || "",
+        remetente_email: balao?.dataset.messageSender || "",
+        grupo_id: balao?.dataset.messageGroupId || "",
+        created_at: balao?.dataset.messageCreatedAt || "",
+        texto: balao?.dataset.messageText || "",
+        ehMinha: balao?.dataset.messageOwn === "true"
+    };
+}
+
+function posicionarMenuAcoesMensagem(menu, balao) {
+    const margem = 12;
+    const rect = balao.getBoundingClientRect();
+    const menuRect = menu.getBoundingClientRect();
+    const largura = menuRect.width;
+    const altura = menuRect.height;
+
+    let left = rect.left;
+    if (balao.classList.contains("balao-enviada")) {
+        left = rect.right - largura;
+    }
+
+    left = Math.max(margem, Math.min(left, window.innerWidth - largura - margem));
+
+    let top = rect.bottom + 10;
+    if (top + altura > window.innerHeight - margem) {
+        top = rect.top - altura - 10;
+    }
+    if (top < margem) {
+        top = Math.max(margem, (window.innerHeight - altura) / 2);
+    }
+
+    menu.style.left = `${Math.round(left)}px`;
+    menu.style.top = `${Math.round(top)}px`;
+}
+
+function abrirPainelDadosMensagem(dados) {
+    const data = dados.created_at ? new Date(dados.created_at) : null;
+    const dataTexto = data && !Number.isNaN(data.getTime())
+        ? data.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })
+        : "Sem data";
+
+    mostrarSubmenuMensagem("Dados da mensagem", [
+        { rotulo: `Enviada em ${dataTexto}`, neutro: true },
+        { rotulo: `ID ${dados.id || "—"}`, neutro: true }
+    ]);
+}
+
+function mostrarSubmenuMensagem(titulo, itens) {
+    const overlay = document.getElementById("menu-acoes-mensagem-overlay");
+    const menu = overlay?.querySelector(".menu-acoes-mensagem");
+    if (!menu) return;
+
+    menu.innerHTML = "";
+
+    const cabecalho = document.createElement("div");
+    cabecalho.className = "menu-msg-subtitulo";
+    cabecalho.textContent = titulo;
+    menu.appendChild(cabecalho);
+
+    itens.forEach(item => {
+        if (item.neutro) {
+            const linha = document.createElement("div");
+            linha.className = "menu-msg-info";
+            linha.textContent = item.rotulo;
+            menu.appendChild(linha);
+            return;
+        }
+
+        menu.appendChild(
+            criarBotaoAcaoMensagem(
+                item.rotulo,
+                item.icone || "apagar",
+                item.acao,
+                item.destrutivo === true
+            )
+        );
+    });
+
+    const cancelar = document.createElement("button");
+    cancelar.type = "button";
+    cancelar.className = "menu-msg-cancelar";
+    cancelar.textContent = "Cancelar";
+    cancelar.addEventListener("click", fecharMenuAcoesMensagem);
+    menu.appendChild(cancelar);
+}
+
+async function abrirOpcoesApagarMensagem(dados) {
+    const meuEmail = (localStorage.getItem("usuarioLogado") || "").trim().toLowerCase();
+    const ehMinha = String(dados.remetente_email || "").trim().toLowerCase() === meuEmail;
+    const ehGrupo = !!dados.grupo_id;
+    const ehAdmin = ehGrupo ? await usuarioEhAdminGrupo(dados.grupo_id) : false;
+
+    const itens = [];
+
+    if (ehMinha || ehAdmin) {
+        itens.push({
+            rotulo: "Apagar para todos",
+            icone: "apagar",
+            destrutivo: true,
+            acao: async () => {
+                fecharMenuAcoesMensagem();
+                await apagarMensagemParaTodos(dados.id, dados);
+            }
+        });
+    }
+
+    itens.push({
+        rotulo: "Apagar para mim",
+        icone: "apagar",
+        destrutivo: true,
+        acao: async () => {
+            fecharMenuAcoesMensagem();
+            const ok = await ocultarMensagemParaMim(dados.id);
+            if (ok) mostrarToastAcoesMensagem("Mensagem apagada para você.");
+        }
+    });
+
+    mostrarSubmenuMensagem("Apagar mensagem", itens);
+}
+
+async function abrirMenuAcoesMensagem(balao) {
+    if (!balao?.dataset?.messageId) return;
+
+    fecharMenuAcoesMensagem();
+
+    const dados = dadosMensagemDoBalao(balao);
+    menuMensagemAtual = dados;
+    balao.classList.add("mensagem-menu-ativa");
+
+    const overlay = document.createElement("div");
+    overlay.id = "menu-acoes-mensagem-overlay";
+    overlay.className = "menu-acoes-mensagem-overlay";
+
+    const menu = document.createElement("div");
+    menu.className = "menu-acoes-mensagem";
+    menu.setAttribute("role", "menu");
+
+    overlay.appendChild(menu);
+    document.body.appendChild(overlay);
+
+    overlay.addEventListener("pointerdown", e => {
+        if (e.target === overlay) fecharMenuAcoesMensagem();
+    });
+
+    const nomeResposta = dados.ehMinha
+        ? "Você"
+        : (
+            balao.querySelector(".nome-remetente")?.textContent?.trim() ||
+            document.getElementById("chat-nome-usuario")?.textContent?.trim() ||
+            "Contato"
+        );
+
+    menu.appendChild(criarBotaoAcaoMensagem("Responder", "responder", () => {
+        fecharMenuAcoesMensagem();
+        iniciarResposta(dados.id, nomeResposta, dados.texto);
+    }));
+
+    menu.appendChild(criarBotaoAcaoMensagem("Encaminhar", "encaminhar", () => {
+        mostrarToastAcoesMensagem("Encaminhar entra na próxima etapa.");
+    }));
+
+    const copiavel = textoCopiavelMensagem(dados.texto);
+    if (copiavel) {
+        menu.appendChild(criarBotaoAcaoMensagem("Copiar", "copiar", async () => {
+            try {
+                await navigator.clipboard.writeText(copiavel);
+                fecharMenuAcoesMensagem();
+                mostrarToastAcoesMensagem("Mensagem copiada.");
+            } catch (e) {
+                mostrarToastAcoesMensagem("Não foi possível copiar.");
+            }
+        }));
+    }
+
+    if (dados.ehMinha) {
+        menu.appendChild(criarBotaoAcaoMensagem("Dados", "dados", () => {
+            abrirPainelDadosMensagem(dados);
+        }));
+    }
+
+    const favorita = mensagemEstaFavorita(dados.id);
+    menu.appendChild(criarBotaoAcaoMensagem(
+        favorita ? "Desfavoritar" : "Favoritar",
+        "favorito",
+        () => {
+            alternarFavoritoMensagem(dados.id);
+            fecharMenuAcoesMensagem();
+        }
+    ));
+
+    menu.appendChild(criarBotaoAcaoMensagem("Apagar", "apagar", () => {
+        abrirOpcoesApagarMensagem(dados);
+    }, true));
+
+    const divisor = document.createElement("div");
+    divisor.className = "menu-msg-divisor";
+    menu.appendChild(divisor);
+
+    menu.appendChild(criarBotaoAcaoMensagem("Mais...", "mais", () => {
+        const itens = [];
+
+        if (!dados.ehMinha) {
+            itens.push({
+                rotulo: "Dados da mensagem",
+                icone: "dados",
+                acao: () => abrirPainelDadosMensagem(dados)
+            });
+        }
+
+        mostrarSubmenuMensagem("Mais", itens.length ? itens : [
+            { rotulo: "Nenhuma outra ação por enquanto.", neutro: true }
+        ]);
+    }));
+
+    requestAnimationFrame(() => posicionarMenuAcoesMensagem(menu, balao));
+}
+
+function inicializarMenuAcoesMensagens() {
+    const container = document.getElementById("chat-mensagens");
+    if (!container || container.dataset.acoesMensagemAtivas === "true") return;
+
+    container.dataset.acoesMensagemAtivas = "true";
+
+    container.addEventListener("contextmenu", e => {
+        const balao = e.target.closest(".balao-msg[data-message-id]");
+        if (!balao || !container.contains(balao)) return;
+
+        e.preventDefault();
+        abrirMenuAcoesMensagem(balao);
+    });
+
+    container.addEventListener("pointerdown", e => {
+        if (e.pointerType === "mouse") return;
+
+        const balao = e.target.closest(".balao-msg[data-message-id]");
+        if (!balao || !container.contains(balao)) return;
+
+        pressaoMensagemInicio = {
+            x: e.clientX,
+            y: e.clientY,
+            balao
+        };
+
+        clearTimeout(timerPressaoMensagem);
+        timerPressaoMensagem = setTimeout(() => {
+            if (navigator.vibrate) navigator.vibrate(18);
+            abrirMenuAcoesMensagem(balao);
+            timerPressaoMensagem = null;
+        }, 520);
+    });
+
+    container.addEventListener("pointermove", e => {
+        if (!pressaoMensagemInicio || !timerPressaoMensagem) return;
+
+        const dx = Math.abs(e.clientX - pressaoMensagemInicio.x);
+        const dy = Math.abs(e.clientY - pressaoMensagemInicio.y);
+
+        if (dx > 12 || dy > 12) {
+            clearTimeout(timerPressaoMensagem);
+            timerPressaoMensagem = null;
+        }
+    });
+
+    ["pointerup", "pointercancel", "pointerleave"].forEach(tipo => {
+        container.addEventListener(tipo, () => {
+            clearTimeout(timerPressaoMensagem);
+            timerPressaoMensagem = null;
+            pressaoMensagemInicio = null;
+        });
+    });
+}
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", inicializarMenuAcoesMensagens, { once: true });
+} else {
+    inicializarMenuAcoesMensagens();
+}
+
 async function renderizarMensagensPrivadasDoCache(mensagens, chaveConversa, limparTudo) {
     const meuEmail = (localStorage.getItem("usuarioLogado") || "").trim().toLowerCase();
     const contatoAtual = (destinatarioAtual || "").trim().toLowerCase();
@@ -1769,9 +2314,12 @@ async function renderizarMensagensPrivadasDoCache(mensagens, chaveConversa, limp
         container.dataset.cacheConversa = chaveConversa;
     }
 
+    await carregarMensagensOcultasDoUsuario();
+
     const mapa = new Map((mensagens || []).map(msg => [String(msg.id), msg]));
 
     for (const msg of (mensagens || [])) {
+        if (mensagemEstaOculta(msg.id)) continue;
         if ((destinatarioAtual || "").trim().toLowerCase() !== contatoAtual) break;
 
         if (msg.id !== null && msg.id !== undefined) {
@@ -1821,6 +2369,9 @@ async function renderizarMensagensPrivadasDoCache(mensagens, chaveConversa, limp
                 msg.visualizada === true
             );
         }
+
+        const balaoRenderizado = localizarBalaoMensagem(msg.id);
+        prepararBalaoParaAcoes(balaoRenderizado, msg, ehMinha);
 
         atualizarAgrupamentoBaloesChat();
     }
@@ -2340,9 +2891,23 @@ async function renderizarMensagensGrupoDoCache(mensagens, idGrupo, chaveConversa
         container.dataset.cacheConversa = chaveConversa;
     }
 
+async function renderizarMensagensGrupoDoCache(mensagens, idGrupo, chaveConversa, limparTudo) {
+    const meuEmail = (localStorage.getItem("usuarioLogado") || "").trim().toLowerCase();
+    const container = document.getElementById("chat-mensagens");
+
+    if (!container) return;
+
+    if (limparTudo) {
+        container.innerHTML = "";
+        container.dataset.cacheConversa = chaveConversa;
+    }
+
+    await carregarMensagensOcultasDoUsuario();
+
     const mapa = new Map((mensagens || []).map(msg => [String(msg.id), msg]));
 
     for (const msg of (mensagens || [])) {
+        if (mensagemEstaOculta(msg.id)) continue;
         if (String(window.grupoAtualId || "") !== String(idGrupo)) break;
 
         if (msg.id !== null && msg.id !== undefined) {
@@ -2427,19 +2992,21 @@ async function renderizarMensagensGrupoDoCache(mensagens, idGrupo, chaveConversa
             );
         }
 
+        let balaoRenderizado = null;
+
+        if (msg.id !== null && msg.id !== undefined) {
+            balaoRenderizado = container.querySelector(
+                `.balao-msg[data-message-id="${String(msg.id)}"]`
+            );
+        }
+
+        if (!balaoRenderizado && container.lastElementChild?.classList?.contains("balao-msg")) {
+            balaoRenderizado = container.lastElementChild;
+        }
+
+        prepararBalaoParaAcoes(balaoRenderizado, msg, ehMinha);
+
         if (!ehMinha) {
-            let balaoRenderizado = null;
-
-            if (msg.id !== null && msg.id !== undefined) {
-                balaoRenderizado = container.querySelector(
-                    `.balao-msg[data-message-id="${String(msg.id)}"]`
-                );
-            }
-
-            if (!balaoRenderizado && container.lastElementChild?.classList?.contains("balao-msg")) {
-                balaoRenderizado = container.lastElementChild;
-            }
-
             prepararAvatarMensagemGrupo(balaoRenderizado, {
                 ehMinha,
                 emailRemetente: msg.remetente_email,
@@ -2882,6 +3449,22 @@ function inscreverRealtime() {
                         [msg]
                     );
                 }
+            }
+        )
+        .on(
+            'postgres_changes',
+            {
+                event: 'DELETE',
+                schema: 'public',
+                table: 'mensagens'
+            },
+            async (payload) => {
+                const msg = payload.old;
+                const idMensagem = msg?.id;
+                if (idMensagem === null || idMensagem === undefined) return;
+
+                await removerMensagemDaInterface(idMensagem);
+                carregarListaContatos();
             }
         )
         .on(
