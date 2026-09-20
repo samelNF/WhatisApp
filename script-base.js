@@ -2082,6 +2082,76 @@ function abrirPainelDadosMensagem(dados) {
     ]);
 }
 
+async function encaminharMensagemParaConversa(idMensagem, alvo) {
+    const meuEmail = (localStorage.getItem("usuarioLogado") || "").trim();
+    if (!meuEmail || !idMensagem || !alvo || !_supabase) return;
+
+    const { data: original, error } = await _supabase
+        .from("mensagens")
+        .select("*")
+        .eq("id", idMensagem)
+        .maybeSingle();
+
+    if (error || !original) {
+        mostrarToastAcoesMensagem("Não foi possível carregar a mensagem.");
+        return;
+    }
+
+    if (original.chamada_id) {
+        mostrarToastAcoesMensagem("Mensagens de ligação não podem ser encaminhadas.");
+        return;
+    }
+
+    const ehGrupo = alvo.tipo === "grupo";
+    const dados = {
+        remetente_email: meuEmail,
+        destinatario_email: ehGrupo ? null : alvo.identificador,
+        grupo_id: ehGrupo ? alvo.id : null,
+        texto: original.texto,
+        tipo: original.tipo || "texto",
+        audio_url: original.audio_url || null,
+        audio_duracao: original.audio_duracao || null,
+        audio_ondas: original.audio_ondas || null,
+        mensagem_respondida_id: null,
+        visualizada: false
+    };
+
+    const { error: erroInsert } = await _supabase
+        .from("mensagens")
+        .insert([dados]);
+
+    if (erroInsert) {
+        console.error("Erro ao encaminhar mensagem:", erroInsert);
+        mostrarToastAcoesMensagem("Não foi possível encaminhar.");
+        return;
+    }
+
+    fecharMenuAcoesMensagem();
+    mostrarToastAcoesMensagem("Mensagem encaminhada.");
+    carregarListaContatos();
+}
+
+function abrirMenuEncaminharMensagem(dados) {
+    const conversas = (todosContatos || []).filter(item =>
+        item?.tipo === "contato" || item?.tipo === "grupo"
+    );
+
+    if (!conversas.length) {
+        mostrarToastAcoesMensagem("Nenhuma conversa disponível.");
+        return;
+    }
+
+    const itens = conversas.map(item => ({
+        rotulo: item.tipo === "grupo"
+            ? `Grupo: ${item.nome || item.usuario || "Grupo"}`
+            : (item.usuario || item.nome || item.identificador || "Contato"),
+        icone: "encaminhar",
+        acao: () => encaminharMensagemParaConversa(dados.id, item)
+    }));
+
+    mostrarSubmenuMensagem("Encaminhar para", itens);
+}
+
 function mostrarSubmenuMensagem(titulo, itens) {
     const overlay = document.getElementById("menu-acoes-mensagem-overlay");
     const menu = overlay?.querySelector(".menu-acoes-mensagem");
@@ -2193,7 +2263,7 @@ async function abrirMenuAcoesMensagem(balao) {
     }));
 
     menu.appendChild(criarBotaoAcaoMensagem("Encaminhar", "encaminhar", () => {
-        mostrarToastAcoesMensagem("Encaminhar entra na próxima etapa.");
+        abrirMenuEncaminharMensagem(dados);
     }));
 
     const copiavel = textoCopiavelMensagem(dados.texto);
