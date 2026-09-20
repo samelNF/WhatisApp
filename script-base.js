@@ -2891,17 +2891,6 @@ async function renderizarMensagensGrupoDoCache(mensagens, idGrupo, chaveConversa
         container.dataset.cacheConversa = chaveConversa;
     }
 
-async function renderizarMensagensGrupoDoCache(mensagens, idGrupo, chaveConversa, limparTudo) {
-    const meuEmail = (localStorage.getItem("usuarioLogado") || "").trim().toLowerCase();
-    const container = document.getElementById("chat-mensagens");
-
-    if (!container) return;
-
-    if (limparTudo) {
-        container.innerHTML = "";
-        container.dataset.cacheConversa = chaveConversa;
-    }
-
     await carregarMensagensOcultasDoUsuario();
 
     const mapa = new Map((mensagens || []).map(msg => [String(msg.id), msg]));
