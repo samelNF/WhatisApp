@@ -909,6 +909,13 @@
                     <span>Dados</span>
                 </button>
 
+                <button id="mini-dados-promover-admin" type="button" class="mini-dados-row hidden" onclick="promoverMembroPeloMiniDados()">
+                    <span class="mini-dados-row-icone">
+                        <img src="./svg/star.svg" alt="" aria-hidden="true">
+                    </span>
+                    <span>Promover a adm</span>
+                </button>
+
                 <button id="mini-dados-remover-grupo" type="button" class="mini-dados-row mini-dados-row-perigo hidden" onclick="removerMembroPeloMiniDados()">
                     <span class="mini-dados-row-icone">
                         <img src="./svg/trash.svg" alt="" aria-hidden="true">
@@ -1085,6 +1092,20 @@
                 <h3>Adicionar participantes</h3>
             </div>
             <div id="grupo-candidatos-lista" class="grupo-membros-lista grupo-candidatos-lista"></div>
+        </div>
+
+        <div id="grupo-transferir-posse-overlay" class="grupo-add-overlay grupo-transferir-posse-overlay hidden">
+            <div class="grupo-add-header">
+                <button type="button" class="close-btn" onclick="fecharTransferenciaPosseGrupo()" aria-label="Voltar">‹</button>
+                <h3>Transferir posse</h3>
+            </div>
+
+            <div class="grupo-transferir-posse-intro">
+                <strong>Escolha o novo dono</strong>
+                <span>Para sair do grupo, você precisa transferir a posse para outro participante.</span>
+            </div>
+
+            <div id="grupo-transferir-posse-lista" class="grupo-membros-lista grupo-candidatos-lista"></div>
         </div>
     </div>
 
