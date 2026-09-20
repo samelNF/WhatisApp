@@ -7062,3 +7062,161 @@ body.chamada-grupo-aberta {
         font-size: 15px !important;
     }
 }
+
+
+/* ==========================================
+   MINI DADOS - ESCALA REFERÊNCIA WHATSAPP IOS
+   ========================================== */
+.mini-dados-membro-overlay {
+    background: rgba(0,0,0,.40) !important;
+    -webkit-backdrop-filter: blur(1px) !important;
+    backdrop-filter: blur(1px) !important;
+}
+
+.mini-dados-membro-sheet {
+    width: min(100%, 720px) !important;
+    max-height: min(62dvh, 590px) !important;
+    padding:
+        26px
+        18px
+        calc(18px + env(safe-area-inset-bottom)) !important;
+    border-radius: 34px 34px 0 0 !important;
+    overflow-y: auto !important;
+}
+
+/* X menor e mais próximo da borda, como a sheet do WhatsApp. */
+.mini-dados-fechar {
+    top: 18px !important;
+    right: 17px !important;
+    width: 46px !important;
+    height: 46px !important;
+}
+
+.mini-dados-fechar svg {
+    width: 25px !important;
+    height: 25px !important;
+}
+
+/* Perfil compacto. */
+.mini-dados-perfil {
+    padding-top: 0 !important;
+}
+
+.mini-dados-avatar {
+    width: 92px !important;
+    height: 92px !important;
+    min-width: 92px !important;
+    min-height: 92px !important;
+    max-width: 92px !important;
+    max-height: 92px !important;
+}
+
+.mini-dados-avatar.avatar-sem-foto {
+    padding: 22px !important;
+}
+
+#mini-dados-membro-titulo {
+    margin-top: 15px !important;
+    max-width: calc(100% - 30px) !important;
+    font-size: clamp(25px, 7vw, 34px) !important;
+    line-height: 1.06 !important;
+    font-weight: 700 !important;
+}
+
+#mini-dados-membro-subtitulo {
+    margin-top: 5px !important;
+    font-size: 17px !important;
+    line-height: 21px !important;
+}
+
+/* Ações bem menores, na proporção da referência. */
+.mini-dados-acoes {
+    margin: 18px auto 15px !important;
+    gap: 8px !important;
+}
+
+.mini-dados-acao {
+    min-height: 78px !important;
+    padding: 9px 5px !important;
+    border-radius: 22px !important;
+    gap: 7px !important;
+}
+
+.mini-dados-acao-icone {
+    width: 28px !important;
+    height: 28px !important;
+}
+
+.mini-dados-acao-label {
+    font-size: 14px !important;
+    line-height: 17px !important;
+}
+
+/* Card inferior menor e com linhas mais próximas do WhatsApp. */
+.mini-dados-card {
+    border-radius: 24px !important;
+}
+
+.mini-dados-row {
+    min-height: 58px !important;
+    padding: 8px 16px !important;
+    gap: 14px !important;
+    font-size: 17px !important;
+}
+
+.mini-dados-row + .mini-dados-row::before {
+    left: 16px !important;
+    right: 16px !important;
+}
+
+.mini-dados-row-icone {
+    width: 28px !important;
+    height: 28px !important;
+    flex: 0 0 28px !important;
+}
+
+#mini-dados-promover-admin .mini-dados-row-icone img,
+.mini-dados-row-perigo .mini-dados-row-icone img {
+    width: 25px !important;
+    height: 25px !important;
+}
+
+@media (max-width: 430px) {
+    .mini-dados-membro-sheet {
+        max-height: 62dvh !important;
+        padding:
+            24px
+            17px
+            calc(17px + env(safe-area-inset-bottom)) !important;
+        border-radius: 32px 32px 0 0 !important;
+    }
+
+    .mini-dados-fechar {
+        top: 16px !important;
+        right: 16px !important;
+        width: 44px !important;
+        height: 44px !important;
+    }
+
+    .mini-dados-avatar {
+        width: 88px !important;
+        height: 88px !important;
+        min-width: 88px !important;
+        min-height: 88px !important;
+        max-width: 88px !important;
+        max-height: 88px !important;
+    }
+
+    .mini-dados-avatar.avatar-sem-foto {
+        padding: 21px !important;
+    }
+
+    .mini-dados-acao {
+        min-height: 76px !important;
+        border-radius: 21px !important;
+    }
+
+    .mini-dados-row {
+        min-height: 56px !important;
+    }
+}
