@@ -4,12 +4,7 @@
 // Este arquivo complementa o script principal sem substituir
 // nem carregar novamente a lógica existente do aplicativo.
 
-window.abrirPainelDadosContato = async function () {
-    if (window.grupoAtualId && typeof window.abrirPainelDadosGrupo === 'function') {
-        window.abrirPainelDadosGrupo();
-        return;
-    }
-
+async function abrirPainelContatoInterno(emailForcado = '', opcoes = {}) {
     const painel = document.getElementById('painel-dados-contato');
     if (!painel) return;
 
@@ -24,14 +19,17 @@ window.abrirPainelDadosContato = async function () {
     const fotoAtual = temFoto && fotoHeader ? fotoHeader.src : '';
     const corAtual = fotoHeader?.dataset.avatarCor || '#3a3a3c';
 
-    let emailContato = '';
-    try {
-        emailContato = (
-            window.destinatarioAtual ||
-            (typeof destinatarioAtual !== 'undefined' ? destinatarioAtual : '') ||
-            ''
-        ).trim();
-    } catch (e) {}
+    let emailContato = String(emailForcado || '').trim();
+
+    if (!emailContato) {
+        try {
+            emailContato = (
+                window.destinatarioAtual ||
+                (typeof destinatarioAtual !== 'undefined' ? destinatarioAtual : '') ||
+                ''
+            ).trim();
+        } catch (e) {}
+    }
 
     let dadosContato = null;
     try {
@@ -75,12 +73,45 @@ window.abrirPainelDadosContato = async function () {
         }
     }
 
+    painel.dataset.emailContato = emailContato || '';
+
+    const tituloHeader = painel.querySelector('.painel-contato-header h3');
+    const btnEditar = painel.querySelector('.painel-contato-btn-editar');
+    const btnTema = document.getElementById('btn-tema-conversa');
+    const cardTema = btnTema?.closest('.painel-contato-card');
+
+    if (tituloHeader) {
+        tituloHeader.textContent = opcoes.titulo || 'Dados do contato';
+    }
+
+    if (btnEditar) {
+        const mostrarEditar = opcoes.mostrarEditar !== false && opcoes.salvo !== false;
+        btnEditar.style.display = mostrarEditar ? '' : 'none';
+    }
+
+    if (cardTema) {
+        cardTema.style.display = opcoes.ocultarTema ? 'none' : '';
+    }
+
     painel.classList.remove('hidden');
     painel.style.display = 'flex';
 
     if (typeof window.atualizarSafeArea === 'function') {
         requestAnimationFrame(() => window.atualizarSafeArea());
     }
+}
+
+window.abrirPainelDadosContato = async function () {
+    if (window.grupoAtualId && typeof window.abrirPainelDadosGrupo === 'function') {
+        window.abrirPainelDadosGrupo();
+        return;
+    }
+
+    return abrirPainelContatoInterno('', {});
+};
+
+window.abrirPainelDadosContatoPorEmail = async function (emailContato, opcoes = {}) {
+    return abrirPainelContatoInterno(emailContato, opcoes);
 };
 
 window.fecharPainelDadosContato = function () {
