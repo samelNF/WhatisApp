@@ -6181,3 +6181,132 @@ body.chamada-grupo-aberta {
         flex-basis: 54px !important;
     }
 }
+
+
+/* ==========================================
+   ABA VOCÊ - ESCALA REFERÊNCIA WHATSAPP IOS
+   ========================================== */
+#tela-voce {
+    padding: 22px 18px 118px !important;
+}
+
+/* Perfil: aproxima a proporção da foto/nome/@ do WhatsApp. */
+#tela-voce .voce-perfil-hero {
+    max-width: 680px;
+    margin: 0 auto 24px !important;
+    padding: 14px 16px 14px !important;
+}
+
+#tela-voce .voce-foto-hero {
+    width: 126px !important;
+    height: 126px !important;
+    margin-bottom: 16px !important;
+}
+
+#tela-voce .voce-foto-hero .foto-perfil-grande {
+    width: 126px !important;
+    height: 126px !important;
+    min-width: 126px !important;
+    min-height: 126px !important;
+    max-width: 126px !important;
+    max-height: 126px !important;
+}
+
+#tela-voce .voce-perfil-hero h2 {
+    font-size: 28px !important;
+    line-height: 34px !important;
+    letter-spacing: -.45px !important;
+}
+
+#tela-voce .voce-perfil-hero p {
+    margin-top: 5px !important;
+    font-size: 18px !important;
+    line-height: 23px !important;
+}
+
+/* Cards e linhas mais compactos, seguindo o ritmo vertical da tela 1. */
+#tela-voce .voce-config-card,
+#tela-voce .voce-sair-card {
+    border-radius: 27px !important;
+}
+
+#tela-voce .voce-config-row {
+    min-height: 66px !important;
+    padding: 9px 18px !important;
+    gap: 15px !important;
+}
+
+#tela-voce .voce-config-row:not(:last-child)::after {
+    left: 66px !important;
+    right: 18px !important;
+}
+
+#tela-voce .voce-config-icon {
+    width: 32px !important;
+    min-width: 32px !important;
+    height: 32px !important;
+}
+
+#tela-voce .voce-config-icon svg {
+    width: 25px !important;
+    height: 25px !important;
+}
+
+#tela-voce .voce-config-texto {
+    gap: 1px !important;
+}
+
+#tela-voce .voce-config-texto strong {
+    font-size: 17px !important;
+    line-height: 21px !important;
+}
+
+#tela-voce .voce-config-texto small {
+    font-size: 12px !important;
+    line-height: 15px !important;
+}
+
+#tela-voce .voce-config-seta {
+    font-size: 32px !important;
+}
+
+#tela-voce .voce-sair-card {
+    margin-top: 20px !important;
+}
+
+#tela-voce .voce-sair-btn {
+    min-height: 60px !important;
+    padding: 10px 18px !important;
+    gap: 15px !important;
+    font-size: 17px !important;
+}
+
+/* Placeholder acompanha o novo tamanho do avatar da Tela Você. */
+#tela-voce .foto-perfil-grande.avatar-sem-foto {
+    padding: 30px !important;
+}
+
+@media (max-width: 500px) {
+    #tela-voce {
+        padding: 20px 17px 116px !important;
+    }
+
+    #tela-voce .voce-perfil-hero {
+        margin-bottom: 22px !important;
+        padding-top: 12px !important;
+    }
+
+    #tela-voce .voce-foto-hero,
+    #tela-voce .voce-foto-hero .foto-perfil-grande {
+        width: 126px !important;
+        height: 126px !important;
+    }
+
+    #tela-voce .voce-perfil-hero h2 {
+        font-size: 28px !important;
+    }
+
+    #tela-voce .voce-perfil-hero p {
+        font-size: 18px !important;
+    }
+}
