@@ -456,6 +456,77 @@
         }
     };
 
+    window.alternarAbaDadosGrupo = function (nomeAba, botao) {
+        const painel = document.getElementById('painel-dados-grupo');
+        if (!painel) return;
+
+        painel.querySelectorAll('.grupo-aba').forEach(el => {
+            el.classList.toggle('ativa', el === botao);
+        });
+
+        painel.querySelectorAll('.grupo-aba-conteudo').forEach(el => {
+            el.classList.toggle('ativa', el.id === 'grupo-aba-' + nomeAba);
+        });
+    };
+
+    window.compartilharGrupoAtual = async function () {
+        const painel = document.getElementById('painel-dados-grupo');
+        const nome = document.getElementById('grupo-info-nome')?.textContent?.trim() || 'Grupo';
+        const texto = nome + ' no WhatisApp';
+
+        try {
+            if (navigator.share) {
+                await navigator.share({ title: nome, text: texto });
+                return;
+            }
+
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(texto);
+                alert('Nome do grupo copiado.');
+                return;
+            }
+        } catch (e) {
+            if (e?.name === 'AbortError') return;
+            console.warn('[Grupo] Não foi possível compartilhar:', e);
+        }
+
+        alert(texto);
+    };
+
+    window.pesquisarNoChatGrupo = function () {
+        const termo = prompt('Pesquisar neste grupo:');
+        if (!termo) return;
+
+        const alvo = String(termo).trim().toLowerCase();
+        if (!alvo) return;
+
+        window.fecharPainelDadosGrupo();
+
+        const mensagens = Array.from(
+            document.querySelectorAll('#chat-mensagens .balao-msg')
+        );
+
+        document
+            .querySelectorAll('#chat-mensagens .balao-msg.pesquisa-chat-destaque')
+            .forEach(el => el.classList.remove('pesquisa-chat-destaque'));
+
+        const encontrada = mensagens.find(el =>
+            String(el.textContent || '').toLowerCase().includes(alvo)
+        );
+
+        if (!encontrada) {
+            setTimeout(() => alert('Nenhuma mensagem encontrada.'), 80);
+            return;
+        }
+
+        encontrada.classList.add('pesquisa-chat-destaque');
+        encontrada.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        setTimeout(() => {
+            encontrada.classList.remove('pesquisa-chat-destaque');
+        }, 2200);
+    };
+
     window.abrirPainelDadosGrupo = async function () {
         const supabase = supabaseAtual();
         const grupoId = window.grupoAtualId;
@@ -512,6 +583,9 @@
 
         painel.classList.remove('hidden');
         painel.style.display = 'flex';
+
+        const abaMembros = painel.querySelector('.grupo-aba[data-grupo-aba="membros"]');
+        if (abaMembros) window.alternarAbaDadosGrupo('membros', abaMembros);
 
         await window.carregarMembrosPainelGrupo();
 
