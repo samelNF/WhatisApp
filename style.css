@@ -6310,3 +6310,224 @@ body.chamada-grupo-aberta {
         font-size: 18px !important;
     }
 }
+
+
+/* ==========================================
+   CHAT - ESCALA REFERÊNCIA WHATSAPP IOS
+   ========================================== */
+#tela-chat {
+    --chat-balao-fonte-ref: 16px;
+    --chat-balao-linha-ref: 1.28;
+}
+
+/* Cabeçalho */
+#tela-chat .chat-header {
+    min-height: calc(82px + env(safe-area-inset-top, 0px)) !important;
+    padding:
+        max(env(safe-area-inset-top), 8px)
+        12px
+        8px !important;
+    gap: 8px !important;
+}
+
+#tela-chat .chat-header-voltar {
+    width: 50px !important;
+    height: 50px !important;
+    min-width: 50px !important;
+}
+
+#tela-chat .chat-header-voltar img {
+    width: 27px !important;
+    height: 27px !important;
+}
+
+#tela-chat .chat-identidade {
+    gap: 9px !important;
+}
+
+#tela-chat .chat-avatar {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    max-width: 44px !important;
+    max-height: 44px !important;
+}
+
+#tela-chat .chat-avatar.avatar-sem-foto {
+    padding: 11px !important;
+}
+
+#tela-chat .chat-info-usuario h2 {
+    font-size: 17px !important;
+    line-height: 20px !important;
+    font-weight: 650 !important;
+}
+
+#tela-chat .status-online {
+    min-height: 14px !important;
+    margin-top: 0 !important;
+    font-size: 12px !important;
+    line-height: 14px !important;
+}
+
+#tela-chat .chat-call-group {
+    height: 48px !important;
+    padding-inline: 5px !important;
+}
+
+#tela-chat .chat-call-btn {
+    width: 39px !important;
+    height: 39px !important;
+}
+
+#tela-chat .chat-call-btn img,
+#tela-chat .chat-call-btn svg {
+    width: 25px !important;
+    height: 25px !important;
+}
+
+/* Histórico */
+#tela-chat .chat-mensagens {
+    padding: 12px 10px 12px !important;
+    gap: 4px !important;
+}
+
+#tela-chat .chat-data-separador {
+    min-height: 27px !important;
+    margin: 8px auto 7px !important;
+    padding: 4px 12px !important;
+    font-size: 12px !important;
+    line-height: 17px !important;
+}
+
+/* Balões */
+#tela-chat {
+    --balao-font-size: var(--chat-balao-fonte-ref) !important;
+    --balao-line-height: var(--chat-balao-linha-ref) !important;
+    --balao-max-width: min(79vw, 330px) !important;
+}
+
+#tela-chat .balao-msg {
+    margin-top: 2px !important;
+    margin-bottom: 3px !important;
+    padding: 7px 9px 6px !important;
+    border-radius: 15px !important;
+}
+
+#tela-chat .balao-enviada {
+    border-bottom-right-radius: 5px !important;
+}
+
+#tela-chat .balao-recebida {
+    border-bottom-left-radius: 5px !important;
+}
+
+#tela-chat .balao-linha {
+    gap: 6px !important;
+}
+
+#tela-chat .balao-hora {
+    font-size: 11px !important;
+}
+
+#tela-chat .balao-visto {
+    width: 17px !important;
+    height: 12px !important;
+    font-size: 14px !important;
+}
+
+/* Foto/vídeo enviados */
+#tela-chat .balao-midia {
+    max-width: min(72vw, 300px) !important;
+    border-radius: 12px !important;
+}
+
+/* Áudio */
+#tela-chat .balao-audio {
+    width: min(76vw, 335px) !important;
+    max-width: min(76vw, 335px) !important;
+    min-width: 238px !important;
+    padding: 8px 10px 7px !important;
+}
+
+#tela-chat .audio-note-left,
+#tela-chat .audio-note-avatar {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+}
+
+#tela-chat .audio-wave {
+    height: 26px !important;
+}
+
+/* Rodapé */
+#tela-chat .chat-footer {
+    padding:
+        7px
+        9px
+        max(env(safe-area-inset-bottom), 10px) !important;
+}
+
+#tela-chat .chat-input-box {
+    gap: 6px !important;
+}
+
+#tela-chat .chat-campo-pill {
+    height: 42px !important;
+    padding-left: 13px !important;
+}
+
+#tela-chat .chat-campo-pill #input-mensagem {
+    font-size: 16px !important;
+}
+
+#tela-chat .chat-footer-icon,
+#tela-chat .chat-send-btn {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+}
+
+#tela-chat .chat-footer-icon svg {
+    width: 26px !important;
+    height: 26px !important;
+}
+
+#tela-chat .chat-anexar-btn svg {
+    width: 29px !important;
+    height: 29px !important;
+}
+
+#tela-chat .chat-sticker-btn {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+}
+
+#tela-chat .chat-sticker-btn img,
+#tela-chat .chat-mic-btn img {
+    width: 23px !important;
+    height: 23px !important;
+}
+
+@media (max-width: 390px) {
+    #tela-chat .chat-header {
+        padding-left: 9px !important;
+        padding-right: 9px !important;
+    }
+
+    #tela-chat .chat-header-voltar {
+        width: 48px !important;
+        height: 48px !important;
+        min-width: 48px !important;
+    }
+
+    #tela-chat .balao-audio {
+        width: min(80vw, 325px) !important;
+        max-width: min(80vw, 325px) !important;
+        min-width: 230px !important;
+    }
+}
