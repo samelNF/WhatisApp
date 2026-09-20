@@ -1991,10 +1991,15 @@
             : '';
 
         const nomeRemetente = opcoes.nomeRemetente || '';
+        const corRemetente = opcoes.corRemetente || '#ff7b00';
+        const naoSalvo = opcoes.naoSalvo === true;
 
         balao.innerHTML = `
             ${!ehMinha && nomeRemetente
-                ? '<span class="nome-remetente">' + nomeRemetente + '</span>'
+                ? '<div class="grupo-msg-cabecalho">' +
+                    '<span class="nome-remetente" style="color:' + corRemetente + '">' + nomeRemetente + '</span>' +
+                    (naoSalvo ? '<span class="grupo-nao-salvo">Não salvo</span>' : '') +
+                  '</div>'
                 : ''}
             <div class="chamada-grupo-bolha-layout">
                 <div class="chamada-bolha-icone">
