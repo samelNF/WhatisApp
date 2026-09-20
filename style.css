@@ -2645,6 +2645,35 @@ body {
     transform: scale(1);
 }
 
+#tela-chat .grupo-msg-cabecalho {
+    width: 100%;
+    min-width: 0;
+    margin: 0 2px 3px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+#tela-chat .grupo-msg-cabecalho .nome-remetente {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+}
+
+#tela-chat .grupo-nao-salvo {
+    flex: 0 0 auto;
+    color: rgba(255,255,255,.48);
+    font-size: 11px;
+    line-height: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+#tela-chat .grupo-msg-cabecalho.grupo-cabecalho-oculto {
+    display: none !important;
+}
+
 /* Nome do remetente em grupo */
 #tela-chat .nome-remetente {
     display: block;
