@@ -581,8 +581,12 @@
 
         const nomeRemetente = opcoes.nomeRemetente || '';
         const corRemetente = opcoes.corRemetente || '#ff7b00';
+        const naoSalvo = opcoes.naoSalvo === true;
         const htmlNome = !ehMinha && nomeRemetente
-            ? '<span class="nome-remetente" style="color:' + corRemetente + '">' + nomeRemetente + '</span>'
+            ? '<div class="grupo-msg-cabecalho">' +
+                '<span class="nome-remetente" style="color:' + corRemetente + '">' + nomeRemetente + '</span>' +
+                (naoSalvo ? '<span class="grupo-nao-salvo">Não salvo</span>' : '') +
+              '</div>'
             : '';
 
         const citacao = await htmlCitacao(opcoes.mensagemRespondida);
