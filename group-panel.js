@@ -34,7 +34,7 @@
             img.style.backgroundColor = 'transparent';
             img.classList.remove('avatar-sem-foto');
         } else {
-            img.src = 'svg/group-placeholder.svg?v=d840e321';
+            img.src = 'svg/group-placeholder.svg?v=d406b3d2';
             img.style.backgroundColor = corGrupo || '#482133';
             img.classList.add('avatar-sem-foto');
         }
