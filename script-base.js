@@ -123,6 +123,7 @@ function formatarHora(dataISO) {
     if (!dataISO) return "";
 
     const data = new Date(dataISO);
+    if (Number.isNaN(data.getTime())) return "";
 
     return data.toLocaleTimeString([], {
         hour: '2-digit',
@@ -130,19 +131,149 @@ function formatarHora(dataISO) {
     });
 }
 
+function inicioDoDia(data) {
+    const d = new Date(data);
+    d.setHours(0, 0, 0, 0);
+    return d;
+}
+
+function inicioDaSemana(data) {
+    const d = inicioDoDia(data);
+    const dia = d.getDay();
+    const deslocamento = dia === 0 ? 6 : dia - 1; // segunda-feira como início
+    d.setDate(d.getDate() - deslocamento);
+    return d;
+}
+
+function chaveDataLocal(dataISO) {
+    const data = new Date(dataISO);
+    if (Number.isNaN(data.getTime())) return "";
+
+    const ano = data.getFullYear();
+    const mes = String(data.getMonth() + 1).padStart(2, "0");
+    const dia = String(data.getDate()).padStart(2, "0");
+
+    return `${ano}-${mes}-${dia}`;
+}
+
+function formatarDataCurta(data, incluirAno = true) {
+    const dia = String(data.getDate()).padStart(2, "0");
+    const mes = String(data.getMonth() + 1).padStart(2, "0");
+    const ano = String(data.getFullYear()).slice(-2);
+
+    return incluirAno ? `${dia}/${mes}/${ano}` : `${dia}/${mes}`;
+}
+
+function formatarRotuloDataMensagem(dataISO, referencia = new Date()) {
+    const data = new Date(dataISO);
+    if (Number.isNaN(data.getTime())) return "";
+
+    const hoje = inicioDoDia(referencia);
+    const diaMensagem = inicioDoDia(data);
+    const diferencaDias = Math.round((hoje - diaMensagem) / 86400000);
+
+    if (diferencaDias === 0) return "Hoje";
+    if (diferencaDias === 1) return "Ontem";
+
+    const inicioSemanaAtual = inicioDaSemana(referencia);
+
+    if (diaMensagem >= inicioSemanaAtual && diaMensagem < hoje) {
+        const nomeDia = data.toLocaleDateString("pt-BR", { weekday: "long" });
+        return nomeDia.charAt(0).toUpperCase() + nomeDia.slice(1);
+    }
+
+    return formatarDataCurta(data, true);
+}
+
 function formatarVistoPorUltimo(dataISO) {
     if (!dataISO) return "offline";
 
     const agora = new Date();
     const ultimaVez = new Date(dataISO);
+    if (Number.isNaN(ultimaVez.getTime())) return "offline";
+
     const diferencaSegundos = Math.floor((agora - ultimaVez) / 1000);
 
     if (diferencaSegundos < 60) {
         return "online";
     }
 
-    return `visto por último às ${formatarHora(dataISO)}`;
+    const hoje = inicioDoDia(agora);
+    const diaUltimaVez = inicioDoDia(ultimaVez);
+    const diferencaDias = Math.round((hoje - diaUltimaVez) / 86400000);
+    const hora = formatarHora(dataISO);
+
+    if (diferencaDias === 0) {
+        return `visto por último às ${hora}`;
+    }
+
+    if (diferencaDias === 1) {
+        return `visto por último ontem, às ${hora}`;
+    }
+
+    const inicioSemanaAtual = inicioDaSemana(agora);
+    const inicioSemanaPassada = new Date(inicioSemanaAtual);
+    inicioSemanaPassada.setDate(inicioSemanaPassada.getDate() - 7);
+
+    if (diaUltimaVez >= inicioSemanaAtual) {
+        const nomeDia = ultimaVez.toLocaleDateString("pt-BR", { weekday: "long" });
+        return `visto por último esta semana, ${nomeDia}, às ${hora}`;
+    }
+
+    if (diaUltimaVez >= inicioSemanaPassada && diaUltimaVez < inicioSemanaAtual) {
+        return "visto por último semana passada";
+    }
+
+    // Enquanto ainda estiver no mesmo mês, mantém a hora. Ao ficar mais
+    // distante (outro mês/ano), mostra apenas a data para não poluir o status.
+    if (
+        ultimaVez.getFullYear() === agora.getFullYear() &&
+        ultimaVez.getMonth() === agora.getMonth()
+    ) {
+        return `visto por último em ${formatarDataCurta(ultimaVez, false)}, às ${hora}`;
+    }
+
+    return `visto por último em ${formatarDataCurta(ultimaVez, true)}`;
 }
+
+function garantirSeparadorDataMensagem(dataISO) {
+    const container = document.getElementById("chat-mensagens");
+    if (!container || !dataISO) return;
+
+    const chave = chaveDataLocal(dataISO);
+    if (!chave) return;
+
+    if (container.querySelector(`.chat-data-separador[data-date-key="${chave}"]`)) {
+        return;
+    }
+
+    const separador = document.createElement("div");
+    separador.className = "chat-data-separador";
+    separador.dataset.dateKey = chave;
+    separador.dataset.dateIso = dataISO;
+    separador.textContent = formatarRotuloDataMensagem(dataISO);
+
+    container.appendChild(separador);
+}
+
+function atualizarRotulosDatasChat() {
+    document.querySelectorAll("#chat-mensagens .chat-data-separador").forEach(separador => {
+        const dataISO = separador.dataset.dateIso;
+        if (!dataISO) return;
+
+        separador.textContent = formatarRotuloDataMensagem(dataISO);
+    });
+}
+
+// Se o app ficar aberto na virada do dia, "Hoje" vira "Ontem" sem precisar
+// fechar e abrir a conversa de novo.
+setInterval(atualizarRotulosDatasChat, 60000);
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+        atualizarRotulosDatasChat();
+        if (destinatarioAtual) checarStatusContato(destinatarioAtual);
+    }
+});
 
 async function gerarHash(texto) {
     const dados = new TextEncoder().encode(texto);
@@ -1634,6 +1765,8 @@ async function renderizarMensagensPrivadasDoCache(mensagens, chaveConversa, limp
 
         const ehMinha = (msg.remetente_email || "").trim().toLowerCase() === meuEmail;
 
+        garantirSeparadorDataMensagem(msg.created_at);
+
         if (
             typeof window.ehMensagemChamada === "function" &&
             window.ehMensagemChamada(msg) &&
@@ -2077,6 +2210,8 @@ async function renderizarMensagensGrupoDoCache(mensagens, idGrupo, chaveConversa
             corRemetente = localStorage.getItem("corUsuario") || null;
             fotoRemetente = localStorage.getItem("fotoUsuario") || "";
         }
+
+        garantirSeparadorDataMensagem(msg.created_at);
 
         let dadosRespondida = null;
 
