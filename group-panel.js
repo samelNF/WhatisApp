@@ -21,16 +21,21 @@
             .replaceAll("'", '&#039;');
     }
 
-    function aplicarAvatarGrupo(img, fotoUrl) {
+    function aplicarAvatarGrupo(img, fotoUrl, corGrupo) {
         if (!img) return;
 
-        if (fotoUrl) {
+        const fotoValida = typeof fotoUrl === 'string' &&
+            fotoUrl.trim() !== '' &&
+            !fotoUrl.includes('group-placeholder.svg') &&
+            !fotoUrl.includes('user-placeholder.svg');
+
+        if (fotoValida) {
             img.src = fotoUrl;
             img.style.backgroundColor = 'transparent';
             img.classList.remove('avatar-sem-foto');
         } else {
             img.src = 'svg/group-placeholder.svg';
-            img.style.backgroundColor = '#482133';
+            img.style.backgroundColor = corGrupo || '#482133';
             img.classList.add('avatar-sem-foto');
         }
     }
@@ -118,7 +123,7 @@
         const dataCriacao = document.getElementById('grupo-info-data-criacao');
 
         if (nome) nome.textContent = grupo.nome || 'Grupo';
-        aplicarAvatarGrupo(foto, grupo.foto_url || '');
+        aplicarAvatarGrupo(foto, grupo.foto_url || '', grupo.cor || '#482133');
 
         const meuEmail = (localStorage.getItem('usuarioLogado') || '').toLowerCase();
         const souCriador = (grupo.criado_por || '').toLowerCase() === meuEmail;
