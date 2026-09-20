@@ -2170,6 +2170,59 @@ function abrirChatGrupo(idGrupo, nomeGrupo, fotoGrupo) {
     if (chatActionBar) chatActionBar.classList.add('hidden');
 }
 
+function prepararAvatarMensagemGrupo(balao, dados = {}) {
+    if (!balao || dados.ehMinha) return;
+
+    const emailRemetente = String(dados.emailRemetente || "").trim().toLowerCase();
+    if (!emailRemetente) return;
+
+    balao.classList.add("grupo-msg-recebida");
+    balao.dataset.groupSender = emailRemetente;
+
+    let avatar = balao.querySelector(".grupo-msg-avatar");
+
+    if (!avatar) {
+        avatar = document.createElement("img");
+        avatar.className = "grupo-msg-avatar";
+        avatar.alt = "";
+        avatar.setAttribute("aria-hidden", "true");
+        balao.appendChild(avatar);
+    }
+
+    aplicarAvatarUsuario(
+        avatar,
+        dados.fotoRemetente || "",
+        dados.corRemetente || "#3a3a3c"
+    );
+}
+
+function atualizarAvataresMensagensGrupo() {
+    const container = document.getElementById("chat-mensagens");
+    if (!container) return;
+
+    const filhos = Array.from(container.children);
+
+    filhos.forEach((elemento, indice) => {
+        if (!elemento.classList?.contains("grupo-msg-recebida")) return;
+
+        const remetenteAtual = elemento.dataset.groupSender || "";
+        const proximo = filhos[indice + 1];
+
+        // A foto fica somente na última mensagem de uma sequência contínua
+        // do mesmo participante. Qualquer mensagem de outra pessoa, mensagem
+        // enviada por mim ou separador de data encerra a sequência.
+        const mesmoRemetenteLogoAbaixo =
+            proximo?.classList?.contains("grupo-msg-recebida") &&
+            (proximo.dataset.groupSender || "") === remetenteAtual;
+
+        const avatar = elemento.querySelector(".grupo-msg-avatar");
+        if (!avatar) return;
+
+        avatar.classList.toggle("visivel", !mesmoRemetenteLogoAbaixo);
+        elemento.classList.toggle("grupo-msg-avatar-visivel", !mesmoRemetenteLogoAbaixo);
+    });
+}
+
 async function renderizarMensagensGrupoDoCache(mensagens, idGrupo, chaveConversa, limparTudo) {
     const meuEmail = (localStorage.getItem("usuarioLogado") || "").trim().toLowerCase();
     const container = document.getElementById("chat-mensagens");
@@ -2258,6 +2311,29 @@ async function renderizarMensagensGrupoDoCache(mensagens, idGrupo, chaveConversa
                 dadosRespondida
             );
         }
+
+        if (!ehMinha) {
+            let balaoRenderizado = null;
+
+            if (msg.id !== null && msg.id !== undefined) {
+                balaoRenderizado = container.querySelector(
+                    `.balao-msg[data-message-id="${String(msg.id)}"]`
+                );
+            }
+
+            if (!balaoRenderizado && container.lastElementChild?.classList?.contains("balao-msg")) {
+                balaoRenderizado = container.lastElementChild;
+            }
+
+            prepararAvatarMensagemGrupo(balaoRenderizado, {
+                ehMinha,
+                emailRemetente: msg.remetente_email,
+                fotoRemetente,
+                corRemetente
+            });
+        }
+
+        atualizarAvataresMensagensGrupo();
     }
 }
 
