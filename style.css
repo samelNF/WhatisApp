@@ -211,7 +211,7 @@
 #tela-chat .grupo-msg-avatar,
 #tela-chat .grupo-msg-cabecalho .nome-remetente {
     cursor: pointer;
-    pointer-events: auto;
+    pointer-events: auto !important;
     -webkit-tap-highlight-color: transparent;
 }
 
