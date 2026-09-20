@@ -3265,7 +3265,71 @@ function abrirChatCom(emailDestinatario, nomeDestinatario, fotoDestinatario, cor
     carregarMensagens();
 }
 
+function distanciaDoFimDoChat() {
+    const container = document.getElementById("chat-mensagens");
+    if (!container) return 0;
+
+    return Math.max(
+        0,
+        container.scrollHeight - container.scrollTop - container.clientHeight
+    );
+}
+
+function atualizarBotaoIrParaBaixo() {
+    const container = document.getElementById("chat-mensagens");
+    const botao = document.getElementById("chat-ir-para-baixo");
+
+    if (!container || !botao) return;
+
+    // Só aparece quando a pessoa realmente saiu da região das mensagens novas.
+    const mostrar = distanciaDoFimDoChat() > 120;
+    botao.classList.toggle("visivel", mostrar);
+    botao.setAttribute("aria-hidden", mostrar ? "false" : "true");
+}
+
+function rolarParaUltimaMensagem() {
+    const container = document.getElementById("chat-mensagens");
+    if (!container) return;
+
+    const comportamento = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches
+        ? "auto"
+        : "smooth";
+
+    container.scrollTo({
+        top: container.scrollHeight,
+        behavior: comportamento
+    });
+
+    // Esconde já no toque; o evento de scroll mantém o estado sincronizado.
+    document.getElementById("chat-ir-para-baixo")?.classList.remove("visivel");
+}
+
+function inicializarBotaoIrParaBaixo() {
+    const container = document.getElementById("chat-mensagens");
+    if (!container || container.dataset.botaoIrParaBaixo === "true") return;
+
+    container.dataset.botaoIrParaBaixo = "true";
+    container.addEventListener("scroll", atualizarBotaoIrParaBaixo, { passive: true });
+
+    // Mudanças no tamanho do histórico também podem alterar a distância do fim.
+    if ("ResizeObserver" in window) {
+        const observer = new ResizeObserver(atualizarBotaoIrParaBaixo);
+        observer.observe(container);
+        container._observerIrParaBaixo = observer;
+    }
+
+    atualizarBotaoIrParaBaixo();
+}
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", inicializarBotaoIrParaBaixo, { once: true });
+} else {
+    inicializarBotaoIrParaBaixo();
+}
+
 function fecharChat() {
+    document.getElementById("chat-ir-para-baixo")?.classList.remove("visivel");
+
     const telaChat = document.getElementById("tela-chat");
     if (telaChat) {
         telaChat.classList.remove("ativa");
