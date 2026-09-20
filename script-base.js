@@ -1085,7 +1085,7 @@ async function carregarListaContatos() {
                     const [resultadoUltima, resultadoNaoLidas] = await Promise.all([
                         _supabase
                             .from("mensagens")
-                            .select("id, texto, tipo, audio_url, audio_duracao, created_at")
+                            .select("id, texto, tipo, audio_url, audio_duracao, created_at, remetente_email, destinatario_email, visualizada")
                             .or(`and(remetente_email.eq.${meuEmail},destinatario_email.eq.${contato.email}),and(remetente_email.eq.${contato.email},destinatario_email.eq.${meuEmail})`)
                             .is("grupo_id", null)
                             .order("created_at", { ascending: false })
@@ -1125,6 +1125,11 @@ async function carregarListaContatos() {
                     horaUltimaMsg: ultimaMsg?.created_at
                         ? formatarHora(ultimaMsg.created_at)
                         : "",
+                    ultimaMsgMinha:
+                        !!ultimaMsg &&
+                        String(ultimaMsg.remetente_email || "").trim().toLowerCase() ===
+                            String(meuEmail || "").trim().toLowerCase(),
+                    ultimaMsgVisualizada: ultimaMsg?.visualizada === true,
                     naoLidas
                 };
             })
@@ -1280,6 +1285,18 @@ function renderizarContatos(lista) {
         const nome = item.usuario || item.nome;
         const naoLidas = Math.max(0, Number(item.naoLidas || 0));
         const textoBadge = naoLidas > 99 ? "99+" : String(naoLidas);
+        const mostrarVistoHome =
+            item.tipo === "contato" &&
+            item.ultimaMsgMinha === true &&
+            !!item.ultimaMsgEm;
+
+        const htmlVistoHome = mostrarVistoHome
+            ? `<span class="home-visto ${item.ultimaMsgVisualizada === true ? "visualizada" : ""}"
+                      aria-label="${item.ultimaMsgVisualizada === true ? "Visualizada" : "Enviada"}">
+                    <span class="home-visto-check">✓</span>
+                    <span class="home-visto-check">✓</span>
+               </span>`
+            : "";
 
         li.classList.toggle("tem-nao-lidas", naoLidas > 0);
 
@@ -1291,7 +1308,7 @@ function renderizarContatos(lista) {
                     <span class="hora-contato">${item.horaUltimaMsg || ""}</span>
                 </div>
                 <div class="info-contato-rodape">
-                    <span class="ultima-msg">${item.ultimaMsg}</span>
+                    <span class="ultima-msg">${htmlVistoHome}${item.ultimaMsg}</span>
                     ${naoLidas > 0
                         ? `<span class="badge-nao-lidas" aria-label="${naoLidas} mensagem${naoLidas === 1 ? "" : "s"} não lida${naoLidas === 1 ? "" : "s"}">${textoBadge}</span>`
                         : ""}
@@ -3608,6 +3625,10 @@ function inscreverRealtime() {
                 if (remetente !== meuEmailAtual) return;
 
                 atualizarIndicadorVisualizacao(msg.id, msg.visualizada === true);
+
+                // Se esta for a última mensagem mostrada na home, o check muda ali também
+                // sem precisar abrir novamente a conversa.
+                carregarListaContatos();
 
                 if (
                     destinatarioAtual &&
