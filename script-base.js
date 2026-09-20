@@ -1816,6 +1816,8 @@ async function renderizarMensagensPrivadasDoCache(mensagens, chaveConversa, limp
                 msg.visualizada === true
             );
         }
+
+        atualizarAgrupamentoBaloesChat();
     }
 }
 
@@ -2220,6 +2222,55 @@ function prepararAvatarMensagemGrupo(balao, dados = {}) {
     );
 }
 
+function chaveAgrupamentoBalao(elemento) {
+    if (!elemento?.classList?.contains("balao-msg")) return "";
+
+    const remetenteGrupo = String(elemento.dataset.groupSender || "").trim().toLowerCase();
+    if (remetenteGrupo) return `grupo:${remetenteGrupo}`;
+
+    if (elemento.classList.contains("balao-enviada")) return "eu";
+    if (elemento.classList.contains("balao-recebida")) return "contato";
+
+    return "";
+}
+
+function atualizarAgrupamentoBaloesChat() {
+    const container = document.getElementById("chat-mensagens");
+    if (!container) return;
+
+    const filhos = Array.from(container.children);
+
+    filhos.forEach((elemento, indice) => {
+        if (!elemento.classList?.contains("balao-msg")) return;
+
+        const chaveAtual = chaveAgrupamentoBalao(elemento);
+        if (!chaveAtual) return;
+
+        const anterior = filhos[indice - 1];
+        const proximo = filhos[indice + 1];
+
+        const mesmoAnterior =
+            anterior?.classList?.contains("balao-msg") &&
+            chaveAgrupamentoBalao(anterior) === chaveAtual;
+
+        const mesmoProximo =
+            proximo?.classList?.contains("balao-msg") &&
+            chaveAgrupamentoBalao(proximo) === chaveAtual;
+
+        // O rabinho fica apenas na mensagem mais recente de cada sequência.
+        elemento.classList.toggle("sem-rabinho", mesmoProximo);
+
+        // Nos grupos, o nome faz o inverso do avatar:
+        // aparece apenas na PRIMEIRA mensagem da sequência daquela pessoa.
+        if (elemento.classList.contains("grupo-msg-recebida")) {
+            const nome = elemento.querySelector(".nome-remetente");
+            if (nome) {
+                nome.classList.toggle("nome-remetente-oculto", mesmoAnterior);
+            }
+        }
+    });
+}
+
 function atualizarAvataresMensagensGrupo() {
     const container = document.getElementById("chat-mensagens");
     if (!container) return;
@@ -2245,6 +2296,8 @@ function atualizarAvataresMensagensGrupo() {
         avatar.classList.toggle("visivel", !mesmoRemetenteLogoAbaixo);
         elemento.classList.toggle("grupo-msg-avatar-visivel", !mesmoRemetenteLogoAbaixo);
     });
+
+    atualizarAgrupamentoBaloesChat();
 }
 
 async function renderizarMensagensGrupoDoCache(mensagens, idGrupo, chaveConversa, limparTudo) {
