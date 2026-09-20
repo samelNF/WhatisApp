@@ -610,7 +610,7 @@
 
         balao.innerHTML = `
             <div class="chamada-bolha-icone">
-                ${svgTelefone(ehMinha)}
+                <span class="chamada-bolha-asset ${(msg?.meta?.modo === 'video' || msg?.meta?.tipo_chamada === 'video') ? 'video' : 'voz'}" aria-hidden="true"></span>
             </div>
 
             <div class="chamada-bolha-info">
