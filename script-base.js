@@ -330,6 +330,7 @@ function aplicarAvatarUsuario(elemento, fotoUrl, corUsuario) {
 
     elemento.dataset.avatarCor = cor;
     elemento.dataset.temFoto = fotoValida ? "true" : "false";
+    elemento.classList.remove("avatar-grupo-sem-foto");
 
     if (fotoValida) {
         elemento.src = fotoUrl;
@@ -356,15 +357,15 @@ function aplicarAvatarGrupo(elemento, fotoUrl, corGrupo) {
 
     elemento.dataset.avatarCor = cor;
     elemento.dataset.temFoto = fotoValida ? "true" : "false";
+    elemento.classList.remove("avatar-sem-foto", "avatar-grupo-sem-foto");
 
     if (fotoValida) {
         elemento.src = fotoUrl;
         elemento.style.backgroundColor = "transparent";
-        elemento.classList.remove("avatar-sem-foto");
     } else {
         elemento.src = "svg/group-placeholder.svg?v=b92f3928";
         elemento.style.backgroundColor = cor;
-        elemento.classList.add("avatar-sem-foto");
+        elemento.classList.add("avatar-grupo-sem-foto");
     }
 }
 
