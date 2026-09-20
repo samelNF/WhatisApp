@@ -1932,6 +1932,33 @@ input:checked + .slider {
     white-space: nowrap;
 }
 
+/* Estado de envio/visualização da última mensagem direto na lista de conversas. */
+#tela-conversas .home-visto {
+    display: inline-flex;
+    align-items: center;
+    width: 18px;
+    height: 14px;
+    margin-right: 5px;
+    vertical-align: -1px;
+    color: #85858b;
+    font-size: 16px;
+    line-height: 1;
+    font-weight: 600;
+}
+
+#tela-conversas .home-visto-check {
+    display: inline-block;
+    line-height: 1;
+}
+
+#tela-conversas .home-visto-check + .home-visto-check {
+    margin-left: -7px;
+}
+
+#tela-conversas .home-visto.visualizada {
+    color: #ffffff;
+}
+
 #tela-conversas .badge-nao-lidas {
     flex: 0 0 auto;
     min-width: 21px;
