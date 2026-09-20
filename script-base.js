@@ -362,7 +362,7 @@ function aplicarAvatarGrupo(elemento, fotoUrl, corGrupo) {
         elemento.style.backgroundColor = "transparent";
         elemento.classList.remove("avatar-sem-foto");
     } else {
-        elemento.src = "svg/group-placeholder.svg";
+        elemento.src = "svg/group-placeholder.svg?v=6c29b606";
         elemento.style.backgroundColor = cor;
         elemento.classList.add("avatar-sem-foto");
     }
@@ -2051,15 +2051,23 @@ function mostrarToastAcoesMensagem(texto) {
 }
 
 function iconeAcaoMensagem(tipo) {
+    const assets = {
+        copiar: "menu-copy",
+        favorito: "menu-star",
+        apagar: "menu-trash",
+        mais: "menu-more"
+    };
+
+    if (assets[tipo]) {
+        return '<span class="menu-msg-svg-asset ' + assets[tipo] + '" aria-hidden="true"></span>';
+    }
+
     const icones = {
         responder: '<svg viewBox="0 0 24 24"><path d="M9.5 7 4 12l5.5 5v-3.2c5.4 0 8.4 1.5 10.5 5.2-.4-6.4-3.4-9.7-10.5-9.8V7Z"/></svg>',
         encaminhar: '<svg viewBox="0 0 24 24"><path d="m14.5 7 5.5 5-5.5 5v-3.2c-5.4 0-8.4 1.5-10.5 5.2.4-6.4 3.4-9.7 10.5-9.8V7Z"/></svg>',
-        copiar: '<svg viewBox="0 0 24 24"><rect x="8" y="5" width="10" height="14" rx="2"/><rect x="4" y="9" width="10" height="11" rx="2"/></svg>',
-        dados: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 10.5v6"/><circle cx="12" cy="7.2" r=".7" fill="currentColor" stroke="none"/></svg>',
-        favorito: '<svg viewBox="0 0 24 24"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z"/></svg>',
-        apagar: '<svg viewBox="0 0 24 24"><path d="M5 7h14M9 7V4h6v3m-8 0 1 13h8l1-13M10 10v7m4-7v7"/></svg>',
-        mais: '<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="9"/></svg>'
+        dados: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 10.5v6"/><circle cx="12" cy="7.2" r=".7" fill="currentColor" stroke="none"/></svg>'
     };
+
     return icones[tipo] || "";
 }
 
