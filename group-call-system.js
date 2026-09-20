@@ -478,7 +478,7 @@
 
         if (foto) {
             const temFoto = !!grupo?.foto_url;
-            foto.src = temFoto ? grupo.foto_url : 'svg/group-placeholder.svg?v=d840e321';
+            foto.src = temFoto ? grupo.foto_url : 'svg/group-placeholder.svg?v=d406b3d2';
             foto.style.backgroundColor = temFoto ? 'transparent' : '#3a3a3c';
         }
 
