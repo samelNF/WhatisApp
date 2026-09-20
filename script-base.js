@@ -362,7 +362,7 @@ function aplicarAvatarGrupo(elemento, fotoUrl, corGrupo) {
         elemento.style.backgroundColor = "transparent";
         elemento.classList.remove("avatar-sem-foto");
     } else {
-        elemento.src = "svg/group-placeholder.svg?v=d840e321";
+        elemento.src = "svg/group-placeholder.svg?v=d406b3d2";
         elemento.style.backgroundColor = cor;
         elemento.classList.add("avatar-sem-foto");
     }
