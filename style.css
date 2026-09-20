@@ -2784,6 +2784,36 @@ body {
     stroke-linejoin: round;
 }
 
+.menu-msg-svg-asset {
+    width: 27px;
+    height: 27px;
+    display: block;
+    background-color: currentColor;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+}
+
+.menu-msg-svg-asset.menu-copy {
+    -webkit-mask-image: url("./svg/copy.svg?v=7c9b62de");
+    mask-image: url("./svg/copy.svg?v=7c9b62de");
+}
+.menu-msg-svg-asset.menu-star {
+    -webkit-mask-image: url("./svg/star.svg?v=59dadca0");
+    mask-image: url("./svg/star.svg?v=59dadca0");
+}
+.menu-msg-svg-asset.menu-trash {
+    -webkit-mask-image: url("./svg/trash.svg?v=eef4009b");
+    mask-image: url("./svg/trash.svg?v=eef4009b");
+}
+.menu-msg-svg-asset.menu-more {
+    -webkit-mask-image: url("./svg/3 points ball.svg?v=80ddee5c");
+    mask-image: url("./svg/3 points ball.svg?v=80ddee5c");
+}
+
 .menu-msg-divisor {
     height: 1px;
     margin: 7px 14px;
@@ -3554,7 +3584,7 @@ body::before {
 }
 
 #painel-dados-grupo .grupo-info-foto.avatar-sem-foto,
-#painel-dados-grupo .grupo-info-foto[src$="group-placeholder.svg"] {
+#painel-dados-grupo .grupo-info-foto[src*="group-placeholder.svg"] {
     padding: 29px !important;
     object-fit: contain !important;
     background: #482133 !important;
@@ -4006,7 +4036,7 @@ body::before {
     }
 
     #painel-dados-grupo .grupo-info-foto.avatar-sem-foto,
-    #painel-dados-grupo .grupo-info-foto[src$="group-placeholder.svg"] {
+    #painel-dados-grupo .grupo-info-foto[src*="group-placeholder.svg"] {
         padding: 27px !important;
     }
 
@@ -4898,6 +4928,28 @@ body.camera-whatisapp-aberta {
     stroke-width: 1.8;
     stroke-linecap: round;
     stroke-linejoin: round;
+}
+
+#tela-chat .chamada-bolha-asset {
+    width: 31px;
+    height: 31px;
+    display: block;
+    background-color: currentColor;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+}
+
+#tela-chat .chamada-bolha-asset.voz {
+    -webkit-mask-image: url("./svg/voice-call.svg?v=c3d5d801");
+    mask-image: url("./svg/voice-call.svg?v=c3d5d801");
+}
+#tela-chat .chamada-bolha-asset.video {
+    -webkit-mask-image: url("./svg/video-call.svg?v=76029bb9");
+    mask-image: url("./svg/video-call.svg?v=76029bb9");
 }
 
 #tela-chat .chamada-bolha-info {
