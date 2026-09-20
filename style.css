@@ -2603,6 +2603,37 @@ body {
     color: #ffffff;
 }
 
+/* Avatar do participante ao lado das mensagens de grupo.
+   Fica visível apenas na última mensagem de cada sequência do mesmo remetente. */
+#tela-chat .balao-msg.grupo-msg-recebida {
+    margin-left: 48px;
+}
+
+#tela-chat .grupo-msg-avatar {
+    position: absolute;
+    left: -43px;
+    bottom: 0;
+    width: 32px;
+    height: 32px;
+    box-sizing: border-box;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #3a3a3c;
+    border: 1px solid rgba(255,255,255,.09);
+    box-shadow: 0 2px 8px rgba(0,0,0,.24);
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(.92);
+    pointer-events: none;
+    transition: opacity .12s ease, transform .12s ease;
+}
+
+#tela-chat .grupo-msg-avatar.visivel {
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1);
+}
+
 /* Nome do remetente em grupo */
 #tela-chat .nome-remetente {
     display: block;
