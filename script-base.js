@@ -344,6 +344,32 @@ function aplicarAvatarUsuario(elemento, fotoUrl, corUsuario) {
 
 window.aplicarAvatarUsuario = aplicarAvatarUsuario;
 
+function aplicarAvatarGrupo(elemento, fotoUrl, corGrupo) {
+    if (!elemento) return;
+
+    const fotoValida = typeof fotoUrl === "string" &&
+        fotoUrl.trim() !== "" &&
+        !fotoUrl.includes("group-placeholder.svg") &&
+        !fotoUrl.includes("user-placeholder.svg");
+
+    const cor = corGrupo || "#482133";
+
+    elemento.dataset.avatarCor = cor;
+    elemento.dataset.temFoto = fotoValida ? "true" : "false";
+
+    if (fotoValida) {
+        elemento.src = fotoUrl;
+        elemento.style.backgroundColor = "transparent";
+        elemento.classList.remove("avatar-sem-foto");
+    } else {
+        elemento.src = "svg/group-placeholder.svg";
+        elemento.style.backgroundColor = cor;
+        elemento.classList.add("avatar-sem-foto");
+    }
+}
+
+window.aplicarAvatarGrupo = aplicarAvatarGrupo;
+
 // ==========================================
 // CONTROLE DE TELAS E NAVEGAÇÃO
 // ==========================================
@@ -1106,7 +1132,7 @@ async function carregarListaContatos() {
         if (idsGrupos.length > 0) {
             const { data: dadosGrupos, error: erroGrupos } = await _supabase
                 .from("grupos")
-                .select("id, nome, foto_url")
+                .select("id, nome, foto_url, cor")
                 .in("id", idsGrupos);
 
             if (erroGrupos) throw erroGrupos;
@@ -1163,7 +1189,8 @@ async function carregarListaContatos() {
                     tipo: "grupo",
                     identificador: grupo.id,
                     usuario: grupo.nome,
-                    foto_url: grupo.foto_url || "svg/group-placeholder.svg",
+                    foto_url: grupo.foto_url || "",
+                    cor: grupo.cor || "#482133",
                     ultimaMsg: ultimaMsg
                         ? (typeof window.formatarPreviewMensagem === "function"
                             ? window.formatarPreviewMensagem(ultimaMsg)
@@ -1252,7 +1279,7 @@ function renderizarContatos(lista) {
 
         const avatarLista = li.querySelector(".foto-contato");
         if (item.tipo === "grupo") {
-            if (avatarLista) avatarLista.src = item.foto_url || "svg/user-placeholder.svg";
+            aplicarAvatarGrupo(avatarLista, item.foto_url || "", item.cor);
         } else {
             aplicarAvatarUsuario(avatarLista, foto, item.cor);
         }
@@ -1260,7 +1287,7 @@ function renderizarContatos(lista) {
         // Ao clicar, verifica se é um grupo ou um chat normal.
         li.onclick = () => {
             if (item.tipo === "grupo") {
-                abrirChatGrupo(item.id, item.nome, item.foto_url || "svg/user-placeholder.svg");
+                abrirChatGrupo(item.id, item.nome, item.foto_url || "", item.cor);
             } else {
                 abrirChatCom(item.identificador, nome, foto, item.cor);
             }
@@ -2785,7 +2812,7 @@ async function marcarGrupoComoLido(idGrupo, ultimaMensagemEm = null) {
     }
 }
 
-function abrirChatGrupo(idGrupo, nomeGrupo, fotoGrupo) {
+function abrirChatGrupo(idGrupo, nomeGrupo, fotoGrupo, corGrupo) {
     window.grupoAtualId = idGrupo; 
     destinatarioAtual = null; // Zera o chat privado
 
@@ -2795,17 +2822,7 @@ function abrirChatGrupo(idGrupo, nomeGrupo, fotoGrupo) {
     const spanStatus = document.getElementById("chat-status-usuario");
 
     if (elemNome) elemNome.innerText = nomeGrupo;
-    if (elemFoto) {
-        const fotoGrupoValida = fotoGrupo && !fotoGrupo.includes("user-placeholder.svg");
-        if (fotoGrupoValida) {
-            elemFoto.src = fotoGrupo;
-            elemFoto.style.backgroundColor = "transparent";
-            elemFoto.classList.remove("avatar-sem-foto");
-            elemFoto.dataset.temFoto = "true";
-        } else {
-            aplicarAvatarUsuario(elemFoto, "", "#3a3a3c");
-        }
-    }
+    aplicarAvatarGrupo(elemFoto, fotoGrupo || "", corGrupo || "#482133");
     if (spanStatus) spanStatus.innerText = "Toque para ver os dados do grupo";
     
     // CORREÇÃO: Adiciona a classe 'ativa' igual ao chat privado para exibir a tela
@@ -4244,6 +4261,7 @@ function abrirAlterarNome() {
 }
 let membrosSelecionadosParaGrupo = [];
 let arquivoFotoGrupoSelecionado = null;
+let corAvatarGrupoSelecionada = null;
 // Exibir o menu flutuante do botão "+"
 function alternarMenuMais(event) {
     if(event) event.stopPropagation();
@@ -4389,19 +4407,22 @@ function atualizarLetraPreview() {
         gerarAvatarPadraoVisual(nome || 'Grupo');
     }
 }
-// Gera cor de fundo aleatória caso não tenha foto
+// Gera uma cor própria para o grupo quando ele não tem foto.
 function gerarAvatarPadraoVisual(nomeTexto) {
     const previewDiv = document.getElementById('preview-avatar-grupo');
     const letraSpan = document.getElementById('letra-inicial-grupo');
     const img = document.getElementById('img-avatar-grupo-preview');
     
-    if(img && img.style.display === 'block') return; // Se tem foto, não mexe na cor
+    if (img && img.style.display === 'block') return;
 
     const cores = ['#ff5722', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#009688', '#4caf50', '#ff9800'];
-    const corAleatoria = cores[Math.floor(Math.random() * cores.length)];
+
+    if (!corAvatarGrupoSelecionada) {
+        corAvatarGrupoSelecionada = cores[Math.floor(Math.random() * cores.length)];
+    }
     
-    if(previewDiv) previewDiv.style.backgroundColor = corAleatoria;
-    if(letraSpan && nomeTexto) letraSpan.textContent = nomeTexto.charAt(0).toUpperCase();
+    if (previewDiv) previewDiv.style.backgroundColor = corAvatarGrupoSelecionada;
+    if (letraSpan && nomeTexto) letraSpan.textContent = nomeTexto.charAt(0).toUpperCase();
 }
 // Finaliza e salva o grupo no Supabase
 async function finalizarCriacaoGrupo() {
@@ -4433,6 +4454,7 @@ async function finalizarCriacaoGrupo() {
         .insert([{
             nome: nomeGrupo,
             foto_url: urlFotoGrupo,
+            cor: corAvatarGrupoSelecionada || "#482133",
             criado_por: meuEmail
         }])
         .select()
@@ -4468,6 +4490,9 @@ async function finalizarCriacaoGrupo() {
     }
 
     alert("Grupo criado com sucesso!");
+    corAvatarGrupoSelecionada = null;
+    arquivoFotoGrupoSelecionado = null;
+
     // Limpa e fecha as telas de criação
     document.getElementById('tela-criar-grupo-detalhes').style.display = 'none';
     mostrarAppPrincipal();
