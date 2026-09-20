@@ -100,6 +100,75 @@
         });
     }
 
+    function cargoEfetivo(cargo, email, criadoPor) {
+        const emailNormalizado = String(email || '').trim().toLowerCase();
+        const donoNormalizado = String(criadoPor || '').trim().toLowerCase();
+
+        if (emailNormalizado && donoNormalizado && emailNormalizado === donoNormalizado) {
+            return 'dono';
+        }
+
+        return cargo === 'admin' ? 'admin' : 'membro';
+    }
+
+    function cargoPodeAdministrar(cargo) {
+        return cargo === 'dono' || cargo === 'admin';
+    }
+
+    async function obterPermissoesGrupo(emailAlvo = '') {
+        const supabase = supabaseAtual();
+        const grupoId = window.grupoAtualId;
+        const meuEmail = (localStorage.getItem('usuarioLogado') || '').trim().toLowerCase();
+
+        if (!supabase || !grupoId || !meuEmail) {
+            return {
+                meuCargo: 'membro',
+                cargoAlvo: 'membro',
+                criadoPor: '',
+                souAdmin: false
+            };
+        }
+
+        const emails = [meuEmail];
+        const alvo = String(emailAlvo || '').trim().toLowerCase();
+        if (alvo && alvo !== meuEmail) emails.push(alvo);
+
+        const [grupoResp, membrosResp] = await Promise.all([
+            supabase
+                .from('grupos')
+                .select('criado_por')
+                .eq('id', grupoId)
+                .maybeSingle(),
+            supabase
+                .from('grupo_membros')
+                .select('usuario_email, cargo')
+                .eq('grupo_id', grupoId)
+                .in('usuario_email', emails)
+        ]);
+
+        const criadoPor = String(grupoResp.data?.criado_por || '').trim().toLowerCase();
+        const relacoes = membrosResp.data || [];
+
+        const minhaRelacao = relacoes.find(
+            m => String(m.usuario_email || '').trim().toLowerCase() === meuEmail
+        );
+        const relacaoAlvo = relacoes.find(
+            m => String(m.usuario_email || '').trim().toLowerCase() === alvo
+        );
+
+        const meuCargo = cargoEfetivo(minhaRelacao?.cargo, meuEmail, criadoPor);
+        const cargoAlvo = alvo
+            ? cargoEfetivo(relacaoAlvo?.cargo, alvo, criadoPor)
+            : 'membro';
+
+        return {
+            meuCargo,
+            cargoAlvo,
+            criadoPor,
+            souAdmin: cargoPodeAdministrar(meuCargo)
+        };
+    }
+
     window.fecharMiniDadosMembroGrupo = function () {
         const overlay = document.getElementById('mini-dados-membro-overlay');
         if (!overlay) return;
@@ -131,25 +200,37 @@
         }
 
         const salvo = await usuarioGrupoEstaSalvo(usuario);
+        const permissoes = await obterPermissoesGrupo(email);
 
-        const painelGrupo = document.getElementById('painel-dados-grupo');
-        const criadoPor = String(painelGrupo?.dataset?.criadoPor || '').trim().toLowerCase();
-        const souAdmin = !!criadoPor && criadoPor === meuEmail;
-        const ehCriador = email === criadoPor;
-        const podeRemover = souAdmin && !ehCriador && email !== meuEmail;
+        const ehDono = permissoes.cargoAlvo === 'dono';
+        const ehAdmin = permissoes.cargoAlvo === 'admin';
+        const podeRemover =
+            permissoes.souAdmin &&
+            !ehDono &&
+            email !== meuEmail;
+
+        const podePromover =
+            permissoes.souAdmin &&
+            permissoes.cargoAlvo === 'membro' &&
+            email !== meuEmail;
 
         miniMembroAtual = {
             ...usuario,
             salvo,
-            souAdmin,
-            ehCriador,
-            podeRemover
+            meuCargo: permissoes.meuCargo,
+            cargo: permissoes.cargoAlvo,
+            souAdmin: permissoes.souAdmin,
+            ehDono,
+            ehAdmin,
+            podeRemover,
+            podePromover
         };
 
         const foto = document.getElementById('mini-dados-membro-foto');
         const titulo = document.getElementById('mini-dados-membro-titulo');
         const subtitulo = document.getElementById('mini-dados-membro-subtitulo');
         const btnCriar = document.getElementById('mini-dados-criar-contato');
+        const btnPromover = document.getElementById('mini-dados-promover-admin');
         const btnRemover = document.getElementById('mini-dados-remover-grupo');
 
         if (typeof window.aplicarAvatarUsuario === 'function') {
@@ -173,6 +254,10 @@
 
         if (btnCriar) {
             btnCriar.classList.toggle('hidden', salvo);
+        }
+
+        if (btnPromover) {
+            btnPromover.classList.toggle('hidden', !podePromover);
         }
 
         if (btnRemover) {
@@ -242,6 +327,43 @@
             if (titulo) titulo.textContent = miniMembroAtual.usuario || 'Contato';
             if (btnCriar) btnCriar.classList.add('hidden');
         }
+    };
+
+    window.promoverMembroPeloMiniDados = async function () {
+        const dados = miniMembroAtual;
+        const supabase = supabaseAtual();
+        const grupoId = window.grupoAtualId;
+
+        if (!dados?.email || !dados?.podePromover || !supabase || !grupoId) return;
+
+        if (!confirm('Promover ' + (dados.usuario || dados.email) + ' a administrador?')) return;
+
+        const permissoes = await obterPermissoesGrupo(dados.email);
+
+        if (!permissoes.souAdmin || permissoes.cargoAlvo !== 'membro') {
+            alert('Você não tem permissão para promover este participante.');
+            return;
+        }
+
+        const { error } = await supabase
+            .from('grupo_membros')
+            .update({ cargo: 'admin' })
+            .eq('grupo_id', grupoId)
+            .eq('usuario_email', dados.email);
+
+        if (error) {
+            console.error('[Grupo] Erro promovendo administrador:', error);
+            alert('Não foi possível promover este participante.');
+            return;
+        }
+
+        miniMembroAtual.cargo = 'admin';
+        miniMembroAtual.ehAdmin = true;
+        miniMembroAtual.podePromover = false;
+
+        document.getElementById('mini-dados-promover-admin')?.classList.add('hidden');
+
+        await window.carregarMembrosPainelGrupo();
     };
 
     window.removerMembroPeloMiniDados = async function () {
@@ -324,8 +446,10 @@
     window.fecharPainelDadosGrupo = function () {
         const painel = document.getElementById('painel-dados-grupo');
         const add = document.getElementById('grupo-adicionar-membros-overlay');
+        const transferir = document.getElementById('grupo-transferir-posse-overlay');
 
         if (add) add.classList.add('hidden');
+        if (transferir) transferir.classList.add('hidden');
         if (painel) {
             painel.classList.add('hidden');
             painel.style.display = 'none';
@@ -412,7 +536,7 @@
 
         const { data: relacoes, error } = await supabase
             .from('grupo_membros')
-            .select('grupo_id, usuario_email, usuario_nome')
+            .select('grupo_id, usuario_email, usuario_nome, cargo')
             .eq('grupo_id', grupoId);
 
         if (error) {
@@ -459,9 +583,13 @@
 
         const criadoPor = painel?.dataset.criadoPor || '';
         const meuEmail = localStorage.getItem('usuarioLogado') || '';
-        const souCriador = !!criadoPor && criadoPor.toLowerCase() === meuEmail.toLowerCase();
+        const minhaRelacao = membros.find(
+            m => (m.usuario_email || '').toLowerCase() === meuEmail.toLowerCase()
+        );
+        const meuCargo = cargoEfetivo(minhaRelacao?.cargo, meuEmail, criadoPor);
+        const souAdmin = cargoPodeAdministrar(meuCargo);
 
-        if (btnAdicionar) btnAdicionar.classList.toggle('hidden', !souCriador);
+        if (btnAdicionar) btnAdicionar.classList.toggle('hidden', !souAdmin);
 
         lista.innerHTML = '';
 
@@ -472,16 +600,19 @@
 
         membros
             .sort((a, b) => {
-                if ((a.usuario_email || '').toLowerCase() === criadoPor.toLowerCase()) return -1;
-                if ((b.usuario_email || '').toLowerCase() === criadoPor.toLowerCase()) return 1;
+                const cargoA = cargoEfetivo(a.cargo, a.usuario_email, criadoPor);
+                const cargoB = cargoEfetivo(b.cargo, b.usuario_email, criadoPor);
+                const peso = { dono: 0, admin: 1, membro: 2 };
+
+                if (peso[cargoA] !== peso[cargoB]) return peso[cargoA] - peso[cargoB];
                 return (a.usuario_nome || '').localeCompare(b.usuario_nome || '');
             })
             .forEach(membro => {
                 const usuario = usuariosPorEmail.get((membro.usuario_email || '').toLowerCase());
                 const nome = usuario?.usuario || membro.usuario_nome || membro.usuario_email || 'Participante';
-                const ehCriador = (membro.usuario_email || '').toLowerCase() === criadoPor.toLowerCase();
-
                 const emailMembro = (membro.usuario_email || '').toLowerCase();
+                const cargoMembro = cargoEfetivo(membro.cargo, emailMembro, criadoPor);
+                const ehCriador = cargoMembro === 'dono';
                 const ehEu = emailMembro === meuEmail.toLowerCase();
                 const item = document.createElement('div');
                 item.className = 'grupo-membro-item';
@@ -498,7 +629,11 @@
                     <div class="grupo-membro-info">
                         <strong>${ehEu ? 'Você' : escapeHtml(nome)}</strong>
                     </div>
-                    ${ehCriador ? '<span class="grupo-membro-admin">Admin</span>' : ''}
+                    ${cargoMembro === 'dono'
+                        ? '<span class="grupo-membro-admin grupo-membro-dono">Dono</span>'
+                        : (cargoMembro === 'admin'
+                            ? '<span class="grupo-membro-admin">Admin</span>'
+                            : '')}
                 `;
 
                 const avatar = item.querySelector('.grupo-membro-avatar');
@@ -534,12 +669,11 @@
 
         if (!supabase || !grupoId || !overlay || !lista) return;
 
-        const painel = document.getElementById('painel-dados-grupo');
-        const criadoPor = painel?.dataset.criadoPor || '';
         const meuEmail = localStorage.getItem('usuarioLogado') || '';
+        const permissoes = await obterPermissoesGrupo();
 
-        if (!criadoPor || criadoPor.toLowerCase() !== meuEmail.toLowerCase()) {
-            alert('Somente quem criou o grupo pode adicionar participantes.');
+        if (!permissoes.souAdmin) {
+            alert('Somente administradores podem adicionar participantes.');
             return;
         }
 
@@ -662,7 +796,8 @@
             .insert([{
                 grupo_id: grupoId,
                 usuario_email: usuario.email,
-                usuario_nome: usuario.usuario || usuario.email
+                usuario_nome: usuario.usuario || usuario.email,
+                cargo: 'membro'
             }]);
 
         if (error) {
@@ -682,16 +817,21 @@
 
         if (!supabase || !grupoId || !email) return false;
 
-        const criadoPor = painel?.dataset.criadoPor || '';
         const meuEmail = localStorage.getItem('usuarioLogado') || '';
+        const permissoes = await obterPermissoesGrupo(email);
 
-        if (!criadoPor || criadoPor.toLowerCase() !== meuEmail.toLowerCase()) {
-            alert('Somente quem criou o grupo pode remover participantes.');
+        if (!permissoes.souAdmin) {
+            alert('Somente administradores podem remover participantes.');
             return false;
         }
 
-        if (email.toLowerCase() === criadoPor.toLowerCase()) {
-            alert('O criador do grupo não pode ser removido.');
+        if (permissoes.cargoAlvo === 'dono') {
+            alert('O dono do grupo não pode ser removido.');
+            return false;
+        }
+
+        if (email.toLowerCase() === meuEmail.toLowerCase()) {
+            alert('Use "Sair do grupo" para remover a si mesmo.');
             return false;
         }
 
@@ -754,43 +894,12 @@
         console.log('[Grupo] Chamada de vídeo em grupo ainda não implementada.');
     };
 
-    window.sairDoGrupoAtual = async function () {
+    async function concluirSaidaGrupo() {
         const supabase = supabaseAtual();
         const grupoId = window.grupoAtualId;
-        const painel = document.getElementById('painel-dados-grupo');
-        const meuEmail = localStorage.getItem('usuarioLogado') || '';
+        const meuEmail = (localStorage.getItem('usuarioLogado') || '').trim();
 
-        if (!supabase || !grupoId || !meuEmail) return;
-        if (!confirm('Sair deste grupo?')) return;
-
-        const criadoPor = (painel?.dataset.criadoPor || '').toLowerCase();
-
-        if (criadoPor === meuEmail.toLowerCase()) {
-            const { data: membros } = await supabase
-                .from('grupo_membros')
-                .select('usuario_email')
-                .eq('grupo_id', grupoId);
-
-            const proximoAdmin = (membros || []).find(
-                m => (m.usuario_email || '').toLowerCase() !== meuEmail.toLowerCase()
-            );
-
-            if (!proximoAdmin) {
-                alert('Você é o único membro do grupo. A exclusão completa do grupo ainda não foi implementada.');
-                return;
-            }
-
-            const { error: erroAdmin } = await supabase
-                .from('grupos')
-                .update({ criado_por: proximoAdmin.usuario_email })
-                .eq('id', grupoId);
-
-            if (erroAdmin) {
-                console.error('[Grupo] Erro transferindo administração:', erroAdmin);
-                alert('Não foi possível transferir a administração do grupo.');
-                return;
-            }
-        }
+        if (!supabase || !grupoId || !meuEmail) return false;
 
         const { error } = await supabase
             .from('grupo_membros')
@@ -801,12 +910,181 @@
         if (error) {
             console.error('[Grupo] Erro ao sair:', error);
             alert('Não foi possível sair do grupo.');
-            return;
+            return false;
         }
 
         window.fecharPainelDadosGrupo();
         if (typeof fecharChat === 'function') fecharChat();
         if (typeof carregarListaContatos === 'function') carregarListaContatos();
+
+        return true;
+    }
+
+    window.fecharTransferenciaPosseGrupo = function () {
+        document.getElementById('grupo-transferir-posse-overlay')?.classList.add('hidden');
+    };
+
+    window.abrirTransferenciaPosseGrupo = async function () {
+        const supabase = supabaseAtual();
+        const grupoId = window.grupoAtualId;
+        const meuEmail = (localStorage.getItem('usuarioLogado') || '').trim().toLowerCase();
+        const overlay = document.getElementById('grupo-transferir-posse-overlay');
+        const lista = document.getElementById('grupo-transferir-posse-lista');
+
+        if (!supabase || !grupoId || !meuEmail || !overlay || !lista) return;
+
+        lista.innerHTML = '<div class="grupo-membros-vazio">Carregando participantes...</div>';
+
+        const { data: membros, error } = await supabase
+            .from('grupo_membros')
+            .select('usuario_email, usuario_nome, cargo')
+            .eq('grupo_id', grupoId);
+
+        if (error) {
+            console.error('[Grupo] Erro carregando candidatos à posse:', error);
+            lista.innerHTML = '<div class="grupo-membros-vazio">Não foi possível carregar os participantes.</div>';
+            overlay.classList.remove('hidden');
+            return;
+        }
+
+        const candidatos = (membros || []).filter(
+            m => (m.usuario_email || '').trim().toLowerCase() !== meuEmail
+        );
+
+        if (!candidatos.length) {
+            alert('Você é o único membro do grupo. Ainda não dá para sair sem outro participante receber a posse.');
+            return;
+        }
+
+        const emails = candidatos.map(m => m.usuario_email).filter(Boolean);
+        const { data: usuarios } = await supabase
+            .from('usuarios')
+            .select('email, usuario, foto_url, cor')
+            .in('email', emails);
+
+        const porEmail = new Map(
+            (usuarios || []).map(u => [(u.email || '').toLowerCase(), u])
+        );
+
+        candidatos.sort((a, b) => {
+            const cargoA = a.cargo === 'admin' ? 0 : 1;
+            const cargoB = b.cargo === 'admin' ? 0 : 1;
+            if (cargoA !== cargoB) return cargoA - cargoB;
+            return (a.usuario_nome || '').localeCompare(b.usuario_nome || '');
+        });
+
+        lista.innerHTML = '';
+
+        candidatos.forEach(membro => {
+            const email = (membro.usuario_email || '').toLowerCase();
+            const usuario = porEmail.get(email);
+            const nome = usuario?.usuario || membro.usuario_nome || membro.usuario_email || 'Participante';
+
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'grupo-membro-item grupo-transferir-candidato';
+            item.innerHTML = `
+                <img class="grupo-membro-avatar" src="" alt="">
+                <div class="grupo-membro-info">
+                    <strong>${escapeHtml(nome)}</strong>
+                    <small class="grupo-transferir-descricao">${membro.cargo === 'admin' ? 'Administrador' : 'Membro'}</small>
+                </div>
+                <span class="grupo-transferir-seta">›</span>
+            `;
+
+            const avatar = item.querySelector('.grupo-membro-avatar');
+            if (typeof window.aplicarAvatarUsuario === 'function') {
+                window.aplicarAvatarUsuario(avatar, usuario?.foto_url || '', usuario?.cor || '#3a3a3c');
+            }
+
+            item.addEventListener('click', () => {
+                window.transferirPosseESairGrupo(email, nome, membro.cargo || 'membro');
+            });
+
+            lista.appendChild(item);
+        });
+
+        overlay.classList.remove('hidden');
+    };
+
+    window.transferirPosseESairGrupo = async function (novoDonoEmail, novoDonoNome, cargoAnterior = 'membro') {
+        const supabase = supabaseAtual();
+        const grupoId = window.grupoAtualId;
+        const meuEmail = (localStorage.getItem('usuarioLogado') || '').trim().toLowerCase();
+
+        if (!supabase || !grupoId || !meuEmail || !novoDonoEmail) return;
+
+        const permissoes = await obterPermissoesGrupo();
+
+        if (permissoes.meuCargo !== 'dono') {
+            alert('Somente o dono atual pode transferir a posse do grupo.');
+            return;
+        }
+
+        if (!confirm('Transferir a posse para ' + (novoDonoNome || novoDonoEmail) + ' e sair do grupo?')) {
+            return;
+        }
+
+        const novoEmail = String(novoDonoEmail).trim().toLowerCase();
+
+        const { error: erroCargo } = await supabase
+            .from('grupo_membros')
+            .update({ cargo: 'dono' })
+            .eq('grupo_id', grupoId)
+            .eq('usuario_email', novoEmail);
+
+        if (erroCargo) {
+            console.error('[Grupo] Erro preparando novo dono:', erroCargo);
+            alert('Não foi possível transferir a posse do grupo.');
+            return;
+        }
+
+        const { error: erroGrupo } = await supabase
+            .from('grupos')
+            .update({ criado_por: novoEmail })
+            .eq('id', grupoId)
+            .eq('criado_por', meuEmail);
+
+        if (erroGrupo) {
+            await supabase
+                .from('grupo_membros')
+                .update({ cargo: cargoAnterior === 'admin' ? 'admin' : 'membro' })
+                .eq('grupo_id', grupoId)
+                .eq('usuario_email', novoEmail);
+
+            console.error('[Grupo] Erro transferindo posse:', erroGrupo);
+            alert('Não foi possível transferir a posse do grupo.');
+            return;
+        }
+
+        const saiu = await concluirSaidaGrupo();
+
+        if (!saiu) {
+            // Se a remoção do antigo dono falhar, tenta restaurar a posse anterior.
+            await supabase
+                .from('grupos')
+                .update({ criado_por: meuEmail })
+                .eq('id', grupoId)
+                .eq('criado_por', novoEmail);
+
+            await supabase
+                .from('grupo_membros')
+                .update({ cargo: cargoAnterior === 'admin' ? 'admin' : 'membro' })
+                .eq('grupo_id', grupoId)
+                .eq('usuario_email', novoEmail);
+        }
+    };
+
+    window.sairDoGrupoAtual = async function () {
+        const permissoes = await obterPermissoesGrupo();
+
+        if (permissoes.meuCargo === 'dono') {
+            await window.abrirTransferenciaPosseGrupo();
+            return;
+        }
+
+        if (!confirm('Sair deste grupo?')) return;
+        await concluirSaidaGrupo();
     };
 
     document.addEventListener('click', (event) => {
