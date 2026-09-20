@@ -2687,16 +2687,6 @@ body {
     border-radius: 50% !important;
 }
 
-/* Placeholder de grupo usa um SVG mais largo que o de usuário.
-   Ele precisa de quase toda a área do avatar, senão parece um círculo dentro de outro. */
-.avatar-grupo-sem-foto {
-    box-sizing: border-box !important;
-    padding: 4px !important;
-    object-fit: contain !important;
-    object-position: center !important;
-    border-radius: 50% !important;
-}
-
 /* Quando existe foto real, ela ocupa o círculo inteiro. */
 .foto-contato:not(.avatar-sem-foto),
 .foto-contato-pequena:not(.avatar-sem-foto),
@@ -3694,9 +3684,11 @@ body::before {
     box-shadow: inset 0 0 0 1px rgba(255,255,255,.04);
 }
 
-#painel-dados-grupo .grupo-info-foto.avatar-grupo-sem-foto {
-    padding: 5px !important;
+#painel-dados-grupo .grupo-info-foto.avatar-sem-foto,
+#painel-dados-grupo .grupo-info-foto[src*="group-placeholder.svg"] {
+    padding: 29px !important;
     object-fit: contain !important;
+    background: #482133 !important;
 }
 
 #painel-dados-grupo #grupo-info-nome {
@@ -4201,8 +4193,9 @@ body::before {
         max-height: 118px;
     }
 
-    #painel-dados-grupo .grupo-info-foto.avatar-grupo-sem-foto {
-        padding: 5px !important;
+    #painel-dados-grupo .grupo-info-foto.avatar-sem-foto,
+    #painel-dados-grupo .grupo-info-foto[src*="group-placeholder.svg"] {
+        padding: 27px !important;
     }
 
     #painel-dados-grupo #grupo-info-nome {
@@ -5964,19 +5957,4 @@ body.chamada-grupo-aberta {
     .grupo-chamada-modo-video .grupo-chamada-participantes {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-}
-
-
-/* Grupo: o fundo continua circular, mas o desenho usa praticamente todo o espaço. */
-.foto-contato.avatar-grupo-sem-foto {
-    padding: 3px !important;
-}
-
-.chat-avatar.avatar-grupo-sem-foto {
-    padding: 3px !important;
-}
-
-.grupo-chamada-avatar.avatar-grupo-sem-foto {
-    padding: 5px !important;
-    object-fit: contain !important;
 }
