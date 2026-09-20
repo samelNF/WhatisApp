@@ -478,8 +478,13 @@
 
         if (foto) {
             const temFoto = !!grupo?.foto_url;
+            foto.classList.remove('avatar-sem-foto', 'avatar-grupo-sem-foto');
             foto.src = temFoto ? grupo.foto_url : 'svg/group-placeholder.svg?v=b92f3928';
             foto.style.backgroundColor = temFoto ? 'transparent' : '#3a3a3c';
+
+            if (!temFoto) {
+                foto.classList.add('avatar-grupo-sem-foto');
+            }
         }
 
         atualizarTipoTelaGrupo(call);
