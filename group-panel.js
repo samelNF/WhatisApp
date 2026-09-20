@@ -29,14 +29,15 @@
             !fotoUrl.includes('group-placeholder.svg') &&
             !fotoUrl.includes('user-placeholder.svg');
 
+        img.classList.remove('avatar-sem-foto', 'avatar-grupo-sem-foto');
+
         if (fotoValida) {
             img.src = fotoUrl;
             img.style.backgroundColor = 'transparent';
-            img.classList.remove('avatar-sem-foto');
         } else {
             img.src = 'svg/group-placeholder.svg?v=b92f3928';
             img.style.backgroundColor = corGrupo || '#482133';
-            img.classList.add('avatar-sem-foto');
+            img.classList.add('avatar-grupo-sem-foto');
         }
     }
 
