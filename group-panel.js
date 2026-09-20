@@ -72,6 +72,215 @@
         return 'Criado em ' + dia + ' à(s) ' + hora;
     }
 
+    let miniMembroAtual = null;
+
+    async function usuarioGrupoEstaSalvo(dadosUsuario) {
+        const meuUsuario = (localStorage.getItem('nomeUsuario') || '').trim();
+        if (!meuUsuario || !dadosUsuario) return false;
+
+        const supabase = supabaseAtual();
+        if (!supabase) return false;
+
+        const { data, error } = await supabase
+            .from('contatos')
+            .select('contato_usuario')
+            .eq('usuario_origem', meuUsuario);
+
+        if (error) {
+            console.warn('[Grupo] Não foi possível verificar contato salvo:', error);
+            return false;
+        }
+
+        const email = String(dadosUsuario.email || '').trim().toLowerCase();
+        const usuario = String(dadosUsuario.usuario || '').trim().toLowerCase();
+
+        return (data || []).some(item => {
+            const salvo = String(item.contato_usuario || '').trim().toLowerCase();
+            return salvo === email || salvo === usuario;
+        });
+    }
+
+    window.fecharMiniDadosMembroGrupo = function () {
+        const overlay = document.getElementById('mini-dados-membro-overlay');
+        if (!overlay) return;
+
+        overlay.classList.add('hidden');
+        overlay.style.display = 'none';
+        overlay.setAttribute('aria-hidden', 'true');
+    };
+
+    window.abrirMiniDadosMembroGrupo = async function (emailMembro) {
+        const supabase = supabaseAtual();
+        const overlay = document.getElementById('mini-dados-membro-overlay');
+        if (!supabase || !overlay || !window.grupoAtualId || !emailMembro) return;
+
+        const email = String(emailMembro).trim().toLowerCase();
+        const meuEmail = (localStorage.getItem('usuarioLogado') || '').trim().toLowerCase();
+
+        if (!email || email === meuEmail) return;
+
+        const { data: usuario, error } = await supabase
+            .from('usuarios')
+            .select('email, usuario, foto_url, cor')
+            .eq('email', email)
+            .maybeSingle();
+
+        if (error || !usuario) {
+            console.warn('[Grupo] Não foi possível abrir mini dados:', error);
+            return;
+        }
+
+        const salvo = await usuarioGrupoEstaSalvo(usuario);
+
+        miniMembroAtual = {
+            ...usuario,
+            salvo
+        };
+
+        const foto = document.getElementById('mini-dados-membro-foto');
+        const titulo = document.getElementById('mini-dados-membro-titulo');
+        const subtitulo = document.getElementById('mini-dados-membro-subtitulo');
+        const btnCriar = document.getElementById('mini-dados-criar-contato');
+
+        if (typeof window.aplicarAvatarUsuario === 'function') {
+            window.aplicarAvatarUsuario(foto, usuario.foto_url || '', usuario.cor || '#3a3a3c');
+        } else if (foto) {
+            foto.src = usuario.foto_url || 'svg/user-placeholder.svg';
+            foto.style.backgroundColor = usuario.foto_url ? 'transparent' : (usuario.cor || '#3a3a3c');
+        }
+
+        if (titulo) {
+            titulo.textContent = salvo
+                ? (usuario.usuario || 'Contato')
+                : 'Não listado';
+        }
+
+        if (subtitulo) {
+            subtitulo.textContent = usuario.usuario
+                ? '@' + usuario.usuario
+                : '';
+        }
+
+        if (btnCriar) {
+            btnCriar.classList.toggle('hidden', salvo);
+        }
+
+        overlay.classList.remove('hidden');
+        overlay.style.display = 'flex';
+        overlay.setAttribute('aria-hidden', 'false');
+    };
+
+    window.acaoMiniMembroGrupo = function (acao) {
+        const dados = miniMembroAtual;
+        if (!dados?.email) return;
+
+        window.fecharMiniDadosMembroGrupo();
+
+        if (typeof window.abrirChatCom === 'function') {
+            window.abrirChatCom(
+                dados.email,
+                dados.usuario || dados.email,
+                dados.foto_url || '',
+                dados.cor || '#3a3a3c'
+            );
+        } else if (typeof abrirChatCom === 'function') {
+            abrirChatCom(
+                dados.email,
+                dados.usuario || dados.email,
+                dados.foto_url || '',
+                dados.cor || '#3a3a3c'
+            );
+        }
+
+        if (acao === 'ligar') {
+            setTimeout(() => {
+                if (typeof window.iniciarLigacaoVoz === 'function') window.iniciarLigacaoVoz();
+                else if (typeof iniciarLigacaoVoz === 'function') iniciarLigacaoVoz();
+            }, 180);
+        } else if (acao === 'video') {
+            setTimeout(() => {
+                if (typeof window.iniciarLigacaoVideo === 'function') window.iniciarLigacaoVideo();
+                else if (typeof iniciarLigacaoVideo === 'function') iniciarLigacaoVideo();
+            }, 180);
+        }
+    };
+
+    window.criarContatoPeloMiniDados = async function () {
+        if (!miniMembroAtual || miniMembroAtual.salvo) return;
+
+        const usuario = miniMembroAtual.usuario;
+        if (!usuario) return;
+
+        if (typeof window.adicionarNovoContato === 'function') {
+            await window.adicionarNovoContato(usuario);
+        } else if (typeof adicionarNovoContato === 'function') {
+            await adicionarNovoContato(usuario);
+        }
+
+        // Confere de novo depois do cadastro; se deu certo, a ficha muda na hora.
+        const salvoAgora = await usuarioGrupoEstaSalvo(miniMembroAtual);
+        if (salvoAgora) {
+            miniMembroAtual.salvo = true;
+
+            const titulo = document.getElementById('mini-dados-membro-titulo');
+            const btnCriar = document.getElementById('mini-dados-criar-contato');
+
+            if (titulo) titulo.textContent = miniMembroAtual.usuario || 'Contato';
+            if (btnCriar) btnCriar.classList.add('hidden');
+        }
+    };
+
+    window.abrirDadosCompletosMembroGrupo = function () {
+        const dados = miniMembroAtual;
+        if (!dados?.email) return;
+
+        window.fecharMiniDadosMembroGrupo();
+
+        if (typeof window.abrirPainelDadosContatoPorEmail === 'function') {
+            window.abrirPainelDadosContatoPorEmail(dados.email, {
+                salvo: dados.salvo === true,
+                ocultarTema: true,
+                mostrarEditar: false,
+                titulo: 'Dados do usuário'
+            });
+        }
+    };
+
+    function instalarCliqueMiniDadosGrupo() {
+        const container = document.getElementById('chat-mensagens');
+        if (!container || container.dataset.miniDadosGrupo === 'true') return;
+
+        container.dataset.miniDadosGrupo = 'true';
+
+        container.addEventListener('click', event => {
+            if (!window.grupoAtualId) return;
+
+            const alvo = event.target.closest('.grupo-msg-avatar, .grupo-msg-cabecalho .nome-remetente');
+            if (!alvo || !container.contains(alvo)) return;
+
+            const balao = alvo.closest('.grupo-msg-recebida');
+            const email = balao?.dataset?.groupSender || '';
+            if (!email) return;
+
+            event.preventDefault();
+            event.stopPropagation();
+            window.abrirMiniDadosMembroGrupo(email);
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', instalarCliqueMiniDadosGrupo, { once: true });
+    } else {
+        instalarCliqueMiniDadosGrupo();
+    }
+
+    document.addEventListener('click', event => {
+        const overlay = document.getElementById('mini-dados-membro-overlay');
+        if (overlay && event.target === overlay) {
+            window.fecharMiniDadosMembroGrupo();
+        }
+    });
+
     window.abrirPainelDadosChat = function () {
         if (window.grupoAtualId) {
             window.abrirPainelDadosGrupo();
