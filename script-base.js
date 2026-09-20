@@ -1506,7 +1506,7 @@ async function renderizarBalao(texto, ehMinha, dataCriacao, idMensagem, mensagem
     container.scrollTop = container.scrollHeight;
 }
 // Adicionado o parâmetro 'idMensagem' aqui também
-async function renderizarBalaoGrupo(texto, ehMinha, dataCriacao, nomeRemetente, corRemetente, idMensagem, mensagemRespondida) {
+async function renderizarBalaoGrupo(texto, ehMinha, dataCriacao, nomeRemetente, corRemetente, idMensagem, mensagemRespondida, naoSalvo = false) {
     const container = document.getElementById("chat-mensagens");
     if (!container) return;
 
@@ -1528,7 +1528,12 @@ async function renderizarBalaoGrupo(texto, ehMinha, dataCriacao, nomeRemetente, 
     let htmlNome = "";
     if (!ehMinha && nomeRemetente) {
         const corNome = corRemetente || "#ff7b00";
-        htmlNome = `<span class="nome-remetente" style="color:${corNome}">${nomeRemetente}</span>`;
+        htmlNome = `
+            <div class="grupo-msg-cabecalho">
+                <span class="nome-remetente" style="color:${corNome}">${nomeRemetente}</span>
+                ${naoSalvo ? '<span class="grupo-nao-salvo">Não salvo</span>' : ''}
+            </div>
+        `;
     }
 
     let htmlResposta = "";
@@ -2196,6 +2201,20 @@ function abrirChatGrupo(idGrupo, nomeGrupo, fotoGrupo) {
     if (chatActionBar) chatActionBar.classList.add('hidden');
 }
 
+function remetenteGrupoEstaSalvo(emailRemetente, nomeRemetente) {
+    const email = String(emailRemetente || "").trim().toLowerCase();
+    const nome = String(nomeRemetente || "").trim().toLowerCase();
+
+    return (todosContatos || []).some(item => {
+        if (item?.tipo !== "contato") return false;
+
+        const itemEmail = String(item?.identificador || item?.email || "").trim().toLowerCase();
+        const itemNome = String(item?.usuario || item?.nome || "").trim().toLowerCase();
+
+        return (email && itemEmail === email) || (nome && itemNome === nome);
+    });
+}
+
 function prepararAvatarMensagemGrupo(balao, dados = {}) {
     if (!balao || dados.ehMinha) return;
 
@@ -2263,8 +2282,12 @@ function atualizarAgrupamentoBaloesChat() {
         // Nos grupos, o nome faz o inverso do avatar:
         // aparece apenas na PRIMEIRA mensagem da sequência daquela pessoa.
         if (elemento.classList.contains("grupo-msg-recebida")) {
+            const cabecalho = elemento.querySelector(".grupo-msg-cabecalho");
             const nome = elemento.querySelector(".nome-remetente");
-            if (nome) {
+
+            if (cabecalho) {
+                cabecalho.classList.toggle("grupo-cabecalho-oculto", mesmoAnterior);
+            } else if (nome) {
                 nome.classList.toggle("nome-remetente-oculto", mesmoAnterior);
             }
         }
@@ -2341,6 +2364,12 @@ async function renderizarMensagensGrupoDoCache(mensagens, idGrupo, chaveConversa
             fotoRemetente = localStorage.getItem("fotoUsuario") || "";
         }
 
+        const contatoSalvo = ehMinha
+            ? true
+            : remetenteGrupoEstaSalvo(msg.remetente_email, nomeRemetente);
+
+        const naoSalvo = !ehMinha && !contatoSalvo;
+
         garantirSeparadorDataMensagem(msg.created_at);
 
         let dadosRespondida = null;
@@ -2364,7 +2393,8 @@ async function renderizarMensagensGrupoDoCache(mensagens, idGrupo, chaveConversa
             await window.renderizarBalaoChamadaGrupo(msg, ehMinha, {
                 nomeRemetente: ehMinha ? "" : nomeRemetente,
                 corRemetente,
-                fotoRemetente
+                fotoRemetente,
+                naoSalvo
             });
         } else if (
             typeof window.ehMensagemAudio === "function" &&
@@ -2375,7 +2405,8 @@ async function renderizarMensagensGrupoDoCache(mensagens, idGrupo, chaveConversa
                 nomeRemetente: ehMinha ? "" : nomeRemetente,
                 corRemetente,
                 fotoRemetente,
-                mensagemRespondida: dadosRespondida
+                mensagemRespondida: dadosRespondida,
+                naoSalvo
             });
         } else {
             await renderizarBalaoGrupo(
@@ -2385,7 +2416,8 @@ async function renderizarMensagensGrupoDoCache(mensagens, idGrupo, chaveConversa
                 ehMinha ? null : nomeRemetente,
                 corRemetente,
                 msg.id,
-                dadosRespondida
+                dadosRespondida,
+                naoSalvo
             );
         }
 
