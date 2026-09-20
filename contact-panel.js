@@ -114,6 +114,46 @@ window.abrirPainelDadosContatoPorEmail = async function (emailContato, opcoes = 
     return abrirPainelContatoInterno(emailContato, opcoes);
 };
 
+window.pesquisarNoChatContato = function () {
+    const termo = prompt('Pesquisar nesta conversa:');
+    if (!termo) return;
+
+    const alvo = String(termo).trim().toLowerCase();
+    if (!alvo) return;
+
+    window.fecharPainelDadosContato();
+
+    const mensagens = Array.from(
+        document.querySelectorAll('#chat-mensagens .balao-msg')
+    );
+
+    document
+        .querySelectorAll('#chat-mensagens .balao-msg.pesquisa-chat-destaque')
+        .forEach(el => el.classList.remove('pesquisa-chat-destaque'));
+
+    const encontrada = mensagens.find(el =>
+        String(el.textContent || '').toLowerCase().includes(alvo)
+    );
+
+    if (!encontrada) {
+        setTimeout(() => {
+            if (typeof mostrarToastAcoesMensagem === 'function') {
+                mostrarToastAcoesMensagem('Nenhuma mensagem encontrada.');
+            } else {
+                alert('Nenhuma mensagem encontrada.');
+            }
+        }, 80);
+        return;
+    }
+
+    encontrada.classList.add('pesquisa-chat-destaque');
+    encontrada.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    setTimeout(() => {
+        encontrada.classList.remove('pesquisa-chat-destaque');
+    }, 2200);
+};
+
 window.fecharPainelDadosContato = function () {
     const painel = document.getElementById('painel-dados-contato');
     if (!painel) return;
