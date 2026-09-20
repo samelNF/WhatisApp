@@ -2453,6 +2453,177 @@ body {
 
 
 /* ==========================================
+   MENU DE AÇÕES DA MENSAGEM
+   ========================================== */
+.menu-acoes-mensagem-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 12000;
+    background: rgba(0, 0, 0, .42);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    touch-action: none;
+}
+
+.menu-acoes-mensagem {
+    position: fixed;
+    z-index: 12001;
+    width: min(310px, calc(100vw - 24px));
+    max-height: min(520px, calc(100vh - 24px));
+    padding: 10px;
+    overflow-y: auto;
+    box-sizing: border-box;
+    border-radius: 28px;
+    color: #f7f7f8;
+    background:
+        linear-gradient(
+            145deg,
+            rgba(72, 72, 74, .78),
+            rgba(42, 42, 44, .72)
+        );
+    border: 1px solid rgba(255,255,255,.16);
+    box-shadow:
+        0 22px 65px rgba(0,0,0,.48),
+        inset 0 1px 0 rgba(255,255,255,.16);
+    -webkit-backdrop-filter: blur(30px) saturate(175%);
+    backdrop-filter: blur(30px) saturate(175%);
+    -webkit-overflow-scrolling: touch;
+}
+
+.menu-msg-item {
+    width: 100%;
+    min-height: 54px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 16px;
+    background: transparent;
+    color: #f7f7f8;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    text-align: left;
+    font: inherit;
+    font-size: 18px;
+    font-weight: 450;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.menu-msg-item:active {
+    background: rgba(255,255,255,.09);
+}
+
+.menu-msg-item.destrutivo {
+    color: #ff7185;
+}
+
+.menu-msg-icone {
+    flex: 0 0 28px;
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+}
+
+.menu-msg-icone svg {
+    width: 27px;
+    height: 27px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.menu-msg-divisor {
+    height: 1px;
+    margin: 7px 14px;
+    background: rgba(255,255,255,.11);
+}
+
+.menu-msg-subtitulo {
+    padding: 10px 14px 8px;
+    color: rgba(255,255,255,.62);
+    font-size: 13px;
+    line-height: 18px;
+    font-weight: 650;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.menu-msg-info {
+    min-height: 44px;
+    padding: 8px 14px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    color: rgba(255,255,255,.78);
+    font-size: 15px;
+    line-height: 20px;
+}
+
+.menu-msg-cancelar {
+    width: calc(100% - 12px);
+    min-height: 46px;
+    margin: 8px 6px 2px;
+    border: 0;
+    border-radius: 15px;
+    background: rgba(255,255,255,.08);
+    color: #f5f5f6;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+#tela-chat .balao-msg.mensagem-menu-ativa {
+    outline: 1px solid rgba(255,255,255,.19);
+    box-shadow: 0 8px 30px rgba(0,0,0,.30) !important;
+}
+
+.acoes-msg-toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(86px + env(safe-area-inset-bottom));
+    z-index: 13000;
+    max-width: min(82vw, 360px);
+    padding: 10px 15px;
+    border-radius: 999px;
+    background: rgba(28,28,30,.88);
+    color: #f7f7f8;
+    border: 1px solid rgba(255,255,255,.10);
+    box-shadow: 0 8px 26px rgba(0,0,0,.34);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    backdrop-filter: blur(18px) saturate(150%);
+    font-size: 13px;
+    line-height: 18px;
+    text-align: center;
+    opacity: 0;
+    transform: translate(-50%, 12px);
+    pointer-events: none;
+    transition: opacity .16s ease, transform .16s ease;
+}
+
+.acoes-msg-toast.visivel {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+@media (max-width: 430px) {
+    .menu-acoes-mensagem {
+        width: min(292px, calc(100vw - 22px));
+        border-radius: 25px;
+        padding: 8px;
+    }
+
+    .menu-msg-item {
+        min-height: 52px;
+        font-size: 17px;
+        gap: 14px;
+    }
+}
+
+
+/* ==========================================
    BALOES E RESPOSTAS - LAYOUT UNIFICADO
    ========================================== */
 #tela-chat {
