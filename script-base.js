@@ -172,17 +172,41 @@ function formatarRotuloDataMensagem(dataISO, referencia = new Date()) {
     const diaMensagem = inicioDoDia(data);
     const diferencaDias = Math.round((hoje - diaMensagem) / 86400000);
 
+    // Até 1 semana: Hoje, Ontem ou nome completo do dia.
     if (diferencaDias === 0) return "Hoje";
     if (diferencaDias === 1) return "Ontem";
 
-    const inicioSemanaAtual = inicioDaSemana(referencia);
-
-    if (diaMensagem >= inicioSemanaAtual && diaMensagem < hoje) {
+    if (diferencaDias >= 2 && diferencaDias <= 7) {
         const nomeDia = data.toLocaleDateString("pt-BR", { weekday: "long" });
         return nomeDia.charAt(0).toUpperCase() + nomeDia.slice(1);
     }
 
-    return formatarDataCurta(data, true);
+    const mesmoMes =
+        data.getFullYear() === referencia.getFullYear() &&
+        data.getMonth() === referencia.getMonth();
+
+    // Passou de 1 semana, mas ainda está no mês atual:
+    // "seg, 25 de set"
+    if (mesmoMes) {
+        const diaSemana = data
+            .toLocaleDateString("pt-BR", { weekday: "short" })
+            .replaceAll(".", "")
+            .toLowerCase();
+
+        const mes = data
+            .toLocaleDateString("pt-BR", { month: "short" })
+            .replaceAll(".", "")
+            .toLowerCase();
+
+        return `${diaSemana}, ${data.getDate()} de ${mes}`;
+    }
+
+    // Ao virar o mês (ou ficar ainda mais antigo), usa data numérica completa.
+    const dia = String(data.getDate()).padStart(2, "0");
+    const mes = String(data.getMonth() + 1).padStart(2, "0");
+    const ano = data.getFullYear();
+
+    return `${dia}/${mes}/${ano}`;
 }
 
 function formatarVistoPorUltimo(dataISO) {
