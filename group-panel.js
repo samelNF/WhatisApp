@@ -132,15 +132,25 @@
 
         const salvo = await usuarioGrupoEstaSalvo(usuario);
 
+        const painelGrupo = document.getElementById('painel-dados-grupo');
+        const criadoPor = String(painelGrupo?.dataset?.criadoPor || '').trim().toLowerCase();
+        const souAdmin = !!criadoPor && criadoPor === meuEmail;
+        const ehCriador = email === criadoPor;
+        const podeRemover = souAdmin && !ehCriador && email !== meuEmail;
+
         miniMembroAtual = {
             ...usuario,
-            salvo
+            salvo,
+            souAdmin,
+            ehCriador,
+            podeRemover
         };
 
         const foto = document.getElementById('mini-dados-membro-foto');
         const titulo = document.getElementById('mini-dados-membro-titulo');
         const subtitulo = document.getElementById('mini-dados-membro-subtitulo');
         const btnCriar = document.getElementById('mini-dados-criar-contato');
+        const btnRemover = document.getElementById('mini-dados-remover-grupo');
 
         if (typeof window.aplicarAvatarUsuario === 'function') {
             window.aplicarAvatarUsuario(foto, usuario.foto_url || '', usuario.cor || '#3a3a3c');
@@ -163,6 +173,10 @@
 
         if (btnCriar) {
             btnCriar.classList.toggle('hidden', salvo);
+        }
+
+        if (btnRemover) {
+            btnRemover.classList.toggle('hidden', !podeRemover);
         }
 
         overlay.classList.remove('hidden');
@@ -227,6 +241,21 @@
 
             if (titulo) titulo.textContent = miniMembroAtual.usuario || 'Contato';
             if (btnCriar) btnCriar.classList.add('hidden');
+        }
+    };
+
+    window.removerMembroPeloMiniDados = async function () {
+        const dados = miniMembroAtual;
+
+        if (!dados?.email || !dados?.podeRemover) return;
+
+        const removido = await window.removerMembroDoGrupo(
+            dados.email,
+            dados.usuario || dados.email
+        );
+
+        if (removido) {
+            window.fecharMiniDadosMembroGrupo();
         }
     };
 
@@ -459,10 +488,10 @@
                 item.dataset.nome = nome.toLowerCase();
                 item.dataset.email = emailMembro;
 
-                if (souCriador && !ehCriador && !ehEu) {
-                    item.classList.add('grupo-membro-removivel');
-                    item.title = 'Toque para remover este membro';
-                }
+                item.classList.add('grupo-membro-clicavel');
+                item.title = ehEu
+                    ? 'Seus dados'
+                    : 'Ver dados deste participante';
 
                 item.innerHTML = `
                     <img class="grupo-membro-avatar" src="" alt="">
@@ -480,11 +509,18 @@
                     avatar.style.backgroundColor = usuario?.foto_url ? 'transparent' : (usuario?.cor || '#3a3a3c');
                 }
 
-                if (souCriador && !ehCriador && !ehEu) {
-                    item.addEventListener('click', () => {
-                        window.removerMembroDoGrupo(membro.usuario_email, nome);
-                    });
-                }
+                item.addEventListener('click', () => {
+                    if (ehEu) {
+                        if (typeof window.abrirDadosUsuario === 'function') {
+                            window.abrirDadosUsuario();
+                        } else if (typeof abrirDadosUsuario === 'function') {
+                            abrirDadosUsuario();
+                        }
+                        return;
+                    }
+
+                    window.abrirMiniDadosMembroGrupo(membro.usuario_email);
+                });
 
                 lista.appendChild(item);
             });
@@ -644,22 +680,22 @@
         const grupoId = window.grupoAtualId;
         const painel = document.getElementById('painel-dados-grupo');
 
-        if (!supabase || !grupoId || !email) return;
+        if (!supabase || !grupoId || !email) return false;
 
         const criadoPor = painel?.dataset.criadoPor || '';
         const meuEmail = localStorage.getItem('usuarioLogado') || '';
 
         if (!criadoPor || criadoPor.toLowerCase() !== meuEmail.toLowerCase()) {
             alert('Somente quem criou o grupo pode remover participantes.');
-            return;
+            return false;
         }
 
         if (email.toLowerCase() === criadoPor.toLowerCase()) {
             alert('O criador do grupo não pode ser removido.');
-            return;
+            return false;
         }
 
-        if (!confirm('Remover ' + (nome || email) + ' do grupo?')) return;
+        if (!confirm('Remover ' + (nome || email) + ' do grupo?')) return false;
 
         const { error } = await supabase
             .from('grupo_membros')
@@ -670,10 +706,11 @@
         if (error) {
             console.error('[Grupo] Erro removendo membro:', error);
             alert('Não foi possível remover este participante.');
-            return;
+            return false;
         }
 
         await window.carregarMembrosPainelGrupo();
+        return true;
     };
 
     window.alternarMenuGrupoDados = function (event) {
