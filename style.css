@@ -9019,3 +9019,9 @@ html[data-tema="claro"] #painel-dados-grupo .grupo-pesquisar-btn img {
     color: #111 !important;
     filter: brightness(0) !important;
 }
+
+
+/* Modo claro: nomes no cabeçalho das respostas ficam escuros. */
+html[data-tema="claro"] #tela-chat .citacao-nome {
+    color: #111111 !important;
+}
