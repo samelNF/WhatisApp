@@ -456,18 +456,71 @@
         }
     };
 
-    window.alternarAbaDadosGrupo = function (nomeAba, botao) {
+    window.alternarAbaDadosGrupo = function (nomeAba, botao = null) {
         const painel = document.getElementById('painel-dados-grupo');
         if (!painel) return;
 
+        const nomesValidos = ['membros', 'midia', 'configuracoes'];
+        if (!nomesValidos.includes(nomeAba)) return;
+
+        const botaoAlvo =
+            botao ||
+            painel.querySelector('.grupo-aba[data-grupo-aba="' + nomeAba + '"]');
+
         painel.querySelectorAll('.grupo-aba').forEach(el => {
-            el.classList.toggle('ativa', el === botao);
+            const ativa = el === botaoAlvo ||
+                el.dataset.grupoAba === nomeAba;
+
+            el.classList.toggle('ativa', ativa);
+            el.setAttribute('aria-selected', ativa ? 'true' : 'false');
+            el.tabIndex = ativa ? 0 : -1;
         });
 
         painel.querySelectorAll('.grupo-aba-conteudo').forEach(el => {
-            el.classList.toggle('ativa', el.id === 'grupo-aba-' + nomeAba);
+            const ativa = el.id === 'grupo-aba-' + nomeAba;
+
+            el.classList.toggle('ativa', ativa);
+            el.hidden = !ativa;
+            el.style.display = ativa ? 'block' : 'none';
         });
+
+        // No iOS o painel pode manter o scroll da aba anterior.
+        // Garante que o conteúdo recém-aberto fique logo abaixo das abas.
+        const conteudo = document.getElementById('grupo-aba-' + nomeAba);
+        if (conteudo) {
+            requestAnimationFrame(() => {
+                const container = painel.querySelector('.grupo-panel-conteudo');
+                const abas = painel.querySelector('.grupo-abas');
+
+                if (container && abas) {
+                    const topo =
+                        abas.offsetTop +
+                        abas.offsetHeight +
+                        6;
+
+                    if (container.scrollTop > topo) {
+                        container.scrollTo({ top: topo, behavior: 'auto' });
+                    }
+                }
+            });
+        }
     };
+
+    // Fallback para o Safari/PWA: troca a aba pelo clique delegado mesmo
+    // se o onclick inline for ignorado após uma atualização do cache.
+    document.addEventListener('click', event => {
+        const botaoAba = event.target.closest?.(
+            '#painel-dados-grupo .grupo-aba[data-grupo-aba]'
+        );
+
+        if (!botaoAba) return;
+
+        event.preventDefault();
+        window.alternarAbaDadosGrupo(
+            botaoAba.dataset.grupoAba,
+            botaoAba
+        );
+    });
 
     window.compartilharGrupoAtual = async function () {
         const painel = document.getElementById('painel-dados-grupo');
