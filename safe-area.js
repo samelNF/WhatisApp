@@ -43,6 +43,8 @@
     function corFixaDaTelaAtual() {
         // Algumas telas principais têm uma cor de fundo definida manualmente.
         // Subtelas/painéis continuam usando a detecção dinâmica logo abaixo.
+        const temaClaro = root.dataset.tema === 'claro';
+
         const subtelasQueUsamFundoProprio = [
             document.getElementById('painel-dados-contato'),
             document.getElementById('painel-dados-grupo'),
@@ -61,15 +63,15 @@
         }
 
         if (elementoEstaAberto(document.getElementById('tela-chat'))) {
-            return '#292929';
+            return temaClaro ? '#F6F6F6' : '#292929';
         }
 
         if (elementoEstaAberto(document.getElementById('tela-voce'))) {
-            return '#0A0A0A';
+            return temaClaro ? '#F6F6F6' : '#0A0A0A';
         }
 
         if (elementoEstaAberto(document.getElementById('tela-conversas'))) {
-            return '#0B0B0C';
+            return temaClaro ? '#FFFFFF' : '#0B0B0C';
         }
 
         return null;
@@ -216,7 +218,7 @@
 
         const fallbackCor = bodyStyle.backgroundColor && bodyStyle.backgroundColor !== 'rgba(0, 0, 0, 0)'
             ? bodyStyle.backgroundColor
-            : '#050505';
+            : (root.dataset.tema === 'claro' ? '#F6F6F6' : '#050505');
 
         if (!alvo) {
             root.style.setProperty('--safe-area-bg-color', fallbackCor);
