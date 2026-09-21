@@ -309,9 +309,11 @@
                     </div>
 
                     <div id="aparencia-fundo-preview" class="aparencia-fundo-preview">
-                        <div class="aparencia-preview-balao esquerda">E aí 👀</div>
-                        <div class="aparencia-preview-balao direita">Fundo novo 😈</div>
+                        <button type="button" class="aparencia-preview-balao esquerda" onclick="abrirPaletaBalao('global', 'recebida')" aria-label="Mudar cor do balão recebido">E aí 👀</button>
+                        <button type="button" class="aparencia-preview-balao direita" onclick="abrirPaletaBalao('global', 'enviada')" aria-label="Mudar cor do meu balão">Fundo novo 😈</button>
                     </div>
+
+                    <p class="aparencia-hint-baloes">Toque em um balão para mudar a cor dele.</p>
 
                     <div class="aparencia-acoes-fundo">
                         <button type="button" class="aparencia-btn-principal" onclick="acionarTrocaFundoGlobal()">
@@ -389,6 +391,48 @@
             </button>
         </div>
     </nav>
+
+    <!-- TEMA DA CONVERSA -->
+    <div id="painel-tema-conversa" class="painel-tema-conversa hidden" aria-hidden="true">
+        <div class="tema-conversa-header">
+            <button type="button" class="tema-conversa-voltar" onclick="fecharTemaConversa()" aria-label="Voltar">‹</button>
+            <h3>Tema da conversa</h3>
+        </div>
+
+        <div class="tema-conversa-conteudo">
+            <section class="tema-conversa-card">
+                <div class="tema-conversa-titulo">
+                    <strong>Prévia</strong>
+                    <small>Toque em cada balão para escolher a cor dele.</small>
+                </div>
+
+                <div id="tema-conversa-preview" class="tema-conversa-preview">
+                    <button type="button" id="tema-preview-recebida" class="tema-preview-balao recebida" onclick="abrirPaletaBalao('conversa', 'recebida')">Mensagem recebida</button>
+                    <button type="button" id="tema-preview-enviada" class="tema-preview-balao enviada" onclick="abrirPaletaBalao('conversa', 'enviada')">Minha mensagem</button>
+                </div>
+
+                <div class="tema-conversa-acoes">
+                    <button type="button" class="tema-btn-principal" onclick="escolherFundoTemaConversa()">Escolher imagem</button>
+                    <button type="button" id="tema-remover-fundo" class="tema-btn-secundario" onclick="removerFundoTemaConversa()">Remover fundo</button>
+                </div>
+            </section>
+
+            <section class="tema-conversa-card tema-conversa-reset-card">
+                <button type="button" class="tema-reset-btn" onclick="restaurarTemaConversaPadrao()">Usar tema padrão</button>
+            </section>
+        </div>
+    </div>
+
+    <!-- PALETA FIXA DOS BALÕES -->
+    <div id="painel-paleta-balao" class="painel-paleta-balao hidden" aria-hidden="true">
+        <div class="paleta-balao-header">
+            <button type="button" class="paleta-balao-voltar" onclick="fecharPaletaBalao()" aria-label="Voltar">‹</button>
+            <h3 id="paleta-balao-titulo">Cor do balão</h3>
+        </div>
+        <div class="paleta-balao-conteudo">
+            <div id="paleta-balao-grid" class="paleta-balao-grid"></div>
+        </div>
+    </div>
 
     <!-- TELA DE LOGIN -->
     <section id="login" class="autenticacao-box">
@@ -1020,7 +1064,7 @@
             </div>
 
             <div class="painel-contato-card">
-                <button class="painel-contato-row" type="button" id="btn-tema-conversa" onclick="acionarTrocaFundo()">
+                <button class="painel-contato-row" type="button" id="btn-tema-conversa" onclick="abrirTemaConversa('contato')">
                     <span class="painel-row-icone">
                         <svg viewBox="0 0 24 24" aria-hidden="true">
                             <path d="M12 3.5a8.5 8.5 0 1 0 0 17c1.2 0 1.9-.7 1.9-1.5 0-.6-.3-1-.6-1.4-.3-.4-.5-.8-.5-1.4 0-1.1.9-2 2-2h1.7c2.1 0 4-1.7 4-4.2C20.5 6.4 16.8 3.5 12 3.5Z"></path>
@@ -1033,7 +1077,7 @@
 
                     <span class="painel-row-texto">
                         <strong>Tema da conversa</strong>
-                        <small>Alterar o fundo deste chat</small>
+                        <small>Fundo e cores dos balões</small>
                     </span>
 
                     <span class="painel-row-seta">›</span>
@@ -1063,7 +1107,7 @@
                 <button type="button" class="grupo-topo-acao grupo-mais-btn" onclick="alternarMenuGrupoDados(event)" aria-label="Mais opções">•••</button>
 
                 <div id="grupo-dados-menu" class="grupo-dados-menu hidden">
-                    <button type="button" onclick="acionarTrocaFundoGrupo(); fecharMenuGrupoDados();">
+                    <button type="button" onclick="abrirTemaConversa('grupo'); fecharMenuGrupoDados();">
                         Tema da conversa
                     </button>
                 </div>
@@ -1177,7 +1221,7 @@
                     <div class="grupo-secao-titulo">Configurações</div>
 
                     <div class="grupo-config-card">
-                        <button type="button" class="grupo-config-row" onclick="acionarTrocaFundoGrupo()">
+                        <button type="button" class="grupo-config-row" onclick="abrirTemaConversa('grupo')">
                             <span class="grupo-config-icone">
                                 <svg viewBox="0 0 24 24" aria-hidden="true">
                                     <path d="M12 3.5a8.5 8.5 0 1 0 0 17c1.2 0 1.9-.7 1.9-1.5 0-.6-.3-1-.6-1.4-.3-.4-.5-.8-.5-1.4 0-1.1.9-2 2-2h1.7c2.1 0 4-1.7 4-4.2C20.5 6.4 16.8 3.5 12 3.5Z"></path>
@@ -1189,7 +1233,7 @@
                             </span>
                             <span class="grupo-config-texto">
                                 <strong>Tema da conversa</strong>
-                                <small>Alterar o fundo deste grupo</small>
+                                <small>Fundo e cores dos balões</small>
                             </span>
                             <span class="grupo-config-seta">›</span>
                         </button>
