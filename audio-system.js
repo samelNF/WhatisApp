@@ -613,8 +613,17 @@
                 </div>
 
                 <button type="button" class="audio-play-btn" aria-label="Reproduzir áudio">
-                    <span class="audio-play-icon">▶</span>
-                    <span class="audio-pause-icon">Ⅱ</span>
+                    <span class="audio-play-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" focusable="false">
+                            <path d="M7.4 5.25c0-1.08 1.18-1.75 2.11-1.2l9.36 5.55a1.4 1.4 0 0 1 0 2.4l-9.36 5.55a1.4 1.4 0 0 1-2.11-1.2V5.25Z"/>
+                        </svg>
+                    </span>
+                    <span class="audio-pause-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" focusable="false">
+                            <rect x="6.5" y="4.5" width="4" height="15" rx="1.2"/>
+                            <rect x="13.5" y="4.5" width="4" height="15" rx="1.2"/>
+                        </svg>
+                    </span>
                 </button>
 
                 <div class="audio-note-main">
