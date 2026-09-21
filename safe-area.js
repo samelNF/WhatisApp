@@ -63,11 +63,11 @@
         }
 
         if (elementoEstaAberto(document.getElementById('tela-chat'))) {
-            return temaClaro ? '#F6F6F6' : '#292929';
+            return temaClaro ? '#F4F4F4' : '#292929';
         }
 
         if (elementoEstaAberto(document.getElementById('tela-voce'))) {
-            return temaClaro ? '#F6F6F6' : '#0A0A0A';
+            return temaClaro ? '#F4F4F4' : '#0A0A0A';
         }
 
         if (elementoEstaAberto(document.getElementById('tela-conversas'))) {
@@ -218,7 +218,7 @@
 
         const fallbackCor = bodyStyle.backgroundColor && bodyStyle.backgroundColor !== 'rgba(0, 0, 0, 0)'
             ? bodyStyle.backgroundColor
-            : (root.dataset.tema === 'claro' ? '#F6F6F6' : '#050505');
+            : (root.dataset.tema === 'claro' ? '#F4F4F4' : '#050505');
 
         if (!alvo) {
             root.style.setProperty('--safe-area-bg-color', fallbackCor);
