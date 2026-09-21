@@ -7605,3 +7605,291 @@ body.chamada-grupo-aberta {
         border-radius: 20px;
     }
 }
+
+
+/* ==========================================
+   TEMA DOS BALOES + PALETA FIXA
+   ========================================== */
+#tela-chat {
+    --cor-balao-enviada: #2b2b2b;
+    --cor-balao-recebida: #1f1f1f;
+}
+
+#tela-chat .balao-enviada {
+    background: var(--cor-balao-enviada) !important;
+}
+
+#tela-chat .balao-recebida {
+    background: var(--cor-balao-recebida) !important;
+}
+
+#tela-chat .balao-enviada::after,
+#tela-chat .chat-mensagens > .balao-msg:last-of-type.balao-enviada::after {
+    background: var(--cor-balao-enviada) !important;
+}
+
+#tela-chat .balao-recebida::after,
+#tela-chat .chat-mensagens > .balao-msg:last-of-type.balao-recebida::after {
+    background: var(--cor-balao-recebida) !important;
+}
+
+#painel-aparencia .aparencia-preview-balao {
+    border: 0 !important;
+    color: #f7f7f7;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+#painel-aparencia .aparencia-hint-baloes {
+    margin: 10px 2px 0;
+    color: #8b8b90;
+    font-size: 12px;
+    line-height: 16px;
+}
+
+/* Tela de tema por contato/grupo */
+#painel-tema-conversa,
+#painel-paleta-balao {
+    position: fixed;
+    inset: 0;
+    z-index: 4700;
+    display: flex;
+    flex-direction: column;
+    background: #171717;
+    color: #f7f7f7;
+}
+
+#painel-paleta-balao {
+    z-index: 4800;
+}
+
+#painel-tema-conversa.hidden,
+#painel-paleta-balao.hidden {
+    display: none !important;
+}
+
+.tema-conversa-header,
+.paleta-balao-header {
+    position: relative;
+    flex: 0 0 auto;
+    min-height: 72px;
+    padding:
+        max(env(safe-area-inset-top), 10px)
+        18px
+        12px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    box-sizing: border-box;
+    background: rgba(23,23,23,.96);
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    -webkit-backdrop-filter: blur(25px) saturate(160%);
+    backdrop-filter: blur(25px) saturate(160%);
+}
+
+.tema-conversa-header h3,
+.paleta-balao-header h3 {
+    margin: 0;
+    font-size: 19px;
+    line-height: 28px;
+    font-weight: 650;
+}
+
+.tema-conversa-voltar,
+.paleta-balao-voltar {
+    position: absolute;
+    left: 12px;
+    bottom: 8px;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #ff982f;
+    font-size: 42px;
+    line-height: 34px;
+    font-weight: 300;
+}
+
+.tema-conversa-conteudo,
+.paleta-balao-conteudo {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding:
+        20px
+        16px
+        calc(30px + env(safe-area-inset-bottom));
+    box-sizing: border-box;
+}
+
+.tema-conversa-card {
+    width: 100%;
+    max-width: 680px;
+    margin: 0 auto 16px;
+    padding: 16px;
+    box-sizing: border-box;
+    border-radius: 26px;
+    background: #202020;
+    border: 1px solid rgba(255,255,255,.08);
+}
+
+.tema-conversa-titulo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 14px;
+}
+
+.tema-conversa-titulo strong {
+    font-size: 18px;
+    line-height: 23px;
+    font-weight: 650;
+}
+
+.tema-conversa-titulo small {
+    color: #8d8d92;
+    font-size: 13px;
+    line-height: 18px;
+}
+
+.tema-conversa-preview {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    border-radius: 22px;
+    background-color: #1d1d1f;
+    background-size: cover;
+    background-position: center;
+    border: 1px solid rgba(255,255,255,.08);
+}
+
+.tema-conversa-preview.sem-fundo {
+    background-image:
+        radial-gradient(circle at 16% 20%, rgba(255,138,31,.10), transparent 24%),
+        radial-gradient(circle at 82% 74%, rgba(255,255,255,.05), transparent 22%);
+}
+
+.tema-preview-balao {
+    position: absolute;
+    max-width: 61%;
+    padding: 8px 12px;
+    border: 0;
+    border-radius: 14px;
+    color: #f7f7f7;
+    font: inherit;
+    font-size: 13px;
+    box-shadow: 0 4px 14px rgba(0,0,0,.22);
+}
+
+.tema-preview-balao.recebida {
+    left: 12px;
+    top: 32%;
+}
+
+.tema-preview-balao.enviada {
+    right: 12px;
+    bottom: 23%;
+}
+
+.tema-conversa-acoes {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.tema-btn-principal,
+.tema-btn-secundario,
+.tema-reset-btn {
+    min-height: 44px;
+    padding: 0 15px;
+    border-radius: 14px;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.tema-btn-principal {
+    flex: 1;
+    color: #ffad62;
+    background: rgba(255,138,31,.16);
+    border: 1px solid rgba(255,151,54,.30);
+}
+
+.tema-btn-secundario,
+.tema-reset-btn {
+    color: #d7d7da;
+    background: rgba(255,255,255,.055);
+    border: 1px solid rgba(255,255,255,.10);
+}
+
+.tema-btn-secundario:disabled {
+    opacity: .35;
+}
+
+.tema-conversa-reset-card {
+    padding: 8px !important;
+}
+
+.tema-reset-btn {
+    width: 100%;
+}
+
+/* Paleta: 4 colunas na mesma ordem do print enviado. */
+.paleta-balao-conteudo {
+    display: flex;
+    justify-content: center;
+}
+
+.paleta-balao-grid {
+    width: min(100%, 430px);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 22px 22px;
+    align-content: start;
+    justify-items: center;
+}
+
+.paleta-cor-opcao {
+    position: relative;
+    width: 58px;
+    height: 58px;
+    padding: 0;
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 50%;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.035);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.paleta-cor-opcao.selecionada::after {
+    content: "✓";
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-size: 22px;
+    font-weight: 800;
+    text-shadow: 0 1px 4px rgba(0,0,0,.55);
+}
+
+@media (max-width: 430px) {
+    .tema-conversa-conteudo,
+    .paleta-balao-conteudo {
+        padding-left: 13px;
+        padding-right: 13px;
+    }
+
+    .paleta-balao-grid {
+        width: 100%;
+        gap: 20px 18px;
+    }
+
+    .paleta-cor-opcao {
+        width: 56px;
+        height: 56px;
+    }
+}
