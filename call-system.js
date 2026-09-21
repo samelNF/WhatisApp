@@ -1222,9 +1222,14 @@
         }
     }
 
-    function criarPeer() {
+    function criarPeer(prepararOfertaLocal = true) {
         // Fecha somente a conexão anterior. O microfone recém-aberto precisa
         // continuar vivo para ser adicionado ao novo RTCPeerConnection.
+        //
+        // IMPORTANTE: quem atende uma offer não deve pré-criar transceivers
+        // antes de setRemoteDescription(). No Safari isso pode criar um
+        // segundo m-line de vídeo e fazer a answer voltar recvonly, deixando
+        // o chamador em sendonly (ele envia a câmera, mas não recebe a outra).
         if (peer) {
             try {
                 peer.onicecandidate = null;
@@ -1249,23 +1254,30 @@
             audio.volume = 1;
         }
 
-        if (streamLocal) {
-            streamLocal.getAudioTracks().forEach(track => {
-                peer.addTrack(track, streamLocal);
-            });
+        if (prepararOfertaLocal) {
+            if (streamLocal) {
+                streamLocal.getAudioTracks().forEach(track => {
+                    peer.addTrack(track, streamLocal);
+                });
+            }
+
+            const videoTrack = streamLocal?.getVideoTracks?.()[0] || null;
+            const videoTransceiver = videoTrack
+                ? peer.addTransceiver(videoTrack, {
+                    direction: 'sendrecv',
+                    streams: [streamLocal]
+                })
+                : peer.addTransceiver('video', {
+                    direction: 'sendrecv'
+                });
+
+            videoSender = videoTransceiver.sender;
+        } else {
+            // A remote offer criará os transceivers corretos. Depois dela,
+            // sincronizarTracksNoPeer() encaixa áudio/vídeo local nesses
+            // mesmos m-lines antes de createAnswer().
+            videoSender = null;
         }
-
-        const videoTrack = streamLocal?.getVideoTracks?.()[0] || null;
-        const videoTransceiver = videoTrack
-            ? peer.addTransceiver(videoTrack, {
-                direction: 'sendrecv',
-                streams: [streamLocal]
-            })
-            : peer.addTransceiver('video', {
-                direction: 'sendrecv'
-            });
-
-        videoSender = videoTransceiver.sender;
 
         const videoLocal = document.getElementById('chamada-video-local');
         const videoRemoto = document.getElementById('chamada-video-remoto');
@@ -1588,7 +1600,7 @@
                 }
             }
 
-            criarPeer();
+            criarPeer(true);
 
             // O peer já nasce com transceiver de vídeo sendrecv. Não usamos
             // offerToReceive* legado aqui: em alguns Safari/Chromium ele fazia
@@ -1696,7 +1708,7 @@
                 }
             }
 
-            criarPeer();
+            criarPeer(false);
             await assinarIce(chamadaAtual.id);
 
             await peer.setRemoteDescription(
@@ -1711,6 +1723,14 @@
 
             const answer = await peer.createAnswer();
             await peer.setLocalDescription(answer);
+
+            const videoTransceiverResposta = transceiverPorKind('video');
+            registrarDiagnostico('answer_criada_receptor', {
+                videoDirection: videoTransceiverResposta?.currentDirection || '',
+                videoPreferredDirection: videoTransceiverResposta?.direction || '',
+                videoSenderTrack: videoTransceiverResposta?.sender?.track?.readyState || '',
+                videoReceiverTrack: videoTransceiverResposta?.receiver?.track?.readyState || ''
+            });
 
             const atualizada = await atualizarChamada(chamadaAtual.id, {
                 status: 'active',
