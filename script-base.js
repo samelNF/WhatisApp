@@ -4525,9 +4525,15 @@ function lerTemaBaloes(chave) {
         const valor = JSON.parse(localStorage.getItem(chave) || "null");
         if (!valor || typeof valor !== "object") return null;
 
+        const enviada = valor.enviada || null;
+        const recebida = valor.recebida || null;
+
+        // Versões anteriores gravavam as cores padrão antigas junto com uma
+        // personalização de apenas um lado. Elas não eram opções da paleta,
+        // então podem voltar a ser "padrão" e acompanhar claro/escuro.
         return {
-            enviada: valor.enviada || null,
-            recebida: valor.recebida || null
+            enviada: enviada === "#2b2b2b" ? null : enviada,
+            recebida: recebida === "#1f1f1f" ? null : recebida
         };
     } catch (e) {
         return null;
@@ -4770,9 +4776,14 @@ function selecionarCorBalao(cor) {
     const lado = contextoPaletaBalao.lado;
 
     if (contextoPaletaBalao.origem === "global") {
-        const tema = obterTemaBaloesGlobal();
-        tema[lado] = cor;
-        salvarTemaBaloes(chaveTemaBaloesGlobal(), tema);
+        const chave = chaveTemaBaloesGlobal();
+        const salvo = lerTemaBaloes(chave) || {
+            enviada: null,
+            recebida: null
+        };
+
+        salvo[lado] = cor;
+        salvarTemaBaloes(chave, salvo);
         atualizarPreviewBaloesGlobal();
 
         // Conversas sem tema próprio mudam na hora.
