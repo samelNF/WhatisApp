@@ -1492,6 +1492,66 @@ async function obterUsuarioMensagem(email) {
     return data || null;
 }
 
+const MARCADOR_MENSAGEM_APAGADA = "[MENSAGEM_APAGADA]";
+
+function mensagemFoiApagada(valor) {
+    if (!valor) return false;
+
+    if (typeof valor === "string") {
+        return valor.trim() === MARCADOR_MENSAGEM_APAGADA;
+    }
+
+    return !!valor.apagada_em ||
+        String(valor.texto || "").trim() === MARCADOR_MENSAGEM_APAGADA;
+}
+
+window.mensagemFoiApagada = mensagemFoiApagada;
+
+function htmlLinhaMensagemApagada(dataCriacao) {
+    return `
+        <div class="balao-linha balao-linha-apagada">
+            <div class="balao-conteudo">
+                <span class="balao-texto balao-texto-apagada">
+                    <span class="mensagem-apagada-icone" aria-hidden="true"></span>
+                    <span>Mensagem apagada</span>
+                </span>
+            </div>
+            <span class="balao-meta balao-meta-apagada">
+                <span class="balao-hora">${formatarHora(dataCriacao || new Date())}</span>
+            </span>
+        </div>
+    `;
+}
+
+function aplicarMensagemApagadaNoBalao(balao, msg, ehMinha) {
+    if (!balao || !msg) return;
+
+    const cabecalhoGrupo = balao.querySelector(".grupo-msg-cabecalho")?.outerHTML || "";
+    const avatarGrupo = balao.querySelector(".grupo-msg-avatar")?.outerHTML || "";
+
+    balao.classList.add("balao-apagada");
+    balao.classList.remove("balao-com-resposta", "balao-com-midia");
+
+    balao.innerHTML =
+        cabecalhoGrupo +
+        htmlLinhaMensagemApagada(msg.created_at) +
+        avatarGrupo;
+
+    balao.dataset.messageDeleted = "true";
+    balao.dataset.messageText = MARCADOR_MENSAGEM_APAGADA;
+    balao.dataset.messageType = "texto";
+    balao.dataset.messageEditedAt = "";
+    balao.dataset.messageCallId = "";
+
+    if (ehMinha) {
+        balao.classList.add("balao-enviada");
+        balao.classList.remove("balao-recebida");
+    }
+
+    atualizarAvataresMensagensGrupo();
+    atualizarAgrupamentoBaloesChat();
+}
+
 async function renderizarBalao(texto, ehMinha, dataCriacao, idMensagem, mensagemRespondida, corRemetente, visualizada = false) {
     const container = document.getElementById("chat-mensagens");
     if (!container) return;
@@ -1502,6 +1562,16 @@ async function renderizarBalao(texto, ehMinha, dataCriacao, idMensagem, mensagem
         balao.dataset.messageId = String(idMensagem);
     }
     balao.classList.add(ehMinha ? "balao-enviada" : "balao-recebida");
+
+    const apagada = mensagemFoiApagada(texto);
+
+    if (apagada) {
+        balao.classList.add("balao-apagada");
+        balao.innerHTML = htmlLinhaMensagemApagada(dataCriacao);
+        container.appendChild(balao);
+        container.scrollTop = container.scrollHeight;
+        return;
+    }
 
     const temResposta = !!(mensagemRespondida && mensagemRespondida.texto);
     const temMidia = !!(texto && (texto.startsWith("[FOTO]:") || texto.startsWith("[VIDEO]:")));
@@ -1516,7 +1586,8 @@ async function renderizarBalao(texto, ehMinha, dataCriacao, idMensagem, mensagem
 
     if (mensagemRespondida && mensagemRespondida.texto) {
         let textoCitado = mensagemRespondida.texto;
-        if (textoCitado.startsWith("[FOTO]:")) textoCitado = "📷 Foto";
+        if (mensagemFoiApagada(mensagemRespondida)) textoCitado = "Mensagem apagada";
+        else if (textoCitado.startsWith("[FOTO]:")) textoCitado = "📷 Foto";
         if (textoCitado.startsWith("[VIDEO]:")) textoCitado = "🎥 Vídeo";
         if (textoCitado.startsWith("[AUDIO]:")) textoCitado = "🎤 Áudio";
 
@@ -1621,10 +1692,22 @@ async function renderizarBalaoGrupo(texto, ehMinha, dataCriacao, nomeRemetente, 
         `;
     }
 
+    if (mensagemFoiApagada(texto)) {
+        balao.classList.add("balao-apagada");
+        balao.innerHTML = `
+            ${htmlNome}
+            ${htmlLinhaMensagemApagada(dataCriacao)}
+        `;
+        container.appendChild(balao);
+        container.scrollTop = container.scrollHeight;
+        return;
+    }
+
     let htmlResposta = "";
     if (mensagemRespondida && mensagemRespondida.texto) {
         let textoCitado = mensagemRespondida.texto;
-        if (textoCitado.startsWith("[FOTO]:")) textoCitado = "📷 Foto";
+        if (mensagemFoiApagada(mensagemRespondida)) textoCitado = "Mensagem apagada";
+        else if (textoCitado.startsWith("[FOTO]:")) textoCitado = "📷 Foto";
         if (textoCitado.startsWith("[VIDEO]:")) textoCitado = "🎥 Vídeo";
         if (textoCitado.startsWith("[AUDIO]:")) textoCitado = "🎤 Áudio";
 
@@ -1895,6 +1978,12 @@ function prepararBalaoParaAcoes(balao, msg, ehMinha) {
     balao.dataset.messageType = msg.tipo || "texto";
     balao.dataset.messageEditedAt = msg.editada_em || "";
     balao.dataset.messageCallId = msg.chamada_id || "";
+    balao.dataset.messageDeleted = mensagemFoiApagada(msg) ? "true" : "false";
+
+    if (mensagemFoiApagada(msg)) {
+        aplicarMensagemApagadaNoBalao(balao, msg, ehMinha);
+        return;
+    }
 
     atualizarEstadoEdicaoBalao(balao, msg);
 }
@@ -1993,18 +2082,40 @@ async function apagarMensagemParaTodos(idMensagem, contexto = {}) {
         return false;
     }
 
-    const { error } = await _supabase
+    const { data, error } = await _supabase
         .from("mensagens")
-        .delete()
-        .eq("id", idMensagem);
+        .update({ apagada_em: new Date().toISOString() })
+        .eq("id", idMensagem)
+        .select("*")
+        .maybeSingle();
 
-    if (error) {
+    if (error || !data) {
         console.error("Erro ao apagar mensagem para todos:", error);
         mostrarToastAcoesMensagem("Não foi possível apagar para todos.");
         return false;
     }
 
-    await removerMensagemDaInterface(idMensagem);
+    if (window.WhatisCache?.salvarMensagens) {
+        const chave = data.grupo_id
+            ? window.WhatisCache.conversaGrupo(data.grupo_id)
+            : (destinatarioAtual
+                ? window.WhatisCache.conversaPrivada(destinatarioAtual)
+                : null);
+
+        if (chave) {
+            await window.WhatisCache.salvarMensagens(chave, [data]);
+        }
+    }
+
+    const balao = localizarBalaoMensagem(idMensagem);
+    if (balao) {
+        prepararBalaoParaAcoes(
+            balao,
+            data,
+            String(data.remetente_email || "").trim().toLowerCase() === meuEmail
+        );
+    }
+
     carregarListaContatos();
     return true;
 }
@@ -2012,6 +2123,8 @@ async function apagarMensagemParaTodos(idMensagem, contexto = {}) {
 const LIMITE_EDICAO_MENSAGEM_MS = 5 * 60 * 1000;
 
 function mensagemEhTextoEditavel(dados) {
+    if (mensagemFoiApagada(dados)) return false;
+
     const tipo = String(dados?.tipo || "texto").toLowerCase();
     const texto = String(dados?.texto || "");
 
@@ -2038,6 +2151,16 @@ function mensagemPodeSerEditada(dados) {
 
 function atualizarEstadoEdicaoBalao(balao, msg) {
     if (!balao || !msg) return;
+
+    if (mensagemFoiApagada(msg)) {
+        const meuEmail = (localStorage.getItem("usuarioLogado") || "").trim().toLowerCase();
+        aplicarMensagemApagadaNoBalao(
+            balao,
+            msg,
+            String(msg.remetente_email || "").trim().toLowerCase() === meuEmail
+        );
+        return;
+    }
 
     const texto = balao.querySelector(".balao-conteudo > .balao-texto");
     if (texto && typeof msg.texto === "string") {
@@ -2210,6 +2333,7 @@ function textoCopiavelMensagem(texto) {
     if (valor.startsWith("[FOTO]:")) return "";
     if (valor.startsWith("[VIDEO]:")) return "";
     if (valor.startsWith("[AUDIO]:")) return "";
+    if (valor.trim() === MARCADOR_MENSAGEM_APAGADA) return "";
     return valor;
 }
 
@@ -2319,6 +2443,7 @@ function dadosMensagemDoBalao(balao) {
         tipo: balao?.dataset.messageType || "texto",
         editada_em: balao?.dataset.messageEditedAt || "",
         chamada_id: balao?.dataset.messageCallId || "",
+        apagada: balao?.dataset.messageDeleted === "true",
         ehMinha: balao?.dataset.messageOwn === "true"
     };
 }
@@ -2373,6 +2498,11 @@ async function encaminharMensagemParaConversa(idMensagem, alvo) {
 
     if (error || !original) {
         mostrarToastAcoesMensagem("Não foi possível carregar a mensagem.");
+        return;
+    }
+
+    if (mensagemFoiApagada(original)) {
+        mostrarToastAcoesMensagem("Mensagens apagadas não podem ser encaminhadas.");
         return;
     }
 
@@ -2527,6 +2657,17 @@ async function abrirMenuAcoesMensagem(balao) {
     overlay.addEventListener("pointerdown", e => {
         if (e.target === overlay) fecharMenuAcoesMensagem();
     });
+
+    if (dados.apagada) {
+        menu.appendChild(criarBotaoAcaoMensagem("Apagar para mim", "apagar", async () => {
+            fecharMenuAcoesMensagem();
+            const ok = await ocultarMensagemParaMim(dados.id);
+            if (ok) mostrarToastAcoesMensagem("Mensagem apagada para você.");
+        }, true));
+
+        requestAnimationFrame(() => posicionarMenuAcoesMensagem(menu, balao));
+        return;
+    }
 
     const nomeResposta = dados.ehMinha
         ? "Você"
@@ -3752,6 +3893,79 @@ function inscreverRealtime() {
             async (payload) => {
                 const msg = payload.new;
                 if (!msg) return;
+
+                if (mensagemFoiApagada(msg)) {
+                    carregarListaContatos();
+
+                    const meuEmailAtualApagada =
+                        (localStorage.getItem("usuarioLogado") || "").trim().toLowerCase();
+                    const remetenteApagada =
+                        String(msg.remetente_email || "").trim().toLowerCase();
+                    const cache = window.WhatisCache;
+
+                    if (msg.grupo_id) {
+                        if (cache?.salvarMensagens) {
+                            await cache.salvarMensagens(
+                                cache.conversaGrupo(msg.grupo_id),
+                                [msg]
+                            );
+                        }
+
+                        if (
+                            window.grupoAtualId &&
+                            String(window.grupoAtualId) === String(msg.grupo_id)
+                        ) {
+                            const balao = localizarBalaoMensagem(msg.id);
+                            if (balao) {
+                                prepararBalaoParaAcoes(
+                                    balao,
+                                    msg,
+                                    remetenteApagada === meuEmailAtualApagada
+                                );
+                            } else {
+                                await carregarMensagensGrupo(window.grupoAtualId);
+                            }
+                        }
+
+                        return;
+                    }
+
+                    const destinatarioApagada =
+                        String(msg.destinatario_email || "").trim().toLowerCase();
+
+                    if (destinatarioAtual) {
+                        const outroApagada =
+                            String(destinatarioAtual || "").trim().toLowerCase();
+
+                        const pertenceAoChatApagada =
+                            (remetenteApagada === meuEmailAtualApagada &&
+                             destinatarioApagada === outroApagada) ||
+                            (remetenteApagada === outroApagada &&
+                             destinatarioApagada === meuEmailAtualApagada);
+
+                        if (pertenceAoChatApagada) {
+                            if (cache?.salvarMensagens) {
+                                await cache.salvarMensagens(
+                                    cache.conversaPrivada(destinatarioAtual),
+                                    [msg]
+                                );
+                            }
+
+                            const balao = localizarBalaoMensagem(msg.id);
+                            if (balao) {
+                                prepararBalaoParaAcoes(
+                                    balao,
+                                    msg,
+                                    remetenteApagada === meuEmailAtualApagada
+                                );
+                            } else {
+                                await carregarMensagens();
+                            }
+                        }
+                    }
+
+                    return;
+                }
 
                 // A mensagem da ligação em grupo muda quando a sala encerra.
                 if (
