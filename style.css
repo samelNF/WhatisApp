@@ -7864,7 +7864,10 @@ body.chamada-grupo-aberta {
     border-radius: 50%;
 
     /* A bolinha precisa mostrar a cor REAL da opção.
-       Nada de vidro/blur/filtro por cima da amostra. */
+       Usa uma variável própria + !important para vencer os estilos
+       globais de vidro dos botões. */
+    background: var(--cor-paleta, #333333) !important;
+    background-color: var(--cor-paleta, #333333) !important;
     background-image: none !important;
     opacity: 1 !important;
     filter: none !important;
