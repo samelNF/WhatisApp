@@ -6,6 +6,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="icon" id="favicon-whatisapp" href="svg/mini-logo.svg">
     <title>WhatisApp</title>
+    <meta name="color-scheme" content="light dark">
+    <script>
+        // Resolve o tema antes do CSS carregar para evitar um flash do modo escuro.
+        (function () {
+            var modo = localStorage.getItem('modoTemaWhatisApp') || 'automatico';
+            var escuroSistema = window.matchMedia &&
+                window.matchMedia('(prefers-color-scheme: dark)').matches;
+            var tema = modo === 'automatico'
+                ? (escuroSistema ? 'escuro' : 'claro')
+                : modo;
+
+            document.documentElement.dataset.tema = tema;
+            document.documentElement.dataset.modoTema = modo;
+        })();
+    </script>
 
     <link rel="stylesheet" href="style.css">
     <!-- FontAwesome para ícones das solicitações -->
@@ -288,7 +303,7 @@
                 </span>
                 <span class="voce-config-texto">
                     <strong>Aparência</strong>
-                    <small>Fundo dos chats e ícone do aplicativo</small>
+                    <small>Tema, fundo dos chats e ícone do aplicativo</small>
                 </span>
                 <span class="voce-config-seta">›</span>
             </button>
@@ -302,6 +317,44 @@
             </div>
 
             <div class="aparencia-conteudo">
+                <section class="aparencia-card aparencia-tema-card">
+                    <div class="aparencia-titulo-bloco">
+                        <strong>Tema do aplicativo</strong>
+                        <small>Escolha claro, escuro ou acompanhe automaticamente o sistema.</small>
+                    </div>
+
+                    <div class="aparencia-tema-opcoes" role="radiogroup" aria-label="Tema do aplicativo">
+                        <button type="button" class="aparencia-tema-opcao" data-modo-tema="automatico" onclick="selecionarModoTema('automatico')" role="radio">
+                            <span class="aparencia-tema-icone tema-auto" aria-hidden="true">
+                                <span class="tema-auto-metade"></span>
+                            </span>
+                            <span class="aparencia-tema-texto">
+                                <strong>Automático</strong>
+                                <small>Usar a aparência do sistema</small>
+                            </span>
+                            <span class="aparencia-tema-check">✓</span>
+                        </button>
+
+                        <button type="button" class="aparencia-tema-opcao" data-modo-tema="claro" onclick="selecionarModoTema('claro')" role="radio">
+                            <span class="aparencia-tema-icone tema-claro" aria-hidden="true"></span>
+                            <span class="aparencia-tema-texto">
+                                <strong>Claro</strong>
+                                <small>Fundo claro e textos escuros</small>
+                            </span>
+                            <span class="aparencia-tema-check">✓</span>
+                        </button>
+
+                        <button type="button" class="aparencia-tema-opcao" data-modo-tema="escuro" onclick="selecionarModoTema('escuro')" role="radio">
+                            <span class="aparencia-tema-icone tema-escuro" aria-hidden="true"></span>
+                            <span class="aparencia-tema-texto">
+                                <strong>Escuro</strong>
+                                <small>Manter a aparência atual</small>
+                            </span>
+                            <span class="aparencia-tema-check">✓</span>
+                        </button>
+                    </div>
+                </section>
+
                 <section class="aparencia-card">
                     <div class="aparencia-titulo-bloco">
                         <strong>Plano de fundo padrão</strong>
