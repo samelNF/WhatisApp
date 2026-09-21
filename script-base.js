@@ -4374,7 +4374,8 @@ function abrirPaletaBalao(origem, lado) {
         const botao = document.createElement("button");
         botao.type = "button";
         botao.className = "paleta-cor-opcao";
-        botao.style.backgroundColor = cor;
+        botao.style.setProperty("--cor-paleta", cor);
+        botao.style.setProperty("background-color", cor, "important");
         botao.dataset.cor = cor;
         botao.setAttribute("aria-label", `Cor ${indice + 1}`);
         botao.classList.toggle("selecionada", cor.toLowerCase() === String(corAtual).toLowerCase());
