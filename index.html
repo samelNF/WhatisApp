@@ -564,6 +564,43 @@
                 <input type="file" id="input-arquivo-chat" accept="image/*, video/*" style="display: none;" onchange="enviarFotoChat(event)">
             </div>
 
+            <!-- Modo de edição de mensagem -->
+            <div id="chat-edit-box" class="chat-edit-box hidden" aria-label="Editar mensagem">
+                <button
+                    type="button"
+                    class="chat-edit-cancel"
+                    onclick="cancelarEdicaoMensagem()"
+                    aria-label="Cancelar edição"
+                    title="Cancelar"
+                >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M6 6l12 12M18 6 6 18"></path>
+                    </svg>
+                </button>
+
+                <div class="chat-edit-pill">
+                    <input
+                        type="text"
+                        id="input-editar-mensagem"
+                        autocomplete="off"
+                        aria-label="Editar mensagem"
+                        onkeydown="checarEnterEdicao(event)"
+                    >
+                </div>
+
+                <button
+                    type="button"
+                    class="chat-edit-confirm"
+                    onclick="confirmarEdicaoMensagem()"
+                    aria-label="Salvar edição"
+                    title="Salvar"
+                >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m6.5 12.5 3.6 3.6L18 8.2"></path>
+                    </svg>
+                </button>
+            </div>
+
             <!-- Barra de decisão (visível APENAS para solicitações pendentes) -->
             <div id="chat-action-bar" class="chat-action-bar hidden">
                 <p class="warning-text">Este usuário não está nos seus contatos. Deseja aceitar a conversa?</p>
