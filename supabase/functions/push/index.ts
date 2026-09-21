@@ -42,11 +42,43 @@ async function sha256(text: string) {
     .join("");
 }
 
-function textoNotificacao(texto?: string | null) {
-  if (!texto) return "Nova mensagem";
-  if (texto.startsWith("[FOTO]:") || texto.startsWith("[IMAGEM]:")) return "📷 Foto";
-  if (texto.startsWith("[VIDEO]:")) return "🎥 Vídeo";
-  if (texto.startsWith("[AUDIO]:")) return "🎤 Áudio";
+function formatarDuracaoNotificacao(valor?: number | string | null) {
+  const total = Math.max(0, Math.round(Number(valor) || 0));
+  if (!total) return "";
+
+  const minutos = Math.floor(total / 60);
+  const segundos = String(total % 60).padStart(2, "0");
+  return minutos + ":" + segundos;
+}
+
+function textoNotificacao(mensagem: any) {
+  const texto = String(mensagem?.texto || "");
+  const tipo = String(mensagem?.tipo || "").toLowerCase();
+
+  if (!texto && !tipo) return "Nova mensagem";
+
+  if (
+    tipo === "foto" ||
+    tipo === "imagem" ||
+    texto.startsWith("[FOTO]:") ||
+    texto.startsWith("[IMAGEM]:")
+  ) {
+    return "📷 Foto";
+  }
+
+  if (tipo === "video" || texto.startsWith("[VIDEO]:")) {
+    return "🎥 Vídeo";
+  }
+
+  if (
+    tipo === "audio" ||
+    tipo === "áudio" ||
+    texto.startsWith("[AUDIO]:")
+  ) {
+    const duracao = formatarDuracaoNotificacao(mensagem?.audio_duracao);
+    return duracao ? ("🎤 Áudio · " + duracao) : "🎤 Áudio";
+  }
+
   if (texto.startsWith("[CHAMADA]")) return "📞 Ligação de voz";
   if (texto.startsWith("[CHAMADA_GRUPO]")) return "📞 Ligação de voz em grupo";
 
@@ -294,7 +326,7 @@ Deno.serve(async (req) => {
 
     const { data: usuarioRemetente } = await supabase
       .from("usuarios")
-      .select("usuario")
+      .select("usuario, foto_url")
       .eq("email", mensagem.remetente_email)
       .maybeSingle();
 
@@ -304,7 +336,8 @@ Deno.serve(async (req) => {
       "Contato";
 
     let titulo = nomeRemetente;
-    let corpo = textoNotificacao(mensagem.texto);
+    let corpo = textoNotificacao(mensagem);
+    let icone = usuarioRemetente?.foto_url || null;
 
     const ehChamada =
       mensagem.tipo === "chamada" ||
@@ -331,11 +364,12 @@ Deno.serve(async (req) => {
     if (mensagem.grupo_id) {
       const { data: grupo } = await supabase
         .from("grupos")
-        .select("nome")
+        .select("nome, foto_url")
         .eq("id", mensagem.grupo_id)
         .maybeSingle();
 
       titulo = grupo?.nome || "Grupo";
+      icone = grupo?.foto_url || null;
       if (!ehChamadaGrupo) {
         corpo = nomeRemetente + ": " + corpo;
       }
@@ -391,6 +425,7 @@ Deno.serve(async (req) => {
     const payload = JSON.stringify({
       title: titulo,
       body: corpo,
+      icon: icone || undefined,
       tag:
         (ehChamadaGrupo
           ? "chamada-grupo-"
