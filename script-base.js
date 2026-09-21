@@ -3086,6 +3086,7 @@ function abrirChatGrupo(idGrupo, nomeGrupo, fotoGrupo, corGrupo) {
     atualizarRolagemNomeChat();
     aplicarAvatarGrupo(elemFoto, fotoGrupo || "", corGrupo || "#482133");
     if (spanStatus) spanStatus.innerText = "Toque para ver os dados do grupo";
+    aplicarTemaBaloesNoChat("grupo");
     
     // CORREÇÃO: Adiciona a classe 'ativa' igual ao chat privado para exibir a tela
     if (telaChat) {
@@ -3484,6 +3485,7 @@ function abrirChatCom(emailDestinatario, nomeDestinatario, fotoDestinatario, cor
     if (elemNome) elemNome.innerText = nomeDestinatario || emailDestinatario;
     atualizarRolagemNomeChat();
     aplicarAvatarUsuario(elemFoto, fotoDestinatario, corDestinatario);
+    aplicarTemaBaloesNoChat("contato");
     
     if (telaChat) {
         telaChat.style.display = "flex";
@@ -3637,6 +3639,7 @@ function alterarFundoChat(event) {
         const meuEmail = localStorage.getItem("usuarioLogado");
         localStorage.setItem(`fundo_chat_${meuEmail}_${destinatarioAtual}`, urlImagem);
 
+        atualizarPainelTemaConversa();
         fecharPainelDadosContato();
     };
     reader.readAsDataURL(arquivo);
@@ -4143,6 +4146,306 @@ async function trocarFotoPerfil(event) {
 // ==========================================
 // APARÊNCIA - FUNDO GLOBAL + ÍCONE DO PWA
 // ==========================================
+const CORES_BALOES_FIXAS = [
+    "#186f47", "#134d36", "#423495", "#2c2a5b",
+    "#703081", "#4a2159", "#853c24", "#4c2c24",
+    "#025d55", "#0a3e3d", "#06488f", "#06305a",
+    "#094a79", "#08344d", "#3c513a", "#293327",
+    "#7b122e", "#531322", "#4c4c4c", "#333333",
+    "#05468c", "#062f5a", "#404445", "#333333",
+    "#025a7e", "#09334d", "#5b3c28", "#34261e",
+    "#7b634c", "#3a342b", "#117261", "#0e483b",
+    "#b19900", "#5b5102", "#577c27", "#2e4012",
+    "#bb285c", "#571d36", "#a61235", "#60172d",
+    "#881f10", "#56120a", "#9e782c", "#504124"
+];
+
+const TEMA_BALOES_PADRAO = {
+    enviada: "#2b2b2b",
+    recebida: "#1f1f1f"
+};
+
+let contextoTemaConversa = null;
+let contextoPaletaBalao = null;
+
+function chaveTemaBaloesGlobal() {
+    const meuEmail = localStorage.getItem("usuarioLogado") || "local";
+    return `tema_baloes_global_${meuEmail}`;
+}
+
+function chaveTemaBaloesConversa(tipo = contextoTemaConversa) {
+    const meuEmail = localStorage.getItem("usuarioLogado") || "local";
+
+    if (tipo === "grupo" && window.grupoAtualId) {
+        return `tema_baloes_grupo_${meuEmail}_${window.grupoAtualId}`;
+    }
+
+    if (tipo === "contato" && destinatarioAtual) {
+        return `tema_baloes_chat_${meuEmail}_${destinatarioAtual}`;
+    }
+
+    return "";
+}
+
+function lerTemaBaloes(chave) {
+    if (!chave) return null;
+
+    try {
+        const valor = JSON.parse(localStorage.getItem(chave) || "null");
+        if (!valor || typeof valor !== "object") return null;
+
+        return {
+            enviada: valor.enviada || null,
+            recebida: valor.recebida || null
+        };
+    } catch (e) {
+        return null;
+    }
+}
+
+function obterTemaBaloesGlobal() {
+    const salvo = lerTemaBaloes(chaveTemaBaloesGlobal()) || {};
+
+    return {
+        enviada: salvo.enviada || TEMA_BALOES_PADRAO.enviada,
+        recebida: salvo.recebida || TEMA_BALOES_PADRAO.recebida
+    };
+}
+
+function obterTemaBaloesAtual(tipo = null) {
+    const global = obterTemaBaloesGlobal();
+    const contexto = tipo || (window.grupoAtualId ? "grupo" : (destinatarioAtual ? "contato" : null));
+    const chave = chaveTemaBaloesConversa(contexto);
+    const proprio = lerTemaBaloes(chave) || {};
+
+    return {
+        enviada: proprio.enviada || global.enviada,
+        recebida: proprio.recebida || global.recebida
+    };
+}
+
+function salvarTemaBaloes(chave, tema) {
+    if (!chave) return;
+    localStorage.setItem(chave, JSON.stringify(tema));
+}
+
+function aplicarTemaBaloesNoChat(tipo = null) {
+    const tela = document.getElementById("tela-chat");
+    if (!tela) return;
+
+    const tema = obterTemaBaloesAtual(tipo);
+    tela.style.setProperty("--cor-balao-enviada", tema.enviada);
+    tela.style.setProperty("--cor-balao-recebida", tema.recebida);
+}
+
+window.aplicarTemaBaloesNoChat = aplicarTemaBaloesNoChat;
+
+function atualizarPreviewBaloesGlobal() {
+    const tema = obterTemaBaloesGlobal();
+    const recebida = document.querySelector("#aparencia-fundo-preview .aparencia-preview-balao.esquerda");
+    const enviada = document.querySelector("#aparencia-fundo-preview .aparencia-preview-balao.direita");
+
+    if (recebida) recebida.style.background = tema.recebida;
+    if (enviada) enviada.style.background = tema.enviada;
+}
+
+function atualizarPainelTemaConversa() {
+    const painel = document.getElementById("painel-tema-conversa");
+    if (!painel || painel.classList.contains("hidden")) return;
+
+    const tema = obterTemaBaloesAtual(contextoTemaConversa);
+    const recebida = document.getElementById("tema-preview-recebida");
+    const enviada = document.getElementById("tema-preview-enviada");
+    const preview = document.getElementById("tema-conversa-preview");
+    const remover = document.getElementById("tema-remover-fundo");
+
+    if (recebida) recebida.style.background = tema.recebida;
+    if (enviada) enviada.style.background = tema.enviada;
+
+    const meuEmail = localStorage.getItem("usuarioLogado") || "local";
+    let fundo = "";
+
+    if (contextoTemaConversa === "grupo" && window.grupoAtualId) {
+        fundo = localStorage.getItem(`fundo_grupo_${meuEmail}_${window.grupoAtualId}`) || "";
+    } else if (contextoTemaConversa === "contato" && destinatarioAtual) {
+        fundo = localStorage.getItem(`fundo_chat_${meuEmail}_${destinatarioAtual}`) || "";
+    }
+
+    const fundoGlobal = obterFundoGlobal();
+    const fundoAplicado = fundo || fundoGlobal || "";
+
+    if (preview) {
+        preview.style.backgroundImage = fundoAplicado ? `url("${fundoAplicado}")` : "";
+        preview.classList.toggle("sem-fundo", !fundoAplicado);
+    }
+
+    if (remover) remover.disabled = !fundo;
+}
+
+window.atualizarPainelTemaConversa = atualizarPainelTemaConversa;
+
+function abrirTemaConversa(tipo) {
+    contextoTemaConversa = tipo === "grupo" ? "grupo" : "contato";
+
+    const painel = document.getElementById("painel-tema-conversa");
+    if (!painel) return;
+
+    painel.classList.remove("hidden");
+    painel.setAttribute("aria-hidden", "false");
+    atualizarPainelTemaConversa();
+
+    if (typeof window.atualizarSafeArea === "function") {
+        requestAnimationFrame(() => window.atualizarSafeArea());
+    }
+}
+
+window.abrirTemaConversa = abrirTemaConversa;
+
+function fecharTemaConversa() {
+    const painel = document.getElementById("painel-tema-conversa");
+    if (!painel) return;
+
+    painel.classList.add("hidden");
+    painel.setAttribute("aria-hidden", "true");
+
+    if (typeof window.atualizarSafeArea === "function") {
+        requestAnimationFrame(() => window.atualizarSafeArea());
+    }
+}
+
+window.fecharTemaConversa = fecharTemaConversa;
+
+function escolherFundoTemaConversa() {
+    if (contextoTemaConversa === "grupo") {
+        window.acionarTrocaFundoGrupo?.();
+    } else {
+        acionarTrocaFundo();
+    }
+}
+
+window.escolherFundoTemaConversa = escolherFundoTemaConversa;
+
+function removerFundoTemaConversa() {
+    const meuEmail = localStorage.getItem("usuarioLogado") || "local";
+
+    if (contextoTemaConversa === "grupo" && window.grupoAtualId) {
+        localStorage.removeItem(`fundo_grupo_${meuEmail}_${window.grupoAtualId}`);
+        window.carregarFundoGrupoSalvo?.(window.grupoAtualId);
+    } else if (contextoTemaConversa === "contato" && destinatarioAtual) {
+        localStorage.removeItem(`fundo_chat_${meuEmail}_${destinatarioAtual}`);
+        carregarFundoChatSalvo(destinatarioAtual);
+    }
+
+    atualizarPainelTemaConversa();
+}
+
+window.removerFundoTemaConversa = removerFundoTemaConversa;
+
+function restaurarTemaConversaPadrao() {
+    const chave = chaveTemaBaloesConversa(contextoTemaConversa);
+    if (chave) localStorage.removeItem(chave);
+
+    aplicarTemaBaloesNoChat(contextoTemaConversa);
+    atualizarPainelTemaConversa();
+}
+
+window.restaurarTemaConversaPadrao = restaurarTemaConversaPadrao;
+
+function abrirPaletaBalao(origem, lado) {
+    contextoPaletaBalao = {
+        origem: origem === "global" ? "global" : "conversa",
+        lado: lado === "recebida" ? "recebida" : "enviada"
+    };
+
+    const painel = document.getElementById("painel-paleta-balao");
+    const grid = document.getElementById("paleta-balao-grid");
+    const titulo = document.getElementById("paleta-balao-titulo");
+    if (!painel || !grid) return;
+
+    const temaAtual = contextoPaletaBalao.origem === "global"
+        ? obterTemaBaloesGlobal()
+        : obterTemaBaloesAtual(contextoTemaConversa);
+
+    const corAtual = temaAtual[contextoPaletaBalao.lado];
+
+    grid.innerHTML = "";
+
+    CORES_BALOES_FIXAS.forEach((cor, indice) => {
+        const botao = document.createElement("button");
+        botao.type = "button";
+        botao.className = "paleta-cor-opcao";
+        botao.style.backgroundColor = cor;
+        botao.dataset.cor = cor;
+        botao.setAttribute("aria-label", `Cor ${indice + 1}`);
+        botao.classList.toggle("selecionada", cor.toLowerCase() === String(corAtual).toLowerCase());
+        botao.addEventListener("click", () => selecionarCorBalao(cor));
+        grid.appendChild(botao);
+    });
+
+    if (titulo) {
+        titulo.textContent = contextoPaletaBalao.lado === "enviada"
+            ? "Cor do meu balão"
+            : "Cor do balão recebido";
+    }
+
+    painel.classList.remove("hidden");
+    painel.setAttribute("aria-hidden", "false");
+}
+
+window.abrirPaletaBalao = abrirPaletaBalao;
+
+function fecharPaletaBalao() {
+    const painel = document.getElementById("painel-paleta-balao");
+    if (!painel) return;
+
+    painel.classList.add("hidden");
+    painel.setAttribute("aria-hidden", "true");
+}
+
+window.fecharPaletaBalao = fecharPaletaBalao;
+
+function selecionarCorBalao(cor) {
+    if (!contextoPaletaBalao || !CORES_BALOES_FIXAS.includes(cor)) return;
+
+    const lado = contextoPaletaBalao.lado;
+
+    if (contextoPaletaBalao.origem === "global") {
+        const tema = obterTemaBaloesGlobal();
+        tema[lado] = cor;
+        salvarTemaBaloes(chaveTemaBaloesGlobal(), tema);
+        atualizarPreviewBaloesGlobal();
+
+        // Conversas sem tema próprio mudam na hora.
+        aplicarTemaBaloesNoChat();
+    } else {
+        const chave = chaveTemaBaloesConversa(contextoTemaConversa);
+        if (!chave) return;
+
+        const salvo = lerTemaBaloes(chave) || {};
+        const tema = {
+            enviada: salvo.enviada || null,
+            recebida: salvo.recebida || null
+        };
+
+        tema[lado] = cor;
+        salvarTemaBaloes(chave, tema);
+        aplicarTemaBaloesNoChat(contextoTemaConversa);
+        atualizarPainelTemaConversa();
+    }
+
+    fecharPaletaBalao();
+}
+
+window.selecionarCorBalao = selecionarCorBalao;
+
+function restaurarTemaGlobalBaloes() {
+    localStorage.removeItem(chaveTemaBaloesGlobal());
+    atualizarPreviewBaloesGlobal();
+    aplicarTemaBaloesNoChat();
+}
+
+window.restaurarTemaGlobalBaloes = restaurarTemaGlobalBaloes;
+
 const ICONES_PWA = {
     normal: './images/icon-192.png',
     dark: './images/icon-dark.png?v=8aeba4f8'
@@ -4299,6 +4602,7 @@ function selecionarIconePWA(tipo) {
 
 function carregarPreferenciasAparencia() {
     atualizarPreviewFundoGlobal();
+    atualizarPreviewBaloesGlobal();
     atualizarSelecaoIconePWA();
     aplicarIconePWA();
 }
