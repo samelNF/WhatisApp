@@ -1186,6 +1186,9 @@
             const url = e.target.result;
             localStorage.setItem(`fundo_grupo_${meuEmail}_${grupoId}`, url);
             window.aplicarFundoGrupoNaTela(url);
+            if (typeof window.atualizarPainelTemaConversa === 'function') {
+                window.atualizarPainelTemaConversa();
+            }
             window.fecharPainelDadosGrupo();
         };
         reader.readAsDataURL(arquivo);
