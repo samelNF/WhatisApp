@@ -30,6 +30,10 @@
 
     function ehMensagemAudio(msg) {
         if (!msg) return false;
+        if (
+            msg.apagada_em ||
+            String(msg.texto || '').trim() === '[MENSAGEM_APAGADA]'
+        ) return false;
         if (msg.tipo === 'audio') return true;
         if (msg.audio_url) return true;
         return typeof msg.texto === 'string' && msg.texto.startsWith('[AUDIO]:');
@@ -39,6 +43,14 @@
 
     window.formatarPreviewMensagem = function (msg) {
         if (!msg) return '';
+
+        if (
+            msg.apagada_em ||
+            String(msg.texto || '').trim() === '[MENSAGEM_APAGADA]'
+        ) {
+            return 'Mensagem apagada';
+        }
+
         if (
             msg.tipo === 'chamada_grupo' ||
             msg.texto === '[CHAMADA_GRUPO]'
