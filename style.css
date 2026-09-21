@@ -4580,8 +4580,10 @@ source {
 #tela-chat .audio-note {
     width: 100%;
     min-width: 0;
+    min-height: 44px;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
 }
 
@@ -4625,26 +4627,76 @@ source {
 
 #tela-chat .audio-play-btn {
     width: 34px !important;
-    height: 38px !important;
+    height: 42px !important;
     min-width: 34px !important;
+    min-height: 42px !important;
+    margin: 0 !important;
     padding: 0 !important;
+
+    /* remove completamente o quadrado/tint nativo do botão no iOS */
+    appearance: none !important;
+    -webkit-appearance: none !important;
     border: 0 !important;
+    outline: 0 !important;
     border-radius: 0 !important;
-    display: flex;
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    filter: none !important;
+    -webkit-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+
+    display: grid !important;
+    place-items: center !important;
+    align-self: center;
+    overflow: visible;
+    color: rgba(255,255,255,.78) !important;
+    -webkit-tap-highlight-color: transparent;
+}
+
+
+#tela-chat .balao-audio .audio-play-btn::before,
+#tela-chat .balao-audio .audio-play-btn::after {
+    content: none !important;
+    display: none !important;
+}
+
+#tela-chat .balao-audio .audio-play-btn:focus,
+#tela-chat .balao-audio .audio-play-btn:active {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+#tela-chat .audio-play-btn .audio-play-icon,
+#tela-chat .audio-play-btn .audio-pause-icon {
+    width: 28px;
+    height: 28px;
+    line-height: 0;
     align-items: center;
     justify-content: center;
-    background: transparent !important;
-    color: rgba(255,255,255,.70) !important;
-    box-shadow: none !important;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    font-size: 25px;
-    line-height: 1;
+}
+
+#tela-chat .audio-play-btn .audio-play-icon {
+    display: flex;
 }
 
 #tela-chat .audio-play-btn .audio-pause-icon {
     display: none;
-    letter-spacing: -5px;
-    transform: translateX(-2px);
+}
+
+#tela-chat .audio-play-btn svg {
+    display: block;
+    width: 28px;
+    height: 28px;
+    overflow: visible;
+    fill: currentColor;
 }
 
 #tela-chat .balao-audio.audio-tocando .audio-play-btn .audio-play-icon {
