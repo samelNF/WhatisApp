@@ -8705,3 +8705,150 @@ html[data-tema="claro"] .tela-grupo-overlay,
 html[data-tema="claro"] #tela-criar-grupo-detalhes {
     background: #F4F4F4 !important;
 }
+
+
+/* ==========================================
+   MODO CLARO - CORREÇÕES VISUAIS 2
+   ========================================== */
+
+/* O miolo do chat estava herdando o fundo preto do modo escuro.
+   Mantém transparente a lista para não quebrar wallpapers, mas clareia
+   a superfície que fica por baixo quando não há imagem de fundo. */
+html[data-tema="claro"] #tela-chat .chat-conteudo {
+    background: #F4F4F4 !important;
+}
+
+html[data-tema="claro"] #tela-chat .chat-mensagens {
+    background-color: transparent !important;
+}
+
+html[data-tema="claro"] #tela-chat .chat-data-separador {
+    color: #222 !important;
+    background: rgba(255,255,255,.88) !important;
+    border-color: rgba(0,0,0,.08) !important;
+    box-shadow:
+        0 3px 10px rgba(0,0,0,.06),
+        inset 0 1px 0 rgba(255,255,255,.95) !important;
+}
+
+/* Dados do contato: o corpo já estava claro, mas o topo continuava preto. */
+html[data-tema="claro"] #painel-dados-contato .painel-contato-header {
+    background: rgba(244,244,244,.96) !important;
+    color: #111 !important;
+    border-bottom: 1px solid rgba(0,0,0,.07) !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    backdrop-filter: blur(24px) saturate(150%);
+}
+
+html[data-tema="claro"] #painel-dados-contato .painel-contato-header h3 {
+    color: #111 !important;
+}
+
+html[data-tema="claro"] #painel-dados-contato .painel-contato-btn-voltar,
+html[data-tema="claro"] #painel-dados-contato .painel-contato-btn-editar {
+    color: #111 !important;
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.94),
+            rgba(247,247,247,.78)
+        ) !important;
+    border-color: rgba(0,0,0,.11) !important;
+    box-shadow:
+        0 7px 20px rgba(0,0,0,.07),
+        inset 0 1px 0 rgba(255,255,255,.98) !important;
+}
+
+html[data-tema="claro"] #painel-dados-contato .painel-contato-btn-voltar svg {
+    stroke: #111 !important;
+}
+
+/* Mini ficha de participante: no claro o card tinha virado branco,
+   mas textos/ícones ainda estavam presos no branco do tema escuro. */
+html[data-tema="claro"] .mini-dados-membro-overlay {
+    background: rgba(0,0,0,.24) !important;
+    -webkit-backdrop-filter: blur(5px) saturate(105%) !important;
+    backdrop-filter: blur(5px) saturate(105%) !important;
+}
+
+html[data-tema="claro"] .mini-dados-membro-sheet {
+    background:
+        linear-gradient(
+            180deg,
+            rgba(250,250,250,.97),
+            rgba(245,245,245,.94)
+        ) !important;
+    color: #111 !important;
+    border-color: rgba(0,0,0,.09) !important;
+    box-shadow:
+        0 -18px 55px rgba(0,0,0,.16),
+        inset 0 1px 0 rgba(255,255,255,.98) !important;
+}
+
+html[data-tema="claro"] .mini-dados-fechar {
+    color: #111 !important;
+    background:
+        linear-gradient(145deg, rgba(255,255,255,.96), rgba(243,243,243,.80)) !important;
+    border-color: rgba(0,0,0,.10) !important;
+    box-shadow:
+        0 8px 20px rgba(0,0,0,.08),
+        inset 0 1px 0 rgba(255,255,255,.98) !important;
+}
+
+html[data-tema="claro"] .mini-dados-fechar svg {
+    stroke: #111 !important;
+}
+
+html[data-tema="claro"] #mini-dados-membro-titulo {
+    color: #111 !important;
+}
+
+html[data-tema="claro"] #mini-dados-membro-subtitulo {
+    color: #7a7a7d !important;
+}
+
+html[data-tema="claro"] .mini-dados-acao {
+    color: #111 !important;
+    background: rgba(255,255,255,.88) !important;
+    border-color: rgba(0,0,0,.075) !important;
+    box-shadow:
+        0 7px 20px rgba(0,0,0,.055),
+        inset 0 1px 0 rgba(255,255,255,.98) !important;
+}
+
+html[data-tema="claro"] .mini-dados-acao-icone,
+html[data-tema="claro"] .mini-dados-acao-label {
+    color: #111 !important;
+}
+
+html[data-tema="claro"] .mini-dados-card {
+    background: rgba(255,255,255,.90) !important;
+    border-color: rgba(0,0,0,.075) !important;
+    box-shadow:
+        0 7px 20px rgba(0,0,0,.045),
+        inset 0 1px 0 rgba(255,255,255,.98) !important;
+}
+
+html[data-tema="claro"] .mini-dados-row {
+    color: #111 !important;
+    background: transparent !important;
+}
+
+html[data-tema="claro"] .mini-dados-row + .mini-dados-row::before {
+    background: rgba(0,0,0,.10) !important;
+}
+
+html[data-tema="claro"] .mini-dados-row-icone {
+    color: #111 !important;
+}
+
+html[data-tema="claro"] .mini-dados-row-perigo {
+    color: #d5223f !important;
+}
+
+/* Evita que a regra global de botão de vidro reintroduza texto branco
+   nos controles da mini ficha no tema claro. */
+html[data-tema="claro"] .mini-dados-membro-sheet button:not(.mini-dados-row-perigo) {
+    color: #111 !important;
+}
