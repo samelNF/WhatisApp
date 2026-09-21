@@ -2849,6 +2849,19 @@ async function marcarGrupoComoLido(idGrupo, ultimaMensagemEm = null) {
     }
 }
 
+function atualizarRolagemNomeChat() {
+    const viewport = document.querySelector("#tela-chat .chat-nome-viewport");
+    const nome = document.getElementById("chat-nome-usuario");
+    if (!viewport || !nome) return;
+
+    viewport.classList.remove("nome-longo");
+
+    requestAnimationFrame(() => {
+        const excede = nome.scrollWidth > viewport.clientWidth + 2;
+        viewport.classList.toggle("nome-longo", excede);
+    });
+}
+
 function abrirChatGrupo(idGrupo, nomeGrupo, fotoGrupo, corGrupo) {
     window.grupoAtualId = idGrupo; 
     destinatarioAtual = null; // Zera o chat privado
@@ -2859,6 +2872,7 @@ function abrirChatGrupo(idGrupo, nomeGrupo, fotoGrupo, corGrupo) {
     const spanStatus = document.getElementById("chat-status-usuario");
 
     if (elemNome) elemNome.innerText = nomeGrupo;
+    atualizarRolagemNomeChat();
     aplicarAvatarGrupo(elemFoto, fotoGrupo || "", corGrupo || "#482133");
     if (spanStatus) spanStatus.innerText = "Toque para ver os dados do grupo";
     
@@ -2984,6 +2998,14 @@ function atualizarAgrupamentoBaloesChat() {
             }
         }
     });
+
+    // Garantia extra: a mensagem mais recente visível do chat SEMPRE tem
+    // rabinho, mesmo se uma renderização incremental deixar classe antiga.
+    const ultimoBalao = [...filhos]
+        .reverse()
+        .find(elemento => elemento.classList?.contains("balao-msg"));
+
+    ultimoBalao?.classList.remove("sem-rabinho");
 }
 
 function atualizarAvataresMensagensGrupo() {
@@ -3249,6 +3271,7 @@ function abrirChatCom(emailDestinatario, nomeDestinatario, fotoDestinatario, cor
     const telaChat = document.getElementById("tela-chat");
 
     if (elemNome) elemNome.innerText = nomeDestinatario || emailDestinatario;
+    atualizarRolagemNomeChat();
     aplicarAvatarUsuario(elemFoto, fotoDestinatario, corDestinatario);
     
     if (telaChat) {
@@ -4135,6 +4158,7 @@ function abrirChatSolicitacao(solicitacao) {
     destinatarioAtual = solicitacao.remetente_email;
     const elemNome = document.getElementById("chat-nome-usuario");
     if (elemNome) elemNome.innerText = solicitacao.remetente_email;
+    atualizarRolagemNomeChat();
 
     if (telaChat) telaChat.style.display = "flex";
     
