@@ -8687,3 +8687,21 @@ html[data-tema="claro"] #tela-chat .chat-conteudo,
 html[data-tema="claro"] #tela-chat .chat-mensagens {
     color: #111;
 }
+
+
+/* Ajustes finais da paleta clara medidos nas referências */
+html[data-tema="claro"] #tela-conversas {
+    background: #FFFFFF !important;
+}
+
+html[data-tema="claro"] #tela-voce,
+html[data-tema="claro"] #painel-aparencia,
+html[data-tema="claro"] #painel-dados-contato,
+html[data-tema="claro"] #painel-dados-grupo,
+html[data-tema="claro"] #painel-dados-usuario,
+html[data-tema="claro"] #painel-tema-conversa,
+html[data-tema="claro"] #painel-paleta-balao,
+html[data-tema="claro"] .tela-grupo-overlay,
+html[data-tema="claro"] #tela-criar-grupo-detalhes {
+    background: #F4F4F4 !important;
+}
