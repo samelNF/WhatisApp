@@ -8035,3 +8035,655 @@ body.chamada-grupo-aberta {
 #tela-chat .balao-apagada .balao-editada {
     display: none !important;
 }
+
+
+/* ==========================================
+   APARÊNCIA DO APP - CLARO / ESCURO / AUTOMÁTICO
+   ========================================== */
+html[data-tema="escuro"] {
+    color-scheme: dark;
+}
+
+html[data-tema="claro"] {
+    color-scheme: light;
+}
+
+/* Seletor dentro de Você > Aparência */
+#painel-aparencia .aparencia-tema-opcoes {
+    margin-top: 14px;
+    overflow: hidden;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,.09);
+    background: rgba(255,255,255,.035);
+}
+
+#painel-aparencia .aparencia-tema-opcao {
+    position: relative;
+    width: 100%;
+    min-height: 64px;
+    padding: 9px 13px !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #f7f7f7 !important;
+    text-align: left;
+}
+
+#painel-aparencia .aparencia-tema-opcao + .aparencia-tema-opcao::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 58px;
+    right: 13px;
+    height: 1px;
+    background: rgba(255,255,255,.08);
+}
+
+#painel-aparencia .aparencia-tema-icone {
+    position: relative;
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    border-radius: 50%;
+    box-sizing: border-box;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,.18);
+}
+
+#painel-aparencia .aparencia-tema-icone.tema-claro {
+    background: #f7f7f7;
+}
+
+#painel-aparencia .aparencia-tema-icone.tema-escuro {
+    background: #171717;
+}
+
+#painel-aparencia .aparencia-tema-icone.tema-auto {
+    background: #f7f7f7;
+}
+
+#painel-aparencia .tema-auto-metade {
+    position: absolute;
+    inset: 0 0 0 50%;
+    background: #171717;
+}
+
+#painel-aparencia .aparencia-tema-texto {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+#painel-aparencia .aparencia-tema-texto strong {
+    color: inherit;
+    font-size: 16px;
+    line-height: 20px;
+    font-weight: 600;
+}
+
+#painel-aparencia .aparencia-tema-texto small {
+    color: #8b8b90;
+    font-size: 12px;
+    line-height: 16px;
+}
+
+#painel-aparencia .aparencia-tema-check {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: #ff8a1f;
+    color: #17100a;
+    font-size: 14px;
+    line-height: 1;
+    font-weight: 900;
+}
+
+#painel-aparencia .aparencia-tema-opcao.selecionado .aparencia-tema-check {
+    display: flex;
+}
+
+/* Cores padrão dos balões capturadas das referências do WhatsApp. */
+html[data-tema="escuro"] #tela-chat {
+    --cor-balao-enviada: #254C38;
+    --cor-balao-recebida: #242626;
+    --texto-balao-enviada: #FFFFFF;
+    --texto-balao-recebida: #FFFFFF;
+    --meta-balao-enviada: rgba(255,255,255,.52);
+    --meta-balao-recebida: rgba(255,255,255,.52);
+}
+
+html[data-tema="claro"] #tela-chat {
+    --cor-balao-enviada: #DFFBD5;
+    --cor-balao-recebida: #FFFFFF;
+    --texto-balao-enviada: #111111;
+    --texto-balao-recebida: #111111;
+    --meta-balao-enviada: rgba(0,0,0,.52);
+    --meta-balao-recebida: rgba(0,0,0,.52);
+}
+
+#tela-chat .balao-enviada {
+    color: var(--texto-balao-enviada, #fff) !important;
+}
+
+#tela-chat .balao-recebida {
+    color: var(--texto-balao-recebida, #fff) !important;
+}
+
+#tela-chat .balao-enviada .balao-meta,
+#tela-chat .balao-enviada .balao-hora,
+#tela-chat .balao-enviada .balao-visto,
+#tela-chat .balao-enviada .audio-note-meta,
+#tela-chat .balao-enviada .audio-current-time,
+#tela-chat .balao-enviada .audio-msg-hora {
+    color: var(--meta-balao-enviada, rgba(255,255,255,.52)) !important;
+}
+
+#tela-chat .balao-recebida .balao-meta,
+#tela-chat .balao-recebida .balao-hora,
+#tela-chat .balao-recebida .balao-visto,
+#tela-chat .balao-recebida .audio-note-meta,
+#tela-chat .balao-recebida .audio-current-time,
+#tela-chat .balao-recebida .audio-msg-hora {
+    color: var(--meta-balao-recebida, rgba(255,255,255,.52)) !important;
+}
+
+/* Player de voz herda a cor correta do balão, inclusive no tema claro. */
+#tela-chat .balao-audio .audio-play-btn {
+    color: inherit !important;
+}
+
+#tela-chat .balao-audio .audio-wave-bar {
+    background: currentColor !important;
+    opacity: .28;
+}
+
+#tela-chat .balao-audio .audio-wave-bar.escutada {
+    background: currentColor !important;
+    opacity: .92;
+}
+
+#tela-chat .balao-audio .audio-wave-cursor {
+    background: currentColor !important;
+}
+
+/* ==========================================
+   MODO CLARO
+   Referência visual: WhatsApp no iOS
+   ========================================== */
+html[data-tema="claro"] {
+    --glass-bg: rgba(255,255,255,.66);
+    --glass-bg-strong: rgba(255,255,255,.82);
+    --glass-border: rgba(0,0,0,.10);
+    --glass-border-soft: rgba(0,0,0,.07);
+    --glass-highlight: rgba(255,255,255,.92);
+    --glass-shadow:
+        0 10px 30px rgba(0,0,0,.09),
+        inset 0 1px 0 rgba(255,255,255,.95),
+        inset 0 -1px 0 rgba(0,0,0,.025);
+    --safe-area-bg-color: #f6f6f6;
+    background: #f6f6f6 !important;
+}
+
+/* Telas principais */
+html[data-tema="claro"] #tela-conversas,
+html[data-tema="claro"] #tela-voce,
+html[data-tema="claro"] #painel-aparencia,
+html[data-tema="claro"] #painel-dados-contato,
+html[data-tema="claro"] #painel-dados-grupo,
+html[data-tema="claro"] #painel-dados-usuario,
+html[data-tema="claro"] #painel-tema-conversa,
+html[data-tema="claro"] #painel-paleta-balao,
+html[data-tema="claro"] .tela-grupo-overlay,
+html[data-tema="claro"] #tela-criar-grupo-detalhes {
+    background: #f6f6f6 !important;
+    color: #0b0b0c !important;
+}
+
+/* Home */
+html[data-tema="claro"] #tela-conversas .topo-conversas {
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255,255,255,.96) 0%,
+            rgba(255,255,255,.91) 72%,
+            rgba(255,255,255,.84) 100%
+        ) !important;
+    border-bottom-color: rgba(0,0,0,.08) !important;
+    box-shadow:
+        0 8px 24px rgba(0,0,0,.07),
+        inset 0 -1px 0 rgba(0,0,0,.025) !important;
+}
+
+html[data-tema="claro"] #tela-conversas .topo-conversas::after {
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(0,0,0,.07) 18%,
+        rgba(0,0,0,.07) 82%,
+        transparent
+    ) !important;
+}
+
+html[data-tema="claro"] #tela-conversas .conversa-nova h1,
+html[data-tema="claro"] #tela-conversas .nome-contato {
+    color: #080808 !important;
+}
+
+html[data-tema="claro"] #tela-conversas .ultima-msg,
+html[data-tema="claro"] #tela-conversas .hora-contato,
+html[data-tema="claro"] #tela-conversas .arquivadas-texto {
+    color: #737376 !important;
+}
+
+html[data-tema="claro"] #tela-conversas .item-contato {
+    border-bottom-color: transparent !important;
+    background: transparent !important;
+}
+
+html[data-tema="claro"] #tela-conversas .item-contato::after {
+    background: #dedede !important;
+}
+
+html[data-tema="claro"] #tela-conversas .item-contato:active {
+    background: rgba(0,0,0,.045) !important;
+}
+
+html[data-tema="claro"] #tela-conversas .pesquisa,
+html[data-tema="claro"] #tela-conversas .pesquisa-conversas {
+    background: rgba(118,118,128,.11) !important;
+    border-color: rgba(0,0,0,.07) !important;
+    box-shadow: none !important;
+}
+
+html[data-tema="claro"] #tela-conversas .pesquisa input,
+html[data-tema="claro"] #tela-conversas .pesquisa-conversas input {
+    color: #111 !important;
+}
+
+html[data-tema="claro"] #tela-conversas .pesquisa input::placeholder,
+html[data-tema="claro"] #tela-conversas .pesquisa-conversas input::placeholder {
+    color: #77777b !important;
+}
+
+html[data-tema="claro"] #tela-conversas .glass {
+    filter: brightness(0) opacity(.56) !important;
+}
+
+/* Vidros e botões do topo no claro */
+html[data-tema="claro"] .cinza,
+html[data-tema="claro"] .topo-bolha,
+html[data-tema="claro"] .chat-header-voltar,
+html[data-tema="claro"] .chat-call-group,
+html[data-tema="claro"] #painel-dados-contato .painel-contato-btn-voltar,
+html[data-tema="claro"] #painel-dados-grupo .grupo-voltar-btn,
+html[data-tema="claro"] #painel-dados-grupo .grupo-topo-acoes {
+    color: #111 !important;
+    background:
+        linear-gradient(145deg, rgba(255,255,255,.90), rgba(245,245,245,.68)) !important;
+    border-color: rgba(0,0,0,.12) !important;
+    box-shadow:
+        0 8px 22px rgba(0,0,0,.08),
+        inset 0 1px 0 rgba(255,255,255,.95) !important;
+}
+
+html[data-tema="claro"] .cinza img,
+html[data-tema="claro"] .chat-header-voltar img,
+html[data-tema="claro"] .chat-call-btn img {
+    filter: brightness(0) !important;
+}
+
+/* Barra inferior */
+html[data-tema="claro"] .baixo {
+    color: #111 !important;
+    background:
+        linear-gradient(145deg, rgba(255,255,255,.88), rgba(247,247,247,.72)) !important;
+    border-color: rgba(0,0,0,.10) !important;
+    box-shadow:
+        0 12px 30px rgba(0,0,0,.10),
+        inset 0 1px 0 rgba(255,255,255,.96) !important;
+}
+
+html[data-tema="claro"] .baixo button,
+html[data-tema="claro"] .baixo button span {
+    color: #111 !important;
+}
+
+html[data-tema="claro"] .baixo .chat {
+    filter: brightness(0) !important;
+}
+
+/* Aba Você e Aparência */
+html[data-tema="claro"] #tela-voce .voce-perfil-hero h2,
+html[data-tema="claro"] #tela-voce .voce-config-texto strong,
+html[data-tema="claro"] #tela-voce .voce-sair-btn,
+html[data-tema="claro"] #painel-aparencia .aparencia-titulo-bloco strong,
+html[data-tema="claro"] #painel-aparencia .aparencia-icone-opcao,
+html[data-tema="claro"] #painel-aparencia .aparencia-tema-opcao {
+    color: #111 !important;
+}
+
+html[data-tema="claro"] #tela-voce .voce-perfil-hero p,
+html[data-tema="claro"] #tela-voce .voce-config-texto small,
+html[data-tema="claro"] #painel-aparencia .aparencia-titulo-bloco small,
+html[data-tema="claro"] #painel-aparencia .aparencia-hint-baloes,
+html[data-tema="claro"] #painel-aparencia .aparencia-aviso-icone,
+html[data-tema="claro"] #painel-aparencia .aparencia-tema-texto small {
+    color: #737376 !important;
+}
+
+html[data-tema="claro"] #tela-voce .voce-perfil-hero:active {
+    background: rgba(0,0,0,.035) !important;
+}
+
+html[data-tema="claro"] #tela-voce .voce-config-card,
+html[data-tema="claro"] #tela-voce .voce-sair-card,
+html[data-tema="claro"] #painel-aparencia .aparencia-card,
+html[data-tema="claro"] #painel-aparencia .aparencia-tema-opcoes,
+html[data-tema="claro"] .dados-opcoes {
+    background: #fff !important;
+    border-color: rgba(0,0,0,.07) !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,.045) !important;
+}
+
+html[data-tema="claro"] #tela-voce .voce-config-row:not(:last-child)::after,
+html[data-tema="claro"] #painel-aparencia .aparencia-tema-opcao + .aparencia-tema-opcao::before {
+    background: #e1e1e1 !important;
+}
+
+html[data-tema="claro"] #tela-voce .voce-config-icon,
+html[data-tema="claro"] #tela-voce .voce-config-seta {
+    color: #535357 !important;
+}
+
+html[data-tema="claro"] #painel-aparencia .aparencia-header,
+html[data-tema="claro"] .tema-conversa-header,
+html[data-tema="claro"] .paleta-balao-header {
+    background: rgba(246,246,246,.94) !important;
+    border-bottom-color: rgba(0,0,0,.08) !important;
+    color: #111 !important;
+}
+
+html[data-tema="claro"] #painel-aparencia .aparencia-voltar,
+html[data-tema="claro"] .tema-conversa-voltar,
+html[data-tema="claro"] .paleta-balao-voltar {
+    color: #111 !important;
+    background: rgba(255,255,255,.82) !important;
+    border-color: rgba(0,0,0,.10) !important;
+}
+
+html[data-tema="claro"] #painel-aparencia .aparencia-preview-balao,
+html[data-tema="claro"] .tema-preview-balao {
+    border-color: rgba(0,0,0,.07) !important;
+}
+
+html[data-tema="claro"] .tema-conversa-card {
+    background: #fff !important;
+    border-color: rgba(0,0,0,.07) !important;
+    color: #111 !important;
+}
+
+/* Chat */
+html[data-tema="claro"] #tela-chat {
+    color: #111 !important;
+}
+
+html[data-tema="claro"] #tela-chat .chat-header {
+    background:
+        linear-gradient(180deg, rgba(246,246,246,.96), rgba(246,246,246,.88)) !important;
+    border-bottom-color: rgba(0,0,0,.08) !important;
+    box-shadow: 0 6px 18px rgba(0,0,0,.06) !important;
+}
+
+html[data-tema="claro"] #tela-chat .chat-info-usuario h2 {
+    color: #111 !important;
+}
+
+html[data-tema="claro"] #tela-chat .status-online {
+    color: #737376 !important;
+}
+
+html[data-tema="claro"] #tela-chat .chat-footer {
+    background:
+        linear-gradient(180deg, rgba(246,246,246,.94), rgba(242,242,242,.98)) !important;
+    border-top-color: rgba(0,0,0,.07) !important;
+    box-shadow: 0 -7px 20px rgba(0,0,0,.05) !important;
+}
+
+html[data-tema="claro"] #tela-chat .chat-footer-icon,
+html[data-tema="claro"] #tela-chat .chat-sticker-btn,
+html[data-tema="claro"] #tela-chat .chat-edit-cancel {
+    color: #111 !important;
+}
+
+html[data-tema="claro"] #tela-chat .chat-footer-icon img,
+html[data-tema="claro"] #tela-chat .chat-sticker-btn img,
+html[data-tema="claro"] #tela-chat .chat-edit-cancel img {
+    filter: brightness(0) !important;
+}
+
+html[data-tema="claro"] #tela-chat .chat-campo-pill,
+html[data-tema="claro"] #tela-chat .chat-edit-pill {
+    background: rgba(118,118,128,.10) !important;
+    border-color: rgba(0,0,0,.07) !important;
+    box-shadow: none !important;
+}
+
+html[data-tema="claro"] #tela-chat .chat-campo-pill input,
+html[data-tema="claro"] #tela-chat .chat-edit-pill input {
+    color: #111 !important;
+}
+
+html[data-tema="claro"] #tela-chat .chat-campo-pill input::placeholder,
+html[data-tema="claro"] #tela-chat .chat-edit-pill input::placeholder {
+    color: #818185 !important;
+}
+
+html[data-tema="claro"] #tela-chat .citacao-resposta {
+    background: rgba(0,0,0,.055) !important;
+}
+
+html[data-tema="claro"] #tela-chat .citacao-texto {
+    color: rgba(0,0,0,.68) !important;
+}
+
+html[data-tema="claro"] #tela-chat .grupo-nao-salvo {
+    color: rgba(0,0,0,.48) !important;
+}
+
+/* Mensagem apagada no claro */
+html[data-tema="claro"] #tela-chat .balao-apagada .balao-texto-apagada {
+    color: rgba(0,0,0,.46) !important;
+}
+
+html[data-tema="claro"] #tela-chat .mensagem-apagada-icone {
+    border-color: rgba(0,0,0,.42) !important;
+}
+
+html[data-tema="claro"] #tela-chat .mensagem-apagada-icone::after {
+    background: rgba(0,0,0,.42) !important;
+}
+
+html[data-tema="claro"] #tela-chat .balao-apagada .balao-hora {
+    color: rgba(0,0,0,.43) !important;
+}
+
+/* Menu de ações da mensagem, igual ao vidro claro da referência. */
+html[data-tema="claro"] .menu-acoes-mensagem-overlay {
+    background: rgba(235,233,226,.18) !important;
+    -webkit-backdrop-filter: blur(7px) saturate(105%) !important;
+    backdrop-filter: blur(7px) saturate(105%) !important;
+}
+
+html[data-tema="claro"] .menu-acoes-mensagem {
+    color: #111 !important;
+    background:
+        linear-gradient(
+            145deg,
+            rgba(250,249,245,.91),
+            rgba(239,237,230,.84)
+        ) !important;
+    border-color: rgba(0,0,0,.11) !important;
+    box-shadow:
+        0 18px 48px rgba(0,0,0,.18),
+        inset 0 1px 0 rgba(255,255,255,.96) !important;
+}
+
+html[data-tema="claro"] .menu-msg-item,
+html[data-tema="claro"] .menu-msg-info,
+html[data-tema="claro"] .menu-msg-cancelar {
+    color: #111 !important;
+}
+
+html[data-tema="claro"] .menu-msg-item:active {
+    background: rgba(0,0,0,.055) !important;
+}
+
+html[data-tema="claro"] .menu-msg-item.destrutivo {
+    color: #c9183f !important;
+}
+
+html[data-tema="claro"] .menu-msg-divisor {
+    background: rgba(0,0,0,.10) !important;
+}
+
+html[data-tema="claro"] .menu-msg-subtitulo {
+    color: rgba(0,0,0,.55) !important;
+}
+
+html[data-tema="claro"] #tela-chat .balao-msg.mensagem-menu-ativa {
+    outline-color: rgba(0,0,0,.10) !important;
+    box-shadow: 0 6px 22px rgba(0,0,0,.10) !important;
+}
+
+html[data-tema="claro"] .acoes-msg-toast {
+    background: rgba(245,245,245,.92) !important;
+    color: #111 !important;
+    border-color: rgba(0,0,0,.10) !important;
+    box-shadow: 0 8px 26px rgba(0,0,0,.14) !important;
+}
+
+/* Dados de contato / grupo / usuário */
+html[data-tema="claro"] #painel-dados-contato #painel-nome-contato,
+html[data-tema="claro"] #painel-dados-contato .painel-row-texto strong,
+html[data-tema="claro"] #painel-dados-grupo #grupo-info-nome,
+html[data-tema="claro"] #painel-dados-grupo .grupo-midia-texto strong,
+html[data-tema="claro"] #painel-dados-grupo .grupo-config-texto strong,
+html[data-tema="claro"] #painel-dados-grupo .grupo-config-row,
+html[data-tema="claro"] #painel-dados-grupo .grupo-adicionar-row,
+html[data-tema="claro"] #painel-dados-grupo .grupo-membro-item,
+html[data-tema="claro"] #painel-dados-usuario .dados-opcao-texto span,
+html[data-tema="claro"] #painel-dados-usuario #dados-nome-usuario {
+    color: #111 !important;
+}
+
+html[data-tema="claro"] #painel-dados-contato #painel-subtitulo-contato,
+html[data-tema="claro"] #painel-dados-contato .painel-row-texto small,
+html[data-tema="claro"] #painel-dados-grupo #grupo-info-resumo,
+html[data-tema="claro"] #painel-dados-grupo .grupo-secao-titulo,
+html[data-tema="claro"] #painel-dados-grupo .grupo-midia-texto small,
+html[data-tema="claro"] #painel-dados-grupo .grupo-config-texto small,
+html[data-tema="claro"] #painel-dados-usuario .dados-opcao-texto small {
+    color: #737376 !important;
+}
+
+html[data-tema="claro"] #painel-dados-contato .painel-acao-card,
+html[data-tema="claro"] #painel-dados-contato .painel-contato-card,
+html[data-tema="claro"] #painel-dados-grupo .grupo-acao-card,
+html[data-tema="claro"] #painel-dados-grupo .grupo-membros-card,
+html[data-tema="claro"] #painel-dados-grupo .grupo-midia-card,
+html[data-tema="claro"] #painel-dados-grupo .grupo-config-card,
+html[data-tema="claro"] #painel-dados-grupo .grupo-sair-card,
+html[data-tema="claro"] #painel-dados-usuario .dados-opcoes {
+    background: #fff !important;
+    color: #111 !important;
+    border-color: rgba(0,0,0,.07) !important;
+    box-shadow: none !important;
+}
+
+html[data-tema="claro"] #painel-dados-contato .painel-acao-card {
+    color: #111 !important;
+}
+
+html[data-tema="claro"] #painel-dados-grupo .grupo-aba {
+    color: #737376 !important;
+}
+
+html[data-tema="claro"] #painel-dados-grupo .grupo-aba.ativa {
+    color: #111 !important;
+    background: #fff !important;
+    border-color: rgba(0,0,0,.11) !important;
+    box-shadow: 0 2px 7px rgba(0,0,0,.06) !important;
+}
+
+html[data-tema="claro"] #painel-dados-grupo .grupo-midia-icone,
+html[data-tema="claro"] #painel-dados-grupo .grupo-config-icone,
+html[data-tema="claro"] #painel-dados-grupo .grupo-config-seta,
+html[data-tema="claro"] #painel-dados-contato .painel-row-seta {
+    color: #6d6d70 !important;
+}
+
+html[data-tema="claro"] #painel-dados-grupo .grupo-membro-item:not(:last-child)::after,
+html[data-tema="claro"] #painel-dados-grupo .grupo-adicionar-row::after,
+html[data-tema="claro"] #painel-dados-contato .painel-contato-row + .painel-contato-row::before {
+    background: #e1e1e1 !important;
+}
+
+/* Modais e menus comuns */
+html[data-tema="claro"] .dropdown-menu,
+html[data-tema="claro"] .modal-content,
+html[data-tema="claro"] #modal-novo-contato .novo-contato-card,
+html[data-tema="claro"] .mini-dados-membro-sheet {
+    background: rgba(250,250,250,.94) !important;
+    color: #111 !important;
+    border-color: rgba(0,0,0,.10) !important;
+    box-shadow: 0 18px 45px rgba(0,0,0,.15) !important;
+}
+
+html[data-tema="claro"] .dropdown-menu li,
+html[data-tema="claro"] .modal-content,
+html[data-tema="claro"] .mini-dados-membro-sheet,
+html[data-tema="claro"] #mini-dados-membro-titulo {
+    color: #111 !important;
+}
+
+/* Inputs gerais usados nas configurações/subtelas. */
+html[data-tema="claro"] #modal-novo-contato .novo-contato-campo,
+html[data-tema="claro"] .barra-pesquisa-grupo input,
+html[data-tema="claro"] #nome-grupo-input,
+html[data-tema="claro"] .autenticacao-box input,
+html[data-tema="claro"] .input-usuario-etapa2,
+html[data-tema="claro"] .campo-senha input {
+    background: rgba(118,118,128,.10) !important;
+    color: #111 !important;
+    border-color: rgba(0,0,0,.08) !important;
+    box-shadow: none !important;
+}
+
+/* Paleta: a amostra continua mostrando a própria cor; só o painel fica claro. */
+html[data-tema="claro"] .paleta-balao-conteudo,
+html[data-tema="claro"] .tema-conversa-conteudo {
+    background: #f6f6f6 !important;
+}
+
+html[data-tema="claro"] .paleta-cor-opcao {
+    border-color: rgba(0,0,0,.12) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.48),
+        0 4px 12px rgba(0,0,0,.10) !important;
+}
+
+/* O fundo customizado da conversa nunca é apagado pelo modo claro. */
+html[data-tema="claro"] #tela-chat .chat-conteudo,
+html[data-tema="claro"] #tela-chat .chat-mensagens {
+    color: #111;
+}
