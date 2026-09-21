@@ -25,6 +25,7 @@ let ocultasCarregadasPara = "";
 let menuMensagemAtual = null;
 let timerPressaoMensagem = null;
 let pressaoMensagemInicio = null;
+let mensagemEditando = null;
 
 // ==========================================
 // INICIALIZAÇÃO E SERVICE WORKER
@@ -1891,6 +1892,11 @@ function prepararBalaoParaAcoes(balao, msg, ehMinha) {
     balao.dataset.messageGroupId = msg.grupo_id ?? "";
     balao.dataset.messageCreatedAt = msg.created_at || "";
     balao.dataset.messageText = msg.texto || "";
+    balao.dataset.messageType = msg.tipo || "texto";
+    balao.dataset.messageEditedAt = msg.editada_em || "";
+    balao.dataset.messageCallId = msg.chamada_id || "";
+
+    atualizarEstadoEdicaoBalao(balao, msg);
 }
 
 function limparSeparadoresDatasVazios() {
@@ -2003,6 +2009,201 @@ async function apagarMensagemParaTodos(idMensagem, contexto = {}) {
     return true;
 }
 
+const LIMITE_EDICAO_MENSAGEM_MS = 5 * 60 * 1000;
+
+function mensagemEhTextoEditavel(dados) {
+    const tipo = String(dados?.tipo || "texto").toLowerCase();
+    const texto = String(dados?.texto || "");
+
+    if (tipo && tipo !== "texto") return false;
+    if (dados?.chamada_id) return false;
+
+    return !/^\[(FOTO|IMAGEM|VIDEO|AUDIO|CHAMADA|CHAMADA_GRUPO)\]/i.test(texto);
+}
+
+function mensagemDentroDoPrazoEdicao(dados) {
+    const criada = new Date(dados?.created_at || "").getTime();
+    if (!Number.isFinite(criada)) return false;
+
+    const idade = Date.now() - criada;
+    return idade >= 0 && idade <= LIMITE_EDICAO_MENSAGEM_MS;
+}
+
+function mensagemPodeSerEditada(dados) {
+    return dados?.ehMinha === true &&
+        !!dados?.id &&
+        mensagemEhTextoEditavel(dados) &&
+        mensagemDentroDoPrazoEdicao(dados);
+}
+
+function atualizarEstadoEdicaoBalao(balao, msg) {
+    if (!balao || !msg) return;
+
+    const texto = balao.querySelector(".balao-conteudo > .balao-texto");
+    if (texto && typeof msg.texto === "string") {
+        texto.textContent = msg.texto;
+    }
+
+    const meta = balao.querySelector(".balao-meta");
+    if (!meta) return;
+
+    let etiqueta = meta.querySelector(".balao-editada");
+    const foiEditada = !!msg.editada_em;
+
+    if (foiEditada && !etiqueta) {
+        etiqueta = document.createElement("span");
+        etiqueta.className = "balao-editada";
+        etiqueta.textContent = "Editada";
+
+        const hora = meta.querySelector(".balao-hora");
+        meta.insertBefore(etiqueta, hora || meta.firstChild);
+    } else if (!foiEditada && etiqueta) {
+        etiqueta.remove();
+    }
+
+    balao.dataset.messageText = msg.texto || "";
+    balao.dataset.messageEditedAt = msg.editada_em || "";
+
+    const visto = meta.querySelector(".balao-visto");
+    if (visto && typeof msg.visualizada === "boolean") {
+        visto.classList.toggle("visualizada", msg.visualizada === true);
+        visto.setAttribute(
+            "aria-label",
+            msg.visualizada === true ? "Visualizada" : "Enviada"
+        );
+    }
+}
+
+function abrirEdicaoMensagem(dados) {
+    if (!mensagemPodeSerEditada(dados)) {
+        mostrarToastAcoesMensagem("O prazo de 5 minutos para editar terminou.");
+        return;
+    }
+
+    cancelarResposta();
+    fecharMenuAcoesMensagem();
+
+    mensagemEditando = {
+        id: String(dados.id),
+        texto: String(dados.texto || ""),
+        created_at: dados.created_at || "",
+        grupo_id: dados.grupo_id || "",
+        remetente_email: dados.remetente_email || ""
+    };
+
+    const normal = document.getElementById("chat-input-box");
+    const editar = document.getElementById("chat-edit-box");
+    const input = document.getElementById("input-editar-mensagem");
+
+    normal?.classList.add("hidden");
+    editar?.classList.remove("hidden");
+
+    if (input) {
+        input.value = mensagemEditando.texto;
+        requestAnimationFrame(() => {
+            input.focus();
+            const fim = input.value.length;
+            try { input.setSelectionRange(fim, fim); } catch (e) {}
+        });
+    }
+}
+
+function cancelarEdicaoMensagem() {
+    mensagemEditando = null;
+
+    const normal = document.getElementById("chat-input-box");
+    const editar = document.getElementById("chat-edit-box");
+    const input = document.getElementById("input-editar-mensagem");
+
+    if (input) input.value = "";
+    editar?.classList.add("hidden");
+
+    if (!solicitacaoAtual) {
+        normal?.classList.remove("hidden");
+    }
+}
+
+function checarEnterEdicao(event) {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    confirmarEdicaoMensagem();
+}
+
+async function confirmarEdicaoMensagem() {
+    if (!mensagemEditando || !_supabase) return;
+
+    const input = document.getElementById("input-editar-mensagem");
+    const novoTexto = String(input?.value || "").trim();
+
+    if (!novoTexto) {
+        mostrarToastAcoesMensagem("A mensagem não pode ficar vazia.");
+        return;
+    }
+
+    const dadosPrazo = {
+        ...mensagemEditando,
+        ehMinha: true,
+        tipo: "texto",
+        chamada_id: ""
+    };
+
+    if (!mensagemDentroDoPrazoEdicao(dadosPrazo)) {
+        mostrarToastAcoesMensagem("O prazo de 5 minutos para editar terminou.");
+        cancelarEdicaoMensagem();
+        return;
+    }
+
+    if (novoTexto === mensagemEditando.texto.trim()) {
+        cancelarEdicaoMensagem();
+        return;
+    }
+
+    const meuEmail = (localStorage.getItem("usuarioLogado") || "").trim().toLowerCase();
+    const limite = new Date(Date.now() - LIMITE_EDICAO_MENSAGEM_MS).toISOString();
+
+    const { data, error } = await _supabase
+        .from("mensagens")
+        .update({ texto: novoTexto })
+        .eq("id", mensagemEditando.id)
+        .eq("remetente_email", meuEmail)
+        .gte("created_at", limite)
+        .select("*")
+        .maybeSingle();
+
+    if (error || !data) {
+        console.warn("Não foi possível editar a mensagem:", error?.message || "Prazo encerrado.");
+        mostrarToastAcoesMensagem(
+            error?.message?.includes("5 minutos")
+                ? "O prazo de 5 minutos para editar terminou."
+                : "Não foi possível editar a mensagem."
+        );
+        cancelarEdicaoMensagem();
+        return;
+    }
+
+    const balao = localizarBalaoMensagem(data.id);
+    if (balao) {
+        prepararBalaoParaAcoes(balao, data, true);
+    }
+
+    if (window.WhatisCache?.salvarMensagens) {
+        if (data.grupo_id) {
+            await window.WhatisCache.salvarMensagens(
+                window.WhatisCache.conversaGrupo(data.grupo_id),
+                [data]
+            );
+        } else if (destinatarioAtual) {
+            await window.WhatisCache.salvarMensagens(
+                window.WhatisCache.conversaPrivada(destinatarioAtual),
+                [data]
+            );
+        }
+    }
+
+    cancelarEdicaoMensagem();
+    carregarListaContatos();
+}
+
 function textoCopiavelMensagem(texto) {
     const valor = String(texto || "");
     if (!valor) return "";
@@ -2082,6 +2283,7 @@ function iconeAcaoMensagem(tipo) {
     const icones = {
         responder: '<svg viewBox="0 0 24 24"><path d="M9.5 7 4 12l5.5 5v-3.2c5.4 0 8.4 1.5 10.5 5.2-.4-6.4-3.4-9.7-10.5-9.8V7Z"/></svg>',
         encaminhar: '<svg viewBox="0 0 24 24"><path d="m14.5 7 5.5 5-5.5 5v-3.2c-5.4 0-8.4 1.5-10.5 5.2.4-6.4 3.4-9.7 10.5-9.8V7Z"/></svg>',
+        editar: '<svg viewBox="0 0 24 24"><path d="M4 20h4l11-11-4-4L4 16v4Z"/><path d="m13.8 6.2 4 4"/></svg>',
         dados: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 10.5v6"/><circle cx="12" cy="7.2" r=".7" fill="currentColor" stroke="none"/></svg>'
     };
 
@@ -2114,6 +2316,9 @@ function dadosMensagemDoBalao(balao) {
         grupo_id: balao?.dataset.messageGroupId || "",
         created_at: balao?.dataset.messageCreatedAt || "",
         texto: balao?.dataset.messageText || "",
+        tipo: balao?.dataset.messageType || "texto",
+        editada_em: balao?.dataset.messageEditedAt || "",
+        chamada_id: balao?.dataset.messageCallId || "",
         ehMinha: balao?.dataset.messageOwn === "true"
     };
 }
@@ -2354,6 +2559,12 @@ async function abrirMenuAcoesMensagem(balao) {
     }
 
     if (dados.ehMinha) {
+        if (mensagemPodeSerEditada(dados)) {
+            menu.appendChild(criarBotaoAcaoMensagem("Editar", "editar", () => {
+                abrirEdicaoMensagem(dados);
+            }));
+        }
+
         menu.appendChild(criarBotaoAcaoMensagem("Dados", "dados", () => {
             abrirPainelDadosMensagem(dados);
         }));
@@ -3368,6 +3579,7 @@ if (document.readyState === "loading") {
 }
 
 function fecharChat() {
+    cancelarEdicaoMensagem();
     document.getElementById("chat-ir-para-baixo")?.classList.remove("visivel");
 
     const telaChat = document.getElementById("tela-chat");
@@ -3594,7 +3806,41 @@ function inscreverRealtime() {
                     return;
                 }
 
-                if (msg.grupo_id) return;
+                if (msg.grupo_id) {
+                    if (msg.editada_em) {
+                        carregarListaContatos();
+
+                        const cache = window.WhatisCache;
+                        if (cache?.salvarMensagens) {
+                            await cache.salvarMensagens(
+                                cache.conversaGrupo(msg.grupo_id),
+                                [msg]
+                            );
+                        }
+
+                        if (
+                            window.grupoAtualId &&
+                            String(window.grupoAtualId) === String(msg.grupo_id)
+                        ) {
+                            const balao = localizarBalaoMensagem(msg.id);
+                            if (balao) {
+                                const meuEmailEdicao =
+                                    (localStorage.getItem("usuarioLogado") || "")
+                                        .trim()
+                                        .toLowerCase();
+                                prepararBalaoParaAcoes(
+                                    balao,
+                                    msg,
+                                    String(msg.remetente_email || "").trim().toLowerCase() === meuEmailEdicao
+                                );
+                            } else {
+                                await carregarMensagensGrupo(window.grupoAtualId);
+                            }
+                        }
+                    }
+
+                    return;
+                }
 
                 const remetente = (msg.remetente_email || "").trim().toLowerCase();
                 const destinatario = (msg.destinatario_email || "").trim().toLowerCase();
@@ -3642,6 +3888,36 @@ function inscreverRealtime() {
                     }
 
                     return;
+                }
+
+                // Edição precisa chegar para quem enviou e para quem recebeu.
+                if (msg.editada_em && destinatarioAtual) {
+                    const outro = (destinatarioAtual || "").trim().toLowerCase();
+                    const pertenceAoChat =
+                        (remetente === meuEmailAtual && destinatario === outro) ||
+                        (remetente === outro && destinatario === meuEmailAtual);
+
+                    if (pertenceAoChat) {
+                        if (window.WhatisCache?.salvarMensagens) {
+                            await window.WhatisCache.salvarMensagens(
+                                window.WhatisCache.conversaPrivada(destinatarioAtual),
+                                [msg]
+                            );
+                        }
+
+                        const balao = localizarBalaoMensagem(msg.id);
+                        if (balao) {
+                            prepararBalaoParaAcoes(
+                                balao,
+                                msg,
+                                remetente === meuEmailAtual
+                            );
+                        } else {
+                            await carregarMensagens();
+                        }
+                    }
+
+                    carregarListaContatos();
                 }
 
                 // O UPDATE comum abaixo continua cuidando do sistema de "visto".
