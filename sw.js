@@ -6,7 +6,7 @@ const APP_URL = new URL('./index.html', self.registration.scope).href;
 const ICON_URL = new URL('./images/icon-192.png', self.registration.scope).href;
 const BADGE_URL = ICON_URL;
 
-const APP_SHELL_CACHE = 'whatisapp-shell-v13';
+const APP_SHELL_CACHE = 'whatisapp-shell-v14';
 const RUNTIME_MEDIA_CACHE = 'whatisapp-media-v1';
 
 const APP_SHELL = [
@@ -100,8 +100,8 @@ async function exibirNotificacao(data = {}) {
 
     const options = {
         body,
-        icon: data.icon || ICON_URL,
-        badge: data.badge || BADGE_URL,
+        icon: declarativa.icon || data.icon || ICON_URL,
+        badge: declarativa.badge || data.badge || BADGE_URL,
         tag: data.tag || ('whatisapp-' + Date.now()),
         renotify: true,
         data: {
@@ -109,6 +109,9 @@ async function exibirNotificacao(data = {}) {
             url
         }
     };
+
+    const image = declarativa.image || data.image || null;
+    if (image) options.image = image;
 
     await self.registration.showNotification(title, options);
 }
