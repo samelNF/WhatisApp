@@ -9025,3 +9025,27 @@ html[data-tema="claro"] #painel-dados-grupo .grupo-pesquisar-btn img {
 html[data-tema="claro"] #tela-chat .citacao-nome {
     color: #111111 !important;
 }
+
+
+/* Painel de grupo: abas sempre clicáveis e conteúdo ativo realmente visível. */
+#painel-dados-grupo .grupo-abas {
+    position: relative;
+    z-index: 4;
+    pointer-events: auto !important;
+}
+
+#painel-dados-grupo .grupo-aba {
+    position: relative;
+    z-index: 1;
+    pointer-events: auto !important;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+#painel-dados-grupo .grupo-aba-conteudo {
+    display: none !important;
+}
+
+#painel-dados-grupo .grupo-aba-conteudo.ativa {
+    display: block !important;
+}
