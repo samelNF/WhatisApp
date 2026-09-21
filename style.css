@@ -8852,3 +8852,170 @@ html[data-tema="claro"] .mini-dados-row-perigo {
 html[data-tema="claro"] .mini-dados-membro-sheet button:not(.mini-dados-row-perigo) {
     color: #111 !important;
 }
+
+
+/* ==========================================
+   MODO CLARO - CORRECOES DO PAINEL DE GRUPO
+   ========================================== */
+html[data-tema="claro"] #painel-dados-grupo {
+    background: #F4F4F4 !important;
+    color: #111 !important;
+}
+
+html[data-tema="claro"] #painel-dados-grupo .grupo-dados-topo {
+    background: rgba(244,244,244,.96) !important;
+    color: #111 !important;
+    border-bottom: 1px solid rgba(0,0,0,.07) !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    backdrop-filter: blur(24px) saturate(150%);
+}
+
+html[data-tema="claro"] #painel-dados-grupo .grupo-voltar-btn,
+html[data-tema="claro"] #painel-dados-grupo .grupo-topo-acoes {
+    color: #111 !important;
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.94),
+            rgba(247,247,247,.78)
+        ) !important;
+    border-color: rgba(0,0,0,.11) !important;
+    box-shadow:
+        0 7px 20px rgba(0,0,0,.07),
+        inset 0 1px 0 rgba(255,255,255,.98) !important;
+}
+
+html[data-tema="claro"] #painel-dados-grupo .grupo-voltar-btn svg,
+html[data-tema="claro"] #painel-dados-grupo .grupo-topo-acoes svg,
+html[data-tema="claro"] #painel-dados-grupo .grupo-topo-acoes img {
+    stroke: #111 !important;
+    color: #111 !important;
+    filter: brightness(0) !important;
+}
+
+html[data-tema="claro"] #painel-dados-grupo .grupo-panel-conteudo,
+html[data-tema="claro"] #painel-dados-grupo .grupo-dados-conteudo {
+    background: #F4F4F4 !important;
+    color: #111 !important;
+}
+
+html[data-tema="claro"] #painel-dados-grupo #grupo-info-nome {
+    color: #111 !important;
+}
+
+html[data-tema="claro"] #painel-dados-grupo #grupo-info-resumo,
+html[data-tema="claro"] #painel-dados-grupo .grupo-secao-titulo,
+html[data-tema="claro"] #painel-dados-grupo .grupo-membros-titulo-linha h3 {
+    color: #7A7A7D !important;
+}
+
+html[data-tema="claro"] #painel-dados-grupo .grupo-acao-card {
+    background: rgba(255,255,255,.88) !important;
+    color: #111 !important;
+    border-color: rgba(0,0,0,.075) !important;
+    box-shadow:
+        0 7px 20px rgba(0,0,0,.055),
+        inset 0 1px 0 rgba(255,255,255,.98) !important;
+}
+
+html[data-tema="claro"] #painel-dados-grupo .grupo-acao-card > span:last-child {
+    color: #111 !important;
+}
+
+html[data-tema="claro"] #painel-dados-grupo .grupo-abas {
+    background: transparent !important;
+}
+
+html[data-tema="claro"] #painel-dados-grupo .grupo-aba {
+    color: #7A7A7D !important;
+}
+
+html[data-tema="claro"] #painel-dados-grupo .grupo-aba.ativa {
+    color: #111 !important;
+    background: #FFFFFF !important;
+    border-color: rgba(0,0,0,.11) !important;
+    box-shadow: 0 2px 7px rgba(0,0,0,.06) !important;
+}
+
+html[data-tema="claro"] #painel-dados-grupo .grupo-membros-card,
+html[data-tema="claro"] #painel-dados-grupo .grupo-midia-card,
+html[data-tema="claro"] #painel-dados-grupo .grupo-config-card,
+html[data-tema="claro"] #painel-dados-grupo .grupo-sair-card {
+    background: rgba(255,255,255,.90) !important;
+    color: #111 !important;
+    border-color: rgba(0,0,0,.075) !important;
+    box-shadow:
+        0 7px 20px rgba(0,0,0,.045),
+        inset 0 1px 0 rgba(255,255,255,.98) !important;
+}
+
+html[data-tema="claro"] #painel-dados-grupo .grupo-adicionar-row,
+html[data-tema="claro"] #painel-dados-grupo .grupo-membro-item,
+html[data-tema="claro"] #painel-dados-grupo .grupo-config-row {
+    color: #111 !important;
+    background: transparent !important;
+}
+
+html[data-tema="claro"] #painel-dados-grupo .grupo-adicionar-row::after,
+html[data-tema="claro"] #painel-dados-grupo .grupo-membro-item:not(:last-child)::after {
+    background: rgba(0,0,0,.10) !important;
+}
+
+html[data-tema="claro"] #painel-dados-grupo .grupo-membro-item strong,
+html[data-tema="claro"] #painel-dados-grupo .grupo-membro-item .grupo-membro-nome,
+html[data-tema="claro"] #painel-dados-grupo .grupo-membro-item .grupo-membro-usuario,
+html[data-tema="claro"] #painel-dados-grupo .grupo-membro-item .grupo-membro-email,
+html[data-tema="claro"] #painel-dados-grupo .grupo-membro-item .grupo-membro-texto {
+    color: #111 !important;
+}
+
+html[data-tema="claro"] #painel-dados-grupo .grupo-membro-item small,
+html[data-tema="claro"] #painel-dados-grupo .grupo-membro-tag,
+html[data-tema="claro"] #painel-dados-grupo .grupo-membro-info,
+html[data-tema="claro"] #painel-dados-grupo .grupo-membro-descricao {
+    color: #7A7A7D !important;
+}
+
+html[data-tema="claro"] #painel-dados-grupo .grupo-membro-cargo,
+html[data-tema="claro"] #painel-dados-grupo .grupo-membro-admin,
+html[data-tema="claro"] #painel-dados-grupo .grupo-membro-dono {
+    color: #ff8a1f !important;
+}
+
+html[data-tema="claro"] #painel-dados-grupo .grupo-config-texto strong,
+html[data-tema="claro"] #painel-dados-grupo .grupo-midia-texto strong {
+    color: #111 !important;
+}
+
+html[data-tema="claro"] #painel-dados-grupo .grupo-config-texto small,
+html[data-tema="claro"] #painel-dados-grupo .grupo-midia-texto small {
+    color: #7A7A7D !important;
+}
+
+html[data-tema="claro"] #painel-dados-grupo .grupo-config-icone,
+html[data-tema="claro"] #painel-dados-grupo .grupo-midia-icone,
+html[data-tema="claro"] #painel-dados-grupo .grupo-config-seta {
+    color: #6D6D70 !important;
+}
+
+html[data-tema="claro"] #painel-dados-grupo .grupo-pesquisar-btn {
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.94),
+            rgba(247,247,247,.80)
+        ) !important;
+    color: #111 !important;
+    border-color: rgba(0,0,0,.10) !important;
+    box-shadow:
+        0 8px 22px rgba(0,0,0,.08),
+        inset 0 1px 0 rgba(255,255,255,.98) !important;
+}
+
+html[data-tema="claro"] #painel-dados-grupo .grupo-pesquisar-btn svg,
+html[data-tema="claro"] #painel-dados-grupo .grupo-pesquisar-btn img {
+    stroke: #111 !important;
+    color: #111 !important;
+    filter: brightness(0) !important;
+}
