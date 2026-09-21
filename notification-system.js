@@ -251,11 +251,44 @@
         }
     }
 
-    function textoNotificacao(texto) {
-        if (!texto) return 'Nova mensagem';
-        if (texto.startsWith('[FOTO]:')) return '📷 Foto';
-        if (texto.startsWith('[VIDEO]:')) return '🎥 Vídeo';
-        if (texto.startsWith('[AUDIO]:')) return '🎤 Áudio';
+    function formatarDuracaoNotificacao(valor) {
+        const total = Math.max(0, Math.round(Number(valor) || 0));
+        if (!total) return '';
+
+        const minutos = Math.floor(total / 60);
+        const segundos = String(total % 60).padStart(2, '0');
+        return minutos + ':' + segundos;
+    }
+
+    function textoNotificacao(msg) {
+        const objeto = msg && typeof msg === 'object' ? msg : null;
+        const texto = String(objeto ? (objeto.texto || '') : (msg || ''));
+        const tipo = String(objeto?.tipo || '').toLowerCase();
+
+        if (!texto && !tipo) return 'Nova mensagem';
+
+        if (
+            tipo === 'foto' ||
+            tipo === 'imagem' ||
+            texto.startsWith('[FOTO]:') ||
+            texto.startsWith('[IMAGEM]:')
+        ) {
+            return '📷 Foto';
+        }
+
+        if (tipo === 'video' || texto.startsWith('[VIDEO]:')) {
+            return '🎥 Vídeo';
+        }
+
+        if (
+            tipo === 'audio' ||
+            tipo === 'áudio' ||
+            texto.startsWith('[AUDIO]:')
+        ) {
+            const duracao = formatarDuracaoNotificacao(objeto?.audio_duracao);
+            return duracao ? ('🎤 Áudio · ' + duracao) : '🎤 Áudio';
+        }
+
         if (texto.startsWith('[CHAMADA]')) return '📞 Ligação de voz';
         if (texto.startsWith('[CHAMADA_GRUPO]')) return '📞 Ligação de voz em grupo';
 
@@ -368,14 +401,20 @@
         if (!reg) return false;
 
         try {
-            await reg.showNotification(title, {
-                icon: './images/icon-192.png',
-                badge: './images/icon-192.png',
+            const notificacao = {
+                icon: options.icon || './images/icon-192.png',
+                badge: options.badge || './images/icon-192.png',
                 tag: options.tag || ('msg-' + Date.now()),
                 renotify: true,
                 body: options.body || 'Nova mensagem',
                 data: options.data || { url: './index.html' }
-            });
+            };
+
+            if (options.image) {
+                notificacao.image = options.image;
+            }
+
+            await reg.showNotification(title, notificacao);
 
             if ('setAppBadge' in navigator) {
                 try {
@@ -416,7 +455,7 @@
 
         const remetente = await obterUsuario(msg.remetente_email);
         const nomeRemetente = remetente?.usuario || msg.remetente_email || 'Contato';
-        let corpo = textoNotificacao(msg.texto);
+        let corpo = textoNotificacao(msg);
 
         if (ehGrupo) {
             const grupo = await obterGrupo(msg.grupo_id);
@@ -438,6 +477,7 @@
                 body: ehChamadaGrupo
                     ? corpo
                     : (nomeRemetente + ': ' + corpo),
+                icon: grupo?.foto_url || './images/icon-192.png',
                 tag: (ehChamadaGrupo ? 'chamada-grupo-' : 'grupo-') +
                     msg.grupo_id + '-' + (msg.id ?? Date.now()),
                 data: {
@@ -467,6 +507,7 @@
 
         await mostrarNotificacao(nomeRemetente, {
             body: corpo,
+            icon: remetente?.foto_url || './images/icon-192.png',
             tag: (ehChamada ? 'chamada-' : 'privado-') + (msg.id ?? Date.now()),
             data: {
                 url: ehChamada && msg.chamada_id
