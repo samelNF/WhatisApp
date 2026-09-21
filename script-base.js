@@ -4358,8 +4358,92 @@ async function trocarFotoPerfil(event) {
     carregarDadosAbaVoce();
 }
 // ==========================================
-// APARÊNCIA - FUNDO GLOBAL + ÍCONE DO PWA
+// APARÊNCIA - TEMA DO APP + FUNDO GLOBAL + ÍCONE DO PWA
 // ==========================================
+const MODOS_TEMA_VALIDOS = ["automatico", "claro", "escuro"];
+const mediaTemaSistema = window.matchMedia
+    ? window.matchMedia("(prefers-color-scheme: dark)")
+    : null;
+
+function obterModoTemaAplicativo() {
+    const salvo = localStorage.getItem("modoTemaWhatisApp") || "automatico";
+    return MODOS_TEMA_VALIDOS.includes(salvo) ? salvo : "automatico";
+}
+
+function resolverTemaAplicativo(modo = obterModoTemaAplicativo()) {
+    if (modo === "claro" || modo === "escuro") return modo;
+    return mediaTemaSistema?.matches ? "escuro" : "claro";
+}
+
+function atualizarSelecaoModoTema() {
+    const escolhido = obterModoTemaAplicativo();
+
+    document.querySelectorAll("[data-modo-tema]").forEach(botao => {
+        const ativo = botao.dataset.modoTema === escolhido;
+        botao.classList.toggle("selecionado", ativo);
+        botao.setAttribute("aria-checked", ativo ? "true" : "false");
+    });
+}
+
+function aplicarTemaAplicativo(modo = obterModoTemaAplicativo(), persistir = false) {
+    if (!MODOS_TEMA_VALIDOS.includes(modo)) modo = "automatico";
+
+    if (persistir) {
+        localStorage.setItem("modoTemaWhatisApp", modo);
+    }
+
+    const temaResolvido = resolverTemaAplicativo(modo);
+    const root = document.documentElement;
+
+    root.dataset.modoTema = modo;
+    root.dataset.tema = temaResolvido;
+
+    const statusBar = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+    if (statusBar) {
+        statusBar.setAttribute("content", temaResolvido === "claro" ? "default" : "black");
+    }
+
+    atualizarSelecaoModoTema();
+
+    if (typeof atualizarPreviewBaloesGlobal === "function") {
+        atualizarPreviewBaloesGlobal();
+    }
+
+    if (typeof atualizarPainelTemaConversa === "function") {
+        atualizarPainelTemaConversa();
+    }
+
+    if (typeof aplicarTemaBaloesNoChat === "function") {
+        aplicarTemaBaloesNoChat();
+    }
+
+    if (typeof window.atualizarSafeArea === "function") {
+        requestAnimationFrame(() => window.atualizarSafeArea());
+    }
+}
+
+function selecionarModoTema(modo) {
+    if (!MODOS_TEMA_VALIDOS.includes(modo)) return;
+    aplicarTemaAplicativo(modo, true);
+}
+
+window.selecionarModoTema = selecionarModoTema;
+window.aplicarTemaAplicativo = aplicarTemaAplicativo;
+
+if (mediaTemaSistema) {
+    const aoMudarTemaSistema = () => {
+        if (obterModoTemaAplicativo() === "automatico") {
+            aplicarTemaAplicativo("automatico", false);
+        }
+    };
+
+    if (typeof mediaTemaSistema.addEventListener === "function") {
+        mediaTemaSistema.addEventListener("change", aoMudarTemaSistema);
+    } else if (typeof mediaTemaSistema.addListener === "function") {
+        mediaTemaSistema.addListener(aoMudarTemaSistema);
+    }
+}
+
 const CORES_BALOES_FIXAS = [
     "#186f47", "#134d36", "#423495", "#2c2a5b",
     "#703081", "#4a2159", "#853c24", "#4c2c24",
@@ -4375,9 +4459,42 @@ const CORES_BALOES_FIXAS = [
 ];
 
 const TEMA_BALOES_PADRAO = {
-    enviada: "#2b2b2b",
-    recebida: "#1f1f1f"
+    escuro: {
+        enviada: "#254C38",
+        recebida: "#242626"
+    },
+    claro: {
+        enviada: "#DFFBD5",
+        recebida: "#FFFFFF"
+    }
 };
+
+function obterTemaBaloesPadrao() {
+    const tema = document.documentElement.dataset.tema === "claro"
+        ? "claro"
+        : "escuro";
+
+    return TEMA_BALOES_PADRAO[tema];
+}
+
+function corTextoParaFundo(cor) {
+    const valor = String(cor || "").trim();
+    const hex = valor.match(/^#([0-9a-f]{6})$/i);
+
+    if (!hex) {
+        return document.documentElement.dataset.tema === "claro"
+            ? "#111111"
+            : "#FFFFFF";
+    }
+
+    const numero = parseInt(hex[1], 16);
+    const r = (numero >> 16) & 255;
+    const g = (numero >> 8) & 255;
+    const b = numero & 255;
+    const luminancia = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+    return luminancia > 0.62 ? "#111111" : "#FFFFFF";
+}
 
 let contextoTemaConversa = null;
 let contextoPaletaBalao = null;
@@ -4419,10 +4536,11 @@ function lerTemaBaloes(chave) {
 
 function obterTemaBaloesGlobal() {
     const salvo = lerTemaBaloes(chaveTemaBaloesGlobal()) || {};
+    const padrao = obterTemaBaloesPadrao();
 
     return {
-        enviada: salvo.enviada || TEMA_BALOES_PADRAO.enviada,
-        recebida: salvo.recebida || TEMA_BALOES_PADRAO.recebida
+        enviada: salvo.enviada || padrao.enviada,
+        recebida: salvo.recebida || padrao.recebida
     };
 }
 
@@ -4448,8 +4566,21 @@ function aplicarTemaBaloesNoChat(tipo = null) {
     if (!tela) return;
 
     const tema = obterTemaBaloesAtual(tipo);
+    const textoEnviada = corTextoParaFundo(tema.enviada);
+    const textoRecebida = corTextoParaFundo(tema.recebida);
+
     tela.style.setProperty("--cor-balao-enviada", tema.enviada);
     tela.style.setProperty("--cor-balao-recebida", tema.recebida);
+    tela.style.setProperty("--texto-balao-enviada", textoEnviada);
+    tela.style.setProperty("--texto-balao-recebida", textoRecebida);
+    tela.style.setProperty(
+        "--meta-balao-enviada",
+        textoEnviada === "#111111" ? "rgba(0,0,0,.52)" : "rgba(255,255,255,.52)"
+    );
+    tela.style.setProperty(
+        "--meta-balao-recebida",
+        textoRecebida === "#111111" ? "rgba(0,0,0,.52)" : "rgba(255,255,255,.52)"
+    );
 }
 
 window.aplicarTemaBaloesNoChat = aplicarTemaBaloesNoChat;
@@ -4459,8 +4590,15 @@ function atualizarPreviewBaloesGlobal() {
     const recebida = document.querySelector("#aparencia-fundo-preview .aparencia-preview-balao.esquerda");
     const enviada = document.querySelector("#aparencia-fundo-preview .aparencia-preview-balao.direita");
 
-    if (recebida) recebida.style.background = tema.recebida;
-    if (enviada) enviada.style.background = tema.enviada;
+    if (recebida) {
+        recebida.style.background = tema.recebida;
+        recebida.style.color = corTextoParaFundo(tema.recebida);
+    }
+
+    if (enviada) {
+        enviada.style.background = tema.enviada;
+        enviada.style.color = corTextoParaFundo(tema.enviada);
+    }
 }
 
 function atualizarPainelTemaConversa() {
@@ -4473,8 +4611,15 @@ function atualizarPainelTemaConversa() {
     const preview = document.getElementById("tema-conversa-preview");
     const remover = document.getElementById("tema-remover-fundo");
 
-    if (recebida) recebida.style.background = tema.recebida;
-    if (enviada) enviada.style.background = tema.enviada;
+    if (recebida) {
+        recebida.style.background = tema.recebida;
+        recebida.style.color = corTextoParaFundo(tema.recebida);
+    }
+
+    if (enviada) {
+        enviada.style.background = tema.enviada;
+        enviada.style.color = corTextoParaFundo(tema.enviada);
+    }
 
     const meuEmail = localStorage.getItem("usuarioLogado") || "local";
     let fundo = "";
@@ -4816,8 +4961,10 @@ function selecionarIconePWA(tipo) {
 }
 
 function carregarPreferenciasAparencia() {
+    aplicarTemaAplicativo(obterModoTemaAplicativo(), false);
     atualizarPreviewFundoGlobal();
     atualizarPreviewBaloesGlobal();
+    atualizarSelecaoModoTema();
     atualizarSelecaoIconePWA();
     aplicarIconePWA();
 }
