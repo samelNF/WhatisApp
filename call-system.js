@@ -60,6 +60,7 @@
     let cameraLigada = false;
     let pedidoVideoMostrado = null;
     let timerDowngradeVideo = null;
+    let timerRenegociacaoVideo = null;
     let ultimaNegociacaoIniciada = 0;
     let ultimaNegociacaoRespondida = 0;
     let ultimaAnswerAplicada = 0;
@@ -444,6 +445,18 @@
 
         if (atualizada) {
             chamadaAtual = atualizada;
+
+            // A câmera já foi aberta acima, mas numa ligação que nasceu como
+            // voz ela ainda precisa ser encaixada no transceiver existente.
+            // A renegociação SDP será iniciada pelo chamador original.
+            await sincronizarTracksNoPeer();
+
+            registrarDiagnostico('video_track_attached_after_accept', {
+                signalingState: peer?.signalingState || '',
+                videoSenderTrack:
+                    transceiverPorKind('video')?.sender?.track?.readyState || ''
+            });
+
             atualizarTipoTela(atualizada);
         }
 
@@ -885,6 +898,11 @@
             timerDowngradeVideo = null;
         }
 
+        if (timerRenegociacaoVideo) {
+            clearTimeout(timerRenegociacaoVideo);
+            timerRenegociacaoVideo = null;
+        }
+
         esconderPedidoVideo();
 
         candidatosPendentesRemotos = [];
@@ -1069,6 +1087,27 @@
         videoSender = videoTransceiver.sender;
     }
 
+    function agendarRenegociacaoVideoPrivado(delay = 280) {
+        if (timerRenegociacaoVideo) {
+            clearTimeout(timerRenegociacaoVideo);
+        }
+
+        timerRenegociacaoVideo = setTimeout(() => {
+            timerRenegociacaoVideo = null;
+
+            if (
+                peer &&
+                chamadaAtual?.id &&
+                chamadaAtual.status === 'active' &&
+                chamadaAtual.modo === 'video' &&
+                euSouChamador(chamadaAtual) &&
+                cameraLigada
+            ) {
+                iniciarRenegociacaoVideoPrivado();
+            }
+        }, delay);
+    }
+
     async function iniciarRenegociacaoVideoPrivado() {
         if (
             renegociacaoEmCurso ||
@@ -1082,7 +1121,13 @@
             return;
         }
 
-        if (peer.signalingState !== 'stable') return;
+        if (peer.signalingState !== 'stable') {
+            registrarDiagnostico('video_renegotiation_wait_stable', {
+                signalingState: peer.signalingState
+            });
+            agendarRenegociacaoVideoPrivado(320);
+            return;
+        }
 
         renegociacaoEmCurso = true;
 
@@ -1899,6 +1944,27 @@
             });
 
             await flushCandidatesRemotos();
+
+            // Se o pedido de vídeo aconteceu enquanto a chamada ainda estava
+            // fechando a negociação inicial de voz, a primeira tentativa de
+            // renegociar cai em have-local-offer. Agora que a answer deixou o
+            // peer estável, tentamos de novo.
+            if (
+                chamadaAtual?.status === 'active' &&
+                chamadaAtual?.modo === 'video' &&
+                euSouChamador(chamadaAtual) &&
+                cameraLigada
+            ) {
+                await sincronizarTracksNoPeer();
+
+                const videoDepoisDaAnswer = transceiverPorKind('video');
+                if (
+                    !videoDepoisDaAnswer ||
+                    videoDepoisDaAnswer.currentDirection !== 'sendrecv'
+                ) {
+                    agendarRenegociacaoVideoPrivado(80);
+                }
+            }
 
             await tentarTocarAudioRemoto();
         } catch (erro) {
