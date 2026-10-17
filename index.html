@@ -624,7 +624,7 @@
 
             <!-- Barra normal de envio -->
             <div id="chat-input-box" class="chat-input-box">
-                <button type="button" class="chat-footer-icon chat-anexar-btn" onclick="acionarSeletorFotoChat()" aria-label="Adicionar anexo" title="Adicionar">
+                <button type="button" class="chat-footer-icon chat-anexar-btn" onclick="abrirSeletorMidiaChat()" aria-label="Adicionar anexo" title="Adicionar">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M12 4v16M4 12h16"></path>
                     </svg>
@@ -658,7 +658,14 @@
                     <img src="svg/paperplane.svg" alt="">
                 </button>
 
-                <input type="file" id="input-arquivo-chat" accept="image/*, video/*" style="display: none;" onchange="enviarFotoChat(event)">
+                <input
+                    type="file"
+                    id="input-arquivo-chat"
+                    accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar,.7z,.json"
+                    multiple
+                    style="display: none;"
+                    onchange="selecionarMidiasChat(event)"
+                >
             </div>
 
             <!-- Modo de edição de mensagem -->
