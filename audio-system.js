@@ -78,6 +78,7 @@
         const texto = String(msg.texto || '');
         if (texto.startsWith('[FOTO]:') || texto.startsWith('[IMAGEM]:')) return '📷 Foto';
         if (texto.startsWith('[VIDEO]:')) return '🎥 Vídeo';
+        if (texto.startsWith('[ARQUIVO]:') || msg.tipo === 'arquivo') return '📎 Documento';
         return texto;
     };
 
