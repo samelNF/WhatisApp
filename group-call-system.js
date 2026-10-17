@@ -591,6 +591,11 @@
         const state = peers.get(chave);
         if (!state) return;
 
+        if (state.renegotiateTimer) {
+            clearTimeout(state.renegotiateTimer);
+            state.renegotiateTimer = null;
+        }
+
         try {
             state.pc.onicecandidate = null;
             state.pc.ontrack = null;
@@ -647,7 +652,8 @@
             remoteVideoStream: new MediaStream(),
             remoteVideoAtivo: false,
             videoSender: null,
-            videoTransceiver: null
+            videoTransceiver: null,
+            renegotiateTimer: null
         };
 
         peers.set(remoto, state);
@@ -861,7 +867,24 @@
 
         const pc = state.pc;
 
-        if (pc.signalingState !== 'stable') return;
+        if (pc.signalingState !== 'stable') {
+            if (modoVideoGrupo() && cameraLigada) {
+                if (state.renegotiateTimer) {
+                    clearTimeout(state.renegotiateTimer);
+                }
+
+                state.renegotiateTimer = setTimeout(() => {
+                    state.renegotiateTimer = null;
+                    criarOfertaPara(state.remoteEmail);
+                }, 320);
+            }
+            return;
+        }
+
+        if (state.renegotiateTimer) {
+            clearTimeout(state.renegotiateTimer);
+            state.renegotiateTimer = null;
+        }
 
         try {
             state.makingOffer = true;
