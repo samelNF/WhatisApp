@@ -4497,11 +4497,19 @@ async function salvarNovaFotoPerfil(arquivo) {
     return true;
 }
 
+window.salvarNovaFotoPerfil = salvarNovaFotoPerfil;
+
 async function trocarFotoPerfil(event) {
     const arquivo = event.target.files?.[0];
     if (!arquivo) return;
 
-    await salvarNovaFotoPerfil(arquivo);
+    if (typeof window.abrirEditorFotoPerfil === "function") {
+        await window.abrirEditorFotoPerfil(arquivo);
+    } else {
+        console.error("Editor da foto de perfil não carregou.");
+        alert("Não foi possível abrir o editor da foto.");
+    }
+
     event.target.value = "";
 }
 // ==========================================
@@ -5459,9 +5467,16 @@ async function alterarFotoDadosUsuario(event) {
     const arquivo = event.target.files?.[0];
     if (!arquivo) return;
 
-    await salvarNovaFotoPerfil(arquivo);
+    // Não envia mais a imagem original direto. Primeiro abre a tela
+    // quadrada de recorte; somente o JPEG 1024x1024 gerado ali vai ao Supabase.
+    if (typeof window.abrirEditorFotoPerfil === "function") {
+        await window.abrirEditorFotoPerfil(arquivo);
+    } else {
+        console.error("Editor da foto de perfil não carregou.");
+        alert("Não foi possível abrir o editor da foto.");
+    }
 
-    // Permite selecionar o mesmo arquivo novamente depois.
+    // Permite selecionar o mesmo arquivo novamente mesmo se cancelar o corte.
     event.target.value = "";
 }
 
