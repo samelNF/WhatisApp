@@ -4314,48 +4314,104 @@ function carregarDadosAbaVoce() {
     carregarPreferenciasAparencia();
 }
 
-async function trocarFotoPerfil(event) {
-    const arquivo = event.target.files[0];
+async function salvarNovaFotoPerfil(arquivo) {
     const email = localStorage.getItem("usuarioLogado");
 
-    if (!arquivo || !email) return;
+    if (!arquivo || !email || !_supabase) return false;
 
-    const fileExt = arquivo.name.split('.').pop();
-    const fileName = `avatar_${Date.now()}.${fileExt}`;
+    if (!String(arquivo.type || "").startsWith("image/")) {
+        alert("Escolha uma imagem válida.");
+        return false;
+    }
 
-    const { data: uploadData, error: uploadError } = await _supabase
+    const extensaoDoNome = String(arquivo.name || "").split(".").pop()?.toLowerCase();
+    const extensao =
+        extensaoDoNome && /^[a-z0-9]+$/.test(extensaoDoNome)
+            ? extensaoDoNome
+            : (arquivo.type === "image/png" ? "png" : "jpg");
+
+    const fileName = `avatar_${Date.now()}.${extensao}`;
+
+    const { error: uploadError } = await _supabase
         .storage
-        .from('avatars')
+        .from("avatars")
         .upload(fileName, arquivo, {
-            cacheControl: '3600',
+            cacheControl: "3600",
             upsert: true
         });
 
     if (uploadError) {
+        console.error("Erro ao enviar foto do perfil:", uploadError);
         alert("Erro ao enviar a imagem: " + uploadError.message);
-        return;
+        return false;
     }
 
     const { data: publicUrlData } = _supabase
         .storage
-        .from('avatars')
+        .from("avatars")
         .getPublicUrl(fileName);
 
-    const urlFotoPublica = publicUrlData.publicUrl;
+    const urlFotoPublica = publicUrlData?.publicUrl || "";
 
-    const { error: updateError } = await _supabase
-        .from("usuarios")
-        .update({ foto_url: urlFotoPublica })
-        .eq("email", email);
-
-    if (updateError) {
-        alert("Erro ao salvar foto de perfil.");
-        return;
+    if (!urlFotoPublica) {
+        alert("Não foi possível obter o link da nova foto.");
+        return false;
     }
 
-    localStorage.setItem("fotoUsuario", urlFotoPublica);
+    // Faz UPDATE e exige o retorno da linha para confirmar que o Supabase
+    // realmente alterou o usuário correto.
+    const { data: usuarioAtualizado, error: updateError } = await _supabase
+        .from("usuarios")
+        .update({ foto_url: urlFotoPublica })
+        .eq("email", email)
+        .select("email, usuario, foto_url, cor")
+        .maybeSingle();
+
+    if (updateError || !usuarioAtualizado) {
+        console.error("Erro ao salvar foto de perfil:", updateError);
+        alert(
+            "Erro ao salvar foto de perfil no Supabase." +
+            (updateError?.message ? "\n" + updateError.message : "")
+        );
+        return false;
+    }
+
+    localStorage.setItem("fotoUsuario", usuarioAtualizado.foto_url);
+
+    await salvarSessaoNoCache({
+        email: usuarioAtualizado.email,
+        usuario: usuarioAtualizado.usuario || localStorage.getItem("nomeUsuario") || "",
+        foto_url: usuarioAtualizado.foto_url,
+        cor: usuarioAtualizado.cor || localStorage.getItem("corUsuario") || "#3a3a3c"
+    });
+
+    const alvosFoto = [
+        document.getElementById("dados-foto-usuario"),
+        document.getElementById("voce-foto-perfil"),
+        document.getElementById("foto-aba-voce")
+    ];
+
+    alvosFoto.forEach(img => {
+        if (!img) return;
+        aplicarAvatarUsuario(
+            img,
+            usuarioAtualizado.foto_url,
+            usuarioAtualizado.cor || localStorage.getItem("corUsuario")
+        );
+    });
+
     atualizarFotoAbaVoce();
     carregarDadosAbaVoce();
+
+    return true;
+}
+
+async function trocarFotoPerfil(event) {
+    const arquivo = event.target.files?.[0];
+    if (!arquivo) return;
+
+    await salvarNovaFotoPerfil(arquivo);
+    event.target.value = "";
 }
 // ==========================================
 // APARÊNCIA - TEMA DO APP + FUNDO GLOBAL + ÍCONE DO PWA
@@ -5308,26 +5364,14 @@ function acionarAlterarFotoUsuario() {
     document.getElementById('input-foto-dados-usuario').click();
 }
 
-function alterarFotoDadosUsuario(event) {
-    const arquivo = event.target.files[0];
-
+async function alterarFotoDadosUsuario(event) {
+    const arquivo = event.target.files?.[0];
     if (!arquivo) return;
 
-    const url = URL.createObjectURL(arquivo);
+    await salvarNovaFotoPerfil(arquivo);
 
-    const alvosFoto = [
-        document.getElementById('dados-foto-usuario'),
-        document.getElementById('voce-foto-perfil'),
-        document.getElementById('foto-aba-voce')
-    ];
-
-    alvosFoto.forEach(img => {
-        if (!img) return;
-        img.src = url;
-        img.style.backgroundColor = "transparent";
-        img.classList.remove("avatar-sem-foto");
-        img.dataset.temFoto = "true";
-    });
+    // Permite selecionar o mesmo arquivo novamente depois.
+    event.target.value = "";
 }
 
 function abrirAlterarNome() {
