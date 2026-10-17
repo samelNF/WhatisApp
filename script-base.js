@@ -1552,6 +1552,80 @@ function aplicarMensagemApagadaNoBalao(balao, msg, ehMinha) {
     atualizarAgrupamentoBaloesChat();
 }
 
+function dadosArquivoMensagem(texto) {
+    const valor = String(texto || "");
+    if (!valor.startsWith("[ARQUIVO]:")) return null;
+
+    const bruto = valor.slice("[ARQUIVO]:".length).trim();
+
+    try {
+        const pacote = JSON.parse(decodeURIComponent(bruto));
+        if (!pacote?.url) return null;
+
+        return {
+            url: String(pacote.url || ""),
+            nome: String(pacote.nome || "Documento"),
+            tamanho: Number(pacote.tamanho || 0),
+            mime: String(pacote.mime || "")
+        };
+    } catch (e) {
+        return bruto
+            ? {
+                url: bruto,
+                nome: "Documento",
+                tamanho: 0,
+                mime: ""
+            }
+            : null;
+    }
+}
+
+function formatarTamanhoArquivo(bytes) {
+    const total = Math.max(0, Number(bytes) || 0);
+    if (!total) return "";
+
+    if (total < 1024) return total + " B";
+    if (total < 1024 * 1024) return (total / 1024).toFixed(1).replace(".0", "") + " KB";
+    if (total < 1024 * 1024 * 1024) return (total / (1024 * 1024)).toFixed(1).replace(".0", "") + " MB";
+    return (total / (1024 * 1024 * 1024)).toFixed(1).replace(".0", "") + " GB";
+}
+
+function escaparHtmlMidia(valor) {
+    return String(valor ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function htmlArquivoMensagem(texto) {
+    const arquivo = dadosArquivoMensagem(texto);
+    if (!arquivo?.url) return '<span class="balao-texto">Documento</span>';
+
+    const nome = escaparHtmlMidia(arquivo.nome || "Documento");
+    const tamanho = formatarTamanhoArquivo(arquivo.tamanho);
+    const mime = escaparHtmlMidia(arquivo.mime || "");
+    const detalhe = [tamanho, mime].filter(Boolean).join(" · ");
+    const url = escaparHtmlMidia(arquivo.url);
+
+    return `
+        <a class="balao-arquivo" href="${url}" target="_blank" rel="noopener noreferrer" download>
+            <span class="balao-arquivo-icone" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <path d="M7 3h7l5 5v13H7z"></path>
+                    <path d="M14 3v6h5"></path>
+                </svg>
+            </span>
+            <span class="balao-arquivo-info">
+                <strong>${nome}</strong>
+                ${detalhe ? `<small>${detalhe}</small>` : ""}
+            </span>
+            <span class="balao-arquivo-baixar" aria-hidden="true">↓</span>
+        </a>
+    `;
+}
+
 async function renderizarBalao(texto, ehMinha, dataCriacao, idMensagem, mensagemRespondida, corRemetente, visualizada = false) {
     const container = document.getElementById("chat-mensagens");
     if (!container) return;
@@ -1574,7 +1648,11 @@ async function renderizarBalao(texto, ehMinha, dataCriacao, idMensagem, mensagem
     }
 
     const temResposta = !!(mensagemRespondida && mensagemRespondida.texto);
-    const temMidia = !!(texto && (texto.startsWith("[FOTO]:") || texto.startsWith("[VIDEO]:")));
+    const temMidia = !!(texto && (
+        texto.startsWith("[FOTO]:") ||
+        texto.startsWith("[VIDEO]:") ||
+        texto.startsWith("[ARQUIVO]:")
+    ));
 
     if (temResposta) balao.classList.add("balao-com-resposta");
     if (temMidia) balao.classList.add("balao-com-midia");
@@ -1589,6 +1667,7 @@ async function renderizarBalao(texto, ehMinha, dataCriacao, idMensagem, mensagem
         if (mensagemFoiApagada(mensagemRespondida)) textoCitado = "Mensagem apagada";
         else if (textoCitado.startsWith("[FOTO]:")) textoCitado = "📷 Foto";
         if (textoCitado.startsWith("[VIDEO]:")) textoCitado = "🎥 Vídeo";
+        if (textoCitado.startsWith("[ARQUIVO]:")) textoCitado = "📎 Documento";
         if (textoCitado.startsWith("[AUDIO]:")) textoCitado = "🎤 Áudio";
 
         let corCitado = "#888888";
@@ -1622,6 +1701,8 @@ async function renderizarBalao(texto, ehMinha, dataCriacao, idMensagem, mensagem
     } else if (texto && texto.startsWith("[VIDEO]:")) {
         const urlVideo = texto.replace("[VIDEO]:", "").trim();
         conteudoHtml = `<video class="balao-midia balao-video" src="${urlVideo}" controls preload="metadata"></video>`;
+    } else if (texto && texto.startsWith("[ARQUIVO]:")) {
+        conteudoHtml = htmlArquivoMensagem(texto);
     } else {
         conteudoHtml = `<span class="balao-texto">${texto}</span>`;
     }
@@ -1674,7 +1755,11 @@ async function renderizarBalaoGrupo(texto, ehMinha, dataCriacao, nomeRemetente, 
     balao.classList.add(ehMinha ? "balao-enviada" : "balao-recebida");
 
     const temResposta = !!(mensagemRespondida && mensagemRespondida.texto);
-    const temMidia = !!(texto && (texto.startsWith("[FOTO]:") || texto.startsWith("[VIDEO]:")));
+    const temMidia = !!(texto && (
+        texto.startsWith("[FOTO]:") ||
+        texto.startsWith("[VIDEO]:") ||
+        texto.startsWith("[ARQUIVO]:")
+    ));
 
     if (temResposta) balao.classList.add("balao-com-resposta");
     if (temMidia) balao.classList.add("balao-com-midia");
@@ -1709,6 +1794,7 @@ async function renderizarBalaoGrupo(texto, ehMinha, dataCriacao, nomeRemetente, 
         if (mensagemFoiApagada(mensagemRespondida)) textoCitado = "Mensagem apagada";
         else if (textoCitado.startsWith("[FOTO]:")) textoCitado = "📷 Foto";
         if (textoCitado.startsWith("[VIDEO]:")) textoCitado = "🎥 Vídeo";
+        if (textoCitado.startsWith("[ARQUIVO]:")) textoCitado = "📎 Documento";
         if (textoCitado.startsWith("[AUDIO]:")) textoCitado = "🎤 Áudio";
 
         let corCitado = "#888888";
@@ -1744,6 +1830,8 @@ async function renderizarBalaoGrupo(texto, ehMinha, dataCriacao, nomeRemetente, 
     } else if (texto && texto.startsWith("[VIDEO]:")) {
         const urlVideo = texto.replace("[VIDEO]:", "").trim();
         conteudoHtml = `<video class="balao-midia balao-video" src="${urlVideo}" controls preload="metadata"></video>`;
+    } else if (texto && texto.startsWith("[ARQUIVO]:")) {
+        conteudoHtml = htmlArquivoMensagem(texto);
     }
 
     balao.innerHTML = `
@@ -1801,6 +1889,8 @@ function iniciarResposta(idMensagem, nomeRemetente, textoMensagem) {
             textoEl.textContent = "📷 Foto";
         } else if (textoMensagem.startsWith("[VIDEO]:") || textoMensagem.startsWith("[MIDIA_VIDEO]")) {
             textoEl.textContent = "🎥 Vídeo";
+        } else if (textoMensagem.startsWith("[ARQUIVO]:")) {
+            textoEl.textContent = "📎 Documento";
         } else if (textoMensagem.startsWith("[AUDIO]:")) {
             textoEl.textContent = "🎤 Áudio";
         } else {
@@ -2131,7 +2221,7 @@ function mensagemEhTextoEditavel(dados) {
     if (tipo && tipo !== "texto") return false;
     if (dados?.chamada_id) return false;
 
-    return !/^\[(FOTO|IMAGEM|VIDEO|AUDIO|CHAMADA|CHAMADA_GRUPO)\]/i.test(texto);
+    return !/^\[(FOTO|IMAGEM|VIDEO|ARQUIVO|AUDIO|CHAMADA|CHAMADA_GRUPO)\]/i.test(texto);
 }
 
 function mensagemDentroDoPrazoEdicao(dados) {
@@ -2332,6 +2422,7 @@ function textoCopiavelMensagem(texto) {
     if (!valor) return "";
     if (valor.startsWith("[FOTO]:")) return "";
     if (valor.startsWith("[VIDEO]:")) return "";
+    if (valor.startsWith("[ARQUIVO]:")) return "";
     if (valor.startsWith("[AUDIO]:")) return "";
     if (valor.trim() === MARCADOR_MENSAGEM_APAGADA) return "";
     return valor;
