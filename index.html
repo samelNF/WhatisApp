@@ -30,6 +30,7 @@
     <script src="cache-db.js" defer></script>
     <script src="audio-system.js" defer></script>
     <script src="camera-system.js" defer></script>
+    <script src="profile-cropper.js" defer></script>
     <script src="call-system.js" defer></script>
     <script src="group-call-system.js" defer></script>
     <script src="script.js" defer></script>
@@ -1352,6 +1353,66 @@
             </div>
         </div>
     </div>
+
+    <!-- EDITOR DA FOTO DE PERFIL: o Supabase recebe somente o recorte quadrado -->
+    <div id="editor-foto-perfil" class="editor-foto-perfil hidden" aria-hidden="true">
+        <div class="editor-foto-perfil-header">
+            <button
+                type="button"
+                id="editor-foto-perfil-cancelar"
+                class="editor-foto-perfil-cancelar"
+                onclick="fecharEditorFotoPerfil()"
+            >Cancelar</button>
+
+            <strong>Editar foto</strong>
+
+            <button
+                type="button"
+                id="editor-foto-perfil-concluir"
+                class="editor-foto-perfil-concluir"
+                onclick="salvarRecorteFotoPerfil()"
+            >Concluir</button>
+        </div>
+
+        <div class="editor-foto-perfil-corpo">
+            <div class="editor-foto-perfil-palco">
+                <canvas
+                    id="editor-foto-perfil-canvas"
+                    class="editor-foto-perfil-canvas"
+                    aria-label="Área quadrada de recorte da foto"
+                ></canvas>
+
+                <div class="editor-foto-perfil-grade" aria-hidden="true"></div>
+            </div>
+
+            <p class="editor-foto-perfil-ajuda">
+                Arraste para reposicionar. Use dois dedos ou a barra para ajustar o zoom.
+                O recorte enviado será quadrado.
+            </p>
+
+            <div class="editor-foto-perfil-controles">
+                <button type="button" onclick="centralizarEditorFotoPerfil()">
+                    Centralizar
+                </button>
+
+                <div class="editor-foto-perfil-zoom-linha">
+                    <span aria-hidden="true">−</span>
+                    <input
+                        id="editor-foto-perfil-zoom"
+                        type="range"
+                        min="1"
+                        max="4"
+                        step="0.01"
+                        value="1"
+                        oninput="alterarZoomEditorFotoPerfil(this.value)"
+                        aria-label="Zoom da foto"
+                    >
+                    <span aria-hidden="true">+</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
 </body>
 </html>
