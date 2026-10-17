@@ -240,6 +240,13 @@
             return enviarMidiaComSolicitacao(event, null);
         };
 
+        // O sistema novo de mídia entra por último e substitui o fluxo legado
+        // acima sem mexer nas demais funções do script principal.
+        const midia = document.createElement('script');
+        midia.src = './media-system.js';
+        midia.async = false;
+        document.head.appendChild(midia);
+
         // ==========================================
         // SOLICITAÇÕES
         // ==========================================
