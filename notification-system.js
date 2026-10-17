@@ -280,6 +280,10 @@
             return '🎥 Vídeo';
         }
 
+        if (tipo === 'arquivo' || texto.startsWith('[ARQUIVO]:')) {
+            return '📎 Documento';
+        }
+
         if (
             tipo === 'audio' ||
             tipo === 'áudio' ||
