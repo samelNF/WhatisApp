@@ -419,11 +419,11 @@
         return !fila.length;
     }
 
-    async function colocarNaFila(dados) {
+    async function colocarNaFila(dados, idFilaForcado = null) {
         const conta = emailAtual();
         if (!conta) return null;
 
-        const idFila = gerarIdLocal();
+        const idFila = idFilaForcado || gerarIdLocal();
         const pendencia = {
             fila_id: idFila,
             conta,
@@ -515,26 +515,7 @@
         };
 
         if (!navigator.onLine) {
-            const pendencia = await colocarNaFila({
-                ...dados,
-                // reaproveita o mesmo id para idempotência
-                _fila_id: idFila
-            });
-
-            // colocarNaFila gera id próprio; troca pelo id desta tentativa
-            // para que toda mensagem tenha uma identidade única desde o início.
-            if (pendencia && pendencia.fila_id !== idFila) {
-                const fila = lerFila(conta);
-                const ultimo = fila[fila.length - 1];
-
-                if (ultimo && ultimo.fila_id === pendencia.fila_id) {
-                    await removerPendenteDoCache(pendencia);
-                    ultimo.fila_id = idFila;
-                    pendencia.fila_id = idFila;
-                    salvarFila(fila, conta);
-                    await salvarPendenteNoCache(pendencia);
-                }
-            }
+            const pendencia = await colocarNaFila(dados, idFila);
 
             if (pendencia) {
                 await atualizarInterfaceDepoisDeEnfileirar(pendencia);
