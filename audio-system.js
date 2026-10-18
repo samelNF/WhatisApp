@@ -327,6 +327,33 @@
         if (!grupoId && !contato) return false;
 
         const mime = blob.type || mediaRecorder?.mimeType || 'audio/webm';
+
+        let respostaId = null;
+        try {
+            respostaId = typeof mensagemRespondendoId !== 'undefined'
+                ? mensagemRespondendoId
+                : null;
+        } catch (e) {}
+
+        // Fluxo principal: salva o próprio Blob no IndexedDB e usa a mesma
+        // fila ordenada das mensagens de texto. Se estiver online, tenta
+        // enviar imediatamente; se a rede cair, o áudio fica guardado.
+        if (typeof window.WhatisOffline?.enviarAudio === 'function') {
+            return window.WhatisOffline.enviarAudio(
+                blob,
+                duracao,
+                normalizarOndas(ondas, QTD_ONDAS),
+                {
+                    grupo_id: grupoId,
+                    destinatario_email: grupoId ? null : contato,
+                    mensagem_respondida_id: respostaId,
+                    audio_mime: mime
+                }
+            );
+        }
+
+        // Fallback para uma carga antiga do app que ainda não tenha o
+        // offline-system disponível.
         const ext = extensaoPorMime(mime);
         const pastaUsuario = meuEmail.replace(/[^a-zA-Z0-9_-]/g, '_');
         const nomeArquivo =
@@ -352,13 +379,6 @@
 
         const url = urlData?.publicUrl;
         if (!url) return false;
-
-        let respostaId = null;
-        try {
-            respostaId = typeof mensagemRespondendoId !== 'undefined'
-                ? mensagemRespondendoId
-                : null;
-        } catch (e) {}
 
         const dadosMensagem = {
             texto: '[AUDIO]: ' + url,
@@ -558,7 +578,29 @@
             if (existente) return;
         }
 
-        const url = urlAudioMensagem(msg);
+        let url = urlAudioMensagem(msg);
+        let urlObjetoLocal = '';
+
+        const pendenteOffline =
+            msg._offline_pending === true ||
+            String(msg.id || '').startsWith('offline:');
+
+        if (
+            !url &&
+            pendenteOffline &&
+            msg?.meta?.audio_key &&
+            window.WhatisCache?.obterMidiaPendente
+        ) {
+            const registroLocal = await window.WhatisCache.obterMidiaPendente(
+                msg.meta.audio_key
+            );
+
+            if (registroLocal?.blob?.size) {
+                urlObjetoLocal = URL.createObjectURL(registroLocal.blob);
+                url = urlObjetoLocal;
+            }
+        }
+
         if (!url) return;
 
         const balao = document.createElement('div');
@@ -568,6 +610,10 @@
 
         if (msg.id !== null && msg.id !== undefined) {
             balao.dataset.messageId = String(msg.id);
+        }
+
+        if (urlObjetoLocal) {
+            balao.dataset.audioObjectUrl = urlObjetoLocal;
         }
 
         const duracaoBanco = Math.max(1, Number(msg.audio_duracao) || 1);
