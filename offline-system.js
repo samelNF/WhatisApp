@@ -218,6 +218,11 @@
             '#chat-mensagens .balao-msg[data-message-id="' + id + '"]'
         );
 
+        const objectUrl = balao?.dataset?.audioObjectUrl || '';
+        if (objectUrl.startsWith('blob:')) {
+            try { URL.revokeObjectURL(objectUrl); } catch (e) {}
+        }
+
         balao?.remove();
     }
 
