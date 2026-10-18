@@ -6,10 +6,11 @@
 
 (function () {
     const DB_NAME = 'WhatisAppLocal';
-    const DB_VERSION = 2;
+    const DB_VERSION = 3;
     const STORE_MENSAGENS = 'mensagens';
     const STORE_ESTADO = 'estado';
     const STORE_CONVERSAS = 'conversas';
+    const STORE_MIDIAS_PENDENTES = 'midias_pendentes';
     const MAX_MENSAGENS_POR_CONVERSA = 500;
     const CACHE_MIDIAS = 'whatisapp-media-v1';
 
@@ -44,6 +45,15 @@
                     db.createObjectStore(STORE_CONVERSAS, {
                         keyPath: 'conta'
                     });
+                }
+
+                if (!db.objectStoreNames.contains(STORE_MIDIAS_PENDENTES)) {
+                    const storeMidias = db.createObjectStore(STORE_MIDIAS_PENDENTES, {
+                        keyPath: 'id'
+                    });
+
+                    storeMidias.createIndex('conta', 'conta', { unique: false });
+                    storeMidias.createIndex('created_at', 'created_at', { unique: false });
                 }
             };
 
@@ -367,6 +377,72 @@
         });
     }
 
+    async function salvarMidiaPendente(registro) {
+        const db = await abrirBanco();
+        if (!db || !registro?.id || !registro?.blob) return false;
+
+        const dados = {
+            ...registro,
+            conta: String(registro.conta || meuEmail()).trim().toLowerCase(),
+            created_at: registro.created_at || new Date().toISOString()
+        };
+
+        return new Promise(resolve => {
+            const tx = db.transaction(STORE_MIDIAS_PENDENTES, 'readwrite');
+            tx.objectStore(STORE_MIDIAS_PENDENTES).put(dados);
+            tx.oncomplete = () => resolve(true);
+            tx.onerror = () => resolve(false);
+            tx.onabort = () => resolve(false);
+        });
+    }
+
+    async function obterMidiaPendente(id) {
+        const db = await abrirBanco();
+        if (!db || !id) return null;
+
+        return new Promise(resolve => {
+            const tx = db.transaction(STORE_MIDIAS_PENDENTES, 'readonly');
+            const req = tx.objectStore(STORE_MIDIAS_PENDENTES).get(String(id));
+            req.onsuccess = () => resolve(req.result || null);
+            req.onerror = () => resolve(null);
+        });
+    }
+
+    async function listarMidiasPendentes(conta = meuEmail()) {
+        const db = await abrirBanco();
+        const email = String(conta || '').trim().toLowerCase();
+        if (!db || !email) return [];
+
+        return new Promise(resolve => {
+            const tx = db.transaction(STORE_MIDIAS_PENDENTES, 'readonly');
+            const index = tx.objectStore(STORE_MIDIAS_PENDENTES).index('conta');
+            const req = index.getAll(IDBKeyRange.only(email));
+
+            req.onsuccess = () => {
+                const lista = (req.result || []).sort((a, b) =>
+                    new Date(a.created_at || 0).getTime() -
+                    new Date(b.created_at || 0).getTime()
+                );
+                resolve(lista);
+            };
+
+            req.onerror = () => resolve([]);
+        });
+    }
+
+    async function removerMidiaPendente(id) {
+        const db = await abrirBanco();
+        if (!db || !id) return false;
+
+        return new Promise(resolve => {
+            const tx = db.transaction(STORE_MIDIAS_PENDENTES, 'readwrite');
+            tx.objectStore(STORE_MIDIAS_PENDENTES).delete(String(id));
+            tx.oncomplete = () => resolve(true);
+            tx.onerror = () => resolve(false);
+            tx.onabort = () => resolve(false);
+        });
+    }
+
     window.WhatisCache = {
         conversaPrivada,
         conversaGrupo,
@@ -382,6 +458,10 @@
         limparSessaoLocal,
         salvarListaConversas,
         obterListaConversas,
+        salvarMidiaPendente,
+        obterMidiaPendente,
+        listarMidiasPendentes,
+        removerMidiaPendente,
 
         async limparConversa(conversa) {
             const db = await abrirBanco();
