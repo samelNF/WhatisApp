@@ -673,11 +673,15 @@
             }
         };
 
-        if (!navigator.onLine) {
+        if (!navigator.onLine || lerFila(conta).length) {
             const pendencia = await colocarNaFila(dados, idFila);
 
             if (pendencia) {
                 await atualizarInterfaceDepoisDeEnfileirar(pendencia);
+
+                if (navigator.onLine) {
+                    agendarTentativa('fila-existente-texto', 50);
+                }
             }
 
             return;
@@ -830,7 +834,9 @@
             audio_ondas: dados.audio_ondas
         };
 
-        if (navigator.onLine) {
+        // Se já existe alguma mensagem mais antiga esperando, este áudio
+        // entra atrás dela para manter a ordem da conversa.
+        if (navigator.onLine && !lerFila(conta).length) {
             const resultado = await enviarPendencia(pendencia);
 
             if (resultado.ok) {
@@ -876,6 +882,10 @@
         salvarFila(fila, conta);
         await salvarPendenteNoCache(pendencia);
         await atualizarInterfaceDepoisDeEnfileirar(pendencia);
+
+        if (navigator.onLine) {
+            agendarTentativa('fila-existente-audio', 50);
+        }
 
         return true;
     }
