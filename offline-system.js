@@ -107,8 +107,42 @@
             );
     }
 
+    function extensaoAudioPorMime(mime) {
+        const tipo = String(mime || '').toLowerCase();
+        if (tipo.includes('mp4')) return 'm4a';
+        if (tipo.includes('ogg')) return 'ogg';
+        if (tipo.includes('webm')) return 'webm';
+        if (tipo.includes('mpeg')) return 'mp3';
+        return 'webm';
+    }
+
+    function normalizarOndasAudio(amostras, quantidade = 44) {
+        const fonte = Array.isArray(amostras) && amostras.length
+            ? amostras
+            : [0.18];
+
+        const saida = [];
+
+        for (let i = 0; i < quantidade; i++) {
+            const inicio = Math.floor((i / quantidade) * fonte.length);
+            let fim = Math.floor(((i + 1) / quantidade) * fonte.length);
+            if (fim <= inicio) fim = inicio + 1;
+
+            const pedaco = fonte.slice(inicio, fim);
+            const media = pedaco.length
+                ? pedaco.reduce((soma, valor) => soma + Number(valor || 0), 0) / pedaco.length
+                : 0.18;
+
+            saida.push(Math.max(0.10, Math.min(1, media)));
+        }
+
+        return saida;
+    }
+
     async function salvarPendenteNoCache(pendencia) {
         if (!window.WhatisCache?.salvarMensagens) return;
+
+        const ehAudio = pendencia.tipo === 'audio';
 
         const mensagemLocal = {
             id: idMensagemLocal(pendencia.fila_id),
@@ -116,12 +150,20 @@
             remetente_email: pendencia.remetente_email,
             destinatario_email: pendencia.destinatario_email,
             grupo_id: pendencia.grupo_id,
-            texto: pendencia.texto,
-            tipo: 'texto',
+            texto: ehAudio ? '[AUDIO_OFFLINE]' : pendencia.texto,
+            tipo: ehAudio ? 'audio' : 'texto',
+            audio_url: '',
+            audio_duracao: ehAudio
+                ? Math.max(1, Number(pendencia.audio_duracao) || 1)
+                : null,
+            audio_ondas: ehAudio
+                ? normalizarOndasAudio(pendencia.audio_ondas)
+                : null,
             mensagem_respondida_id: pendencia.mensagem_respondida_id,
             visualizada: false,
             meta: {
-                offline_id: pendencia.fila_id
+                offline_id: pendencia.fila_id,
+                audio_key: pendencia.audio_key || null
             },
             _offline_pending: true
         };
@@ -254,11 +296,116 @@
             return { ok: false, rede: true };
         }
 
-        // Evita duplicata caso a primeira requisição tenha chegado ao servidor
+        // Evita duplicata caso a requisição tenha chegado ao servidor
         // mas a resposta tenha se perdido quando a conexão caiu.
         const existente = await procurarMensagemJaEnviada(pendencia);
         if (existente) {
+            if (pendencia.tipo === 'audio' && pendencia.audio_key) {
+                await window.WhatisCache?.removerMidiaPendente?.(pendencia.audio_key);
+            }
+
             return { ok: true, mensagem: existente };
+        }
+
+        if (pendencia.tipo === 'audio') {
+            const registroAudio = await window.WhatisCache?.obterMidiaPendente?.(
+                pendencia.audio_key
+            );
+
+            const blob = registroAudio?.blob;
+
+            if (!blob?.size) {
+                return {
+                    ok: false,
+                    rede: false,
+                    error: new Error('Áudio pendente não foi encontrado no armazenamento local.')
+                };
+            }
+
+            const mime = pendencia.audio_mime || blob.type || 'audio/webm';
+            const ext = extensaoAudioPorMime(mime);
+            const pastaUsuario = pendencia.remetente_email.replace(/[^a-zA-Z0-9_-]/g, '_');
+            const nomeArquivo =
+                'audios/' + pastaUsuario + '/' +
+                pendencia.fila_id + '.' + ext;
+
+            try {
+                const { error: erroUpload } = await supabase.storage
+                    .from('midias')
+                    .upload(nomeArquivo, blob, {
+                        contentType: mime,
+                        upsert: true
+                    });
+
+                if (erroUpload) {
+                    return {
+                        ok: false,
+                        rede: ehErroDeRede(erroUpload),
+                        error: erroUpload
+                    };
+                }
+
+                const { data: urlData } = supabase.storage
+                    .from('midias')
+                    .getPublicUrl(nomeArquivo);
+
+                const url = urlData?.publicUrl || '';
+
+                if (!url) {
+                    return {
+                        ok: false,
+                        rede: false,
+                        error: new Error('Não foi possível obter a URL do áudio.')
+                    };
+                }
+
+                const dadosAudio = {
+                    texto: '[AUDIO]: ' + url,
+                    tipo: 'audio',
+                    audio_url: url,
+                    audio_duracao: Math.max(1, Number(pendencia.audio_duracao) || 1),
+                    audio_ondas: normalizarOndasAudio(pendencia.audio_ondas),
+                    remetente_email: pendencia.remetente_email,
+                    destinatario_email: pendencia.grupo_id
+                        ? null
+                        : pendencia.destinatario_email,
+                    grupo_id: pendencia.grupo_id || null,
+                    mensagem_respondida_id: pendencia.mensagem_respondida_id || null,
+                    meta: {
+                        offline_id: pendencia.fila_id,
+                        origem: 'fila_offline_audio'
+                    }
+                };
+
+                const { data, error } = await supabase
+                    .from('mensagens')
+                    .insert([dadosAudio])
+                    .select('*')
+                    .single();
+
+                if (error) {
+                    return {
+                        ok: false,
+                        rede: ehErroDeRede(error),
+                        error
+                    };
+                }
+
+                await window.WhatisCache?.removerMidiaPendente?.(
+                    pendencia.audio_key
+                );
+
+                return {
+                    ok: true,
+                    mensagem: data
+                };
+            } catch (error) {
+                return {
+                    ok: false,
+                    rede: true,
+                    error
+                };
+            }
         }
 
         const dados = {
@@ -427,12 +574,19 @@
         const pendencia = {
             fila_id: idFila,
             conta,
-            created_at: new Date().toISOString(),
+            created_at: dados.created_at || new Date().toISOString(),
+            tipo: dados.tipo === 'audio' ? 'audio' : 'texto',
             texto: String(dados.texto || ''),
             remetente_email: conta,
             destinatario_email: dados.destinatario_email || null,
             grupo_id: dados.grupo_id || null,
-            mensagem_respondida_id: dados.mensagem_respondida_id || null
+            mensagem_respondida_id: dados.mensagem_respondida_id || null,
+            audio_key: dados.audio_key || null,
+            audio_mime: dados.audio_mime || null,
+            audio_duracao: dados.audio_duracao || null,
+            audio_ondas: Array.isArray(dados.audio_ondas)
+                ? normalizarOndasAudio(dados.audio_ondas)
+                : null
         };
 
         const fila = lerFila(conta);
@@ -528,6 +682,7 @@
             fila_id: idFila,
             conta,
             created_at: new Date().toISOString(),
+            tipo: 'texto',
             texto,
             remetente_email: conta,
             destinatario_email: grupoId ? null : contato,
@@ -585,6 +740,141 @@
         }
     }
 
+    async function enviarAudioComFilaOffline(blob, duracao, ondas, contexto = {}) {
+        const conta = emailAtual();
+        if (!conta || !blob?.size) return false;
+
+        const grupoId = contexto.grupo_id || window.grupoAtualId || null;
+
+        let contato = contexto.destinatario_email || null;
+        if (!grupoId && !contato) {
+            try {
+                contato = (
+                    typeof destinatarioAtual !== 'undefined'
+                        ? destinatarioAtual
+                        : ''
+                ) || null;
+            } catch (e) {}
+        }
+
+        if (!grupoId && !contato) return false;
+
+        let respostaId =
+            contexto.mensagem_respondida_id !== undefined
+                ? contexto.mensagem_respondida_id
+                : null;
+
+        if (respostaId === null) {
+            try {
+                respostaId =
+                    typeof mensagemRespondendoId !== 'undefined'
+                        ? mensagemRespondendoId
+                        : null;
+            } catch (e) {}
+        }
+
+        if (
+            respostaId !== null &&
+            String(respostaId).startsWith('offline:')
+        ) {
+            respostaId = null;
+        }
+
+        const idFila = gerarIdLocal();
+        const audioKey = 'audio:' + conta + ':' + idFila;
+        const criadoEm = new Date().toISOString();
+
+        const salvo = await window.WhatisCache?.salvarMidiaPendente?.({
+            id: audioKey,
+            conta,
+            created_at: criadoEm,
+            blob,
+            mime: blob.type || contexto.audio_mime || 'audio/webm'
+        });
+
+        if (!salvo) {
+            alert('Não foi possível guardar o áudio no aparelho.');
+            return false;
+        }
+
+        const dados = {
+            tipo: 'audio',
+            created_at: criadoEm,
+            destinatario_email: grupoId ? null : contato,
+            grupo_id: grupoId,
+            mensagem_respondida_id: respostaId,
+            audio_key: audioKey,
+            audio_mime: blob.type || contexto.audio_mime || 'audio/webm',
+            audio_duracao: Math.max(1, Math.round(Number(duracao) || 1)),
+            audio_ondas: normalizarOndasAudio(ondas)
+        };
+
+        const pendencia = {
+            fila_id: idFila,
+            conta,
+            created_at: criadoEm,
+            tipo: 'audio',
+            texto: '',
+            remetente_email: conta,
+            destinatario_email: dados.destinatario_email,
+            grupo_id: grupoId,
+            mensagem_respondida_id: respostaId,
+            audio_key: audioKey,
+            audio_mime: dados.audio_mime,
+            audio_duracao: dados.audio_duracao,
+            audio_ondas: dados.audio_ondas
+        };
+
+        if (navigator.onLine) {
+            const resultado = await enviarPendencia(pendencia);
+
+            if (resultado.ok) {
+                await salvarMensagemServidorNoCache(
+                    pendencia,
+                    resultado.mensagem
+                );
+
+                await garantirSolicitacaoPrimeiraMensagem(pendencia);
+
+                try {
+                    if (typeof cancelarResposta === 'function') {
+                        cancelarResposta();
+                    }
+                } catch (e) {}
+
+                if (grupoId && typeof carregarMensagensGrupo === 'function') {
+                    await carregarMensagensGrupo(grupoId);
+                } else if (typeof carregarMensagens === 'function') {
+                    await carregarMensagens();
+                }
+
+                if (typeof carregarListaContatos === 'function') {
+                    carregarListaContatos();
+                }
+
+                return true;
+            }
+
+            if (!resultado.rede) {
+                console.error('[Offline] Erro definitivo ao enviar áudio:', resultado.error);
+                await window.WhatisCache?.removerMidiaPendente?.(audioKey);
+                alert(
+                    'Não foi possível enviar o áudio.' +
+                    (resultado.error?.message ? '\n' + resultado.error.message : '')
+                );
+                return false;
+            }
+        }
+
+        const fila = lerFila(conta);
+        fila.push(pendencia);
+        salvarFila(fila, conta);
+        await salvarPendenteNoCache(pendencia);
+        await atualizarInterfaceDepoisDeEnfileirar(pendencia);
+
+        return true;
+    }
+
     function agendarTentativa(motivo, delay = 350) {
         if (timerSincronizacao) {
             clearTimeout(timerSincronizacao);
@@ -599,6 +889,7 @@
     window.WhatisOffline = {
         processarFila,
         lerFila,
+        enviarAudio: enviarAudioComFilaOffline,
         quantidadePendente() {
             return lerFila().length;
         },
