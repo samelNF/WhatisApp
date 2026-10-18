@@ -9476,3 +9476,27 @@ html[data-tema="claro"] .editor-foto-perfil-controles > button {
         gap: 10px;
     }
 }
+
+
+/* ==========================================
+   MENSAGENS AGUARDANDO INTERNET
+   ========================================== */
+#tela-chat .balao-msg.balao-pendente-offline {
+    opacity: .88;
+}
+
+#tela-chat .balao-visto.pendente-offline {
+    width: 15px;
+    min-width: 15px;
+    display: inline-grid;
+    place-items: center;
+    color: currentColor !important;
+    opacity: .58;
+}
+
+#tela-chat .balao-relogio-offline {
+    display: inline-block;
+    font-size: 13px;
+    line-height: 1;
+    transform: translateY(-.5px);
+}
