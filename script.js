@@ -247,6 +247,13 @@
         midia.async = false;
         document.head.appendChild(midia);
 
+        // A fila offline entra depois do fluxo principal para assumir o envio
+        // de texto sem interferir no sistema de mídia.
+        const offline = document.createElement('script');
+        offline.src = './offline-system.js';
+        offline.async = false;
+        document.head.appendChild(offline);
+
         // ==========================================
         // SOLICITAÇÕES
         // ==========================================
