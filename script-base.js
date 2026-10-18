@@ -2751,6 +2751,13 @@ async function abrirOpcoesApagarMensagem(dados) {
 async function abrirMenuAcoesMensagem(balao) {
     if (!balao?.dataset?.messageId) return;
 
+    if (balao.dataset.offlinePending === "true") {
+        if (typeof mostrarToastAcoesMensagem === "function") {
+            mostrarToastAcoesMensagem("Aguardando conexão para enviar.");
+        }
+        return;
+    }
+
     fecharMenuAcoesMensagem();
 
     const dados = dadosMensagemDoBalao(balao);
