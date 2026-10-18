@@ -2059,7 +2059,11 @@ function localizarBalaoMensagem(idMensagem) {
 function prepararBalaoParaAcoes(balao, msg, ehMinha) {
     if (!balao || !msg) return;
 
-    balao.dataset.messageActions = "true";
+    const pendenteOffline =
+        msg._offline_pending === true ||
+        String(msg.id || "").startsWith("offline:");
+
+    balao.dataset.messageActions = pendenteOffline ? "false" : "true";
     balao.dataset.messageOwn = ehMinha ? "true" : "false";
     balao.dataset.messageSender = msg.remetente_email || "";
     balao.dataset.messageGroupId = msg.grupo_id ?? "";
@@ -2069,6 +2073,25 @@ function prepararBalaoParaAcoes(balao, msg, ehMinha) {
     balao.dataset.messageEditedAt = msg.editada_em || "";
     balao.dataset.messageCallId = msg.chamada_id || "";
     balao.dataset.messageDeleted = mensagemFoiApagada(msg) ? "true" : "false";
+    balao.dataset.offlinePending = pendenteOffline ? "true" : "false";
+
+    if (pendenteOffline) {
+        balao.classList.add("balao-pendente-offline");
+        balao.title = "Aguardando conexão para enviar";
+
+        const indicador = balao.querySelector(".balao-visto");
+
+        if (indicador) {
+            indicador.classList.remove("visualizada");
+            indicador.classList.add("pendente-offline");
+            indicador.setAttribute("aria-label", "Aguardando conexão para enviar");
+            indicador.innerHTML = '<span class="balao-relogio-offline" aria-hidden="true">◷</span>';
+        }
+
+        return;
+    }
+
+    balao.classList.remove("balao-pendente-offline");
 
     if (mensagemFoiApagada(msg)) {
         aplicarMensagemApagadaNoBalao(balao, msg, ehMinha);
@@ -3087,7 +3110,7 @@ async function marcarMensagensComoVisualizadas(emailContato, chaveConversa) {
     }
 }
 
-async function carregarMensagens() {
+async function carregarMensagens(forcarSincronizacaoCompleta = false) {
     const meuEmail = (localStorage.getItem("usuarioLogado") || "").trim();
     const emailContato = (destinatarioAtual || "").trim();
 
@@ -3134,11 +3157,17 @@ async function carregarMensagens() {
 
     // Se já há histórico local, busca só o trecho mais recente.
     // "gte" repete no máximo a última mensagem e o dedupe por ID remove a duplicata.
-    const ultimaCache = mensagensCache.length
-        ? mensagensCache[mensagensCache.length - 1]
+    const mensagensServidorCache = mensagensCache.filter(msg =>
+        msg &&
+        msg._offline_pending !== true &&
+        !String(msg.id || "").startsWith("offline:")
+    );
+
+    const ultimaCache = mensagensServidorCache.length
+        ? mensagensServidorCache[mensagensServidorCache.length - 1]
         : null;
 
-    if (ultimaCache?.created_at) {
+    if (!forcarSincronizacaoCompleta && ultimaCache?.created_at) {
         consulta = consulta.gte("created_at", ultimaCache.created_at);
     }
 
@@ -3162,7 +3191,10 @@ async function carregarMensagens() {
         ? recebidas.filter(msg => !idsCache.has(String(msg.id)))
         : recebidas;
 
-    if (!mensagensCache.length) {
+    if (forcarSincronizacaoCompleta && cache) {
+        const atualizadas = await cache.listarMensagens(chaveConversa);
+        await renderizarMensagensPrivadasDoCache(atualizadas, chaveConversa, true);
+    } else if (!mensagensCache.length) {
         // Primeira carga neste aparelho: renderiza o histórico vindo da rede uma vez.
         if (recebidas.length) {
             await renderizarMensagensPrivadasDoCache(recebidas, chaveConversa, true);
@@ -3609,7 +3641,7 @@ async function renderizarMensagensGrupoDoCache(mensagens, idGrupo, chaveConversa
     }
 }
 
-async function carregarMensagensGrupo(idGrupo) {
+async function carregarMensagensGrupo(idGrupo, forcarSincronizacaoCompleta = false) {
     const meuEmail = (localStorage.getItem("usuarioLogado") || "").trim().toLowerCase();
     if (!meuEmail || idGrupo === null || idGrupo === undefined) return;
 
@@ -3652,11 +3684,17 @@ async function carregarMensagensGrupo(idGrupo) {
         .eq("grupo_id", idGrupo)
         .order("created_at", { ascending: true });
 
-    const ultimaCache = mensagensCache.length
-        ? mensagensCache[mensagensCache.length - 1]
+    const mensagensServidorCache = mensagensCache.filter(msg =>
+        msg &&
+        msg._offline_pending !== true &&
+        !String(msg.id || "").startsWith("offline:")
+    );
+
+    const ultimaCache = mensagensServidorCache.length
+        ? mensagensServidorCache[mensagensServidorCache.length - 1]
         : null;
 
-    if (ultimaCache?.created_at) {
+    if (!forcarSincronizacaoCompleta && ultimaCache?.created_at) {
         consulta = consulta.gte("created_at", ultimaCache.created_at);
     }
 
@@ -3680,7 +3718,10 @@ async function carregarMensagensGrupo(idGrupo) {
         ? recebidas.filter(msg => !idsCache.has(String(msg.id)))
         : recebidas;
 
-    if (!mensagensCache.length) {
+    if (forcarSincronizacaoCompleta && cache) {
+        const atualizadas = await cache.listarMensagens(chaveConversa);
+        await renderizarMensagensGrupoDoCache(atualizadas, idGrupo, chaveConversa, true);
+    } else if (!mensagensCache.length) {
         if (recebidas.length) {
             await renderizarMensagensGrupoDoCache(recebidas, idGrupo, chaveConversa, true);
         }
