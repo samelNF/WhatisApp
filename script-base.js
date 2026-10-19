@@ -1719,6 +1719,81 @@ function htmlArquivoMensagem(texto) {
     `;
 }
 
+function dadosFigurinhaMensagem(texto) {
+    const valor = String(texto || "");
+    if (!valor.startsWith("[FIGURINHA]:")) return null;
+
+    const bruto = valor.slice("[FIGURINHA]:".length).trim();
+
+    try {
+        const pacote = JSON.parse(decodeURIComponent(bruto));
+
+        if (!pacote?.url) return null;
+
+        return {
+            id: pacote.id ?? null,
+            url: String(pacote.url || ""),
+            largura: Math.max(1, Number(pacote.w || pacote.largura) || 1),
+            altura: Math.max(1, Number(pacote.h || pacote.altura) || 1),
+            animada: pacote.a === true || pacote.animada === true
+        };
+    } catch (e) {
+        return bruto
+            ? {
+                id: null,
+                url: bruto,
+                largura: 512,
+                altura: 512,
+                animada: /\.gif(?:$|\?)/i.test(bruto)
+            }
+            : null;
+    }
+}
+
+function tamanhoVisualFigurinha(largura, altura, maximo = 148) {
+    const w = Math.max(1, Number(largura) || 1);
+    const h = Math.max(1, Number(altura) || 1);
+    const escala = maximo / Math.max(w, h);
+
+    return {
+        largura: Math.max(1, Math.round(w * escala)),
+        altura: Math.max(1, Math.round(h * escala))
+    };
+}
+
+function htmlFigurinhaMensagem(texto) {
+    const figurinha = dadosFigurinhaMensagem(texto);
+
+    if (!figurinha?.url) {
+        return '<span class="balao-texto">Figurinha</span>';
+    }
+
+    const tamanho = tamanhoVisualFigurinha(
+        figurinha.largura,
+        figurinha.altura,
+        148
+    );
+
+    const url = escaparHtmlMidia(figurinha.url);
+
+    return `
+        <span
+            class="figurinha-wrap"
+            style="width:${tamanho.largura}px;height:${tamanho.altura}px"
+        >
+            <img
+                class="figurinha-img"
+                src="${url}"
+                alt="Figurinha"
+                loading="lazy"
+                decoding="async"
+                draggable="false"
+                style="width:${tamanho.largura}px;height:${tamanho.altura}px"
+            >
+        </span>
+    `;
+}
+
 async function renderizarBalao(texto, ehMinha, dataCriacao, idMensagem, mensagemRespondida, corRemetente, visualizada = false) {
     const container = document.getElementById("chat-mensagens");
     if (!container) return;
@@ -1744,11 +1819,15 @@ async function renderizarBalao(texto, ehMinha, dataCriacao, idMensagem, mensagem
     const temMidia = !!(texto && (
         texto.startsWith("[FOTO]:") ||
         texto.startsWith("[VIDEO]:") ||
-        texto.startsWith("[ARQUIVO]:")
+        texto.startsWith("[ARQUIVO]:") ||
+        texto.startsWith("[FIGURINHA]:")
     ));
 
     if (temResposta) balao.classList.add("balao-com-resposta");
     if (temMidia) balao.classList.add("balao-com-midia");
+    if (texto?.startsWith("[FIGURINHA]:")) {
+        balao.classList.add("balao-figurinha");
+    }
 
     const horaFormatada = formatarHora(dataCriacao || new Date());
 
@@ -1761,6 +1840,7 @@ async function renderizarBalao(texto, ehMinha, dataCriacao, idMensagem, mensagem
         else if (textoCitado.startsWith("[FOTO]:")) textoCitado = "📷 Foto";
         if (textoCitado.startsWith("[VIDEO]:")) textoCitado = "🎥 Vídeo";
         if (textoCitado.startsWith("[ARQUIVO]:")) textoCitado = "📎 Documento";
+        if (textoCitado.startsWith("[FIGURINHA]:")) textoCitado = "Figurinha";
         if (textoCitado.startsWith("[AUDIO]:")) textoCitado = "🎤 Áudio";
 
         let corCitado = "#888888";
@@ -1796,6 +1876,8 @@ async function renderizarBalao(texto, ehMinha, dataCriacao, idMensagem, mensagem
         conteudoHtml = `<video class="balao-midia balao-video" src="${urlVideo}" controls preload="metadata"></video>`;
     } else if (texto && texto.startsWith("[ARQUIVO]:")) {
         conteudoHtml = htmlArquivoMensagem(texto);
+    } else if (texto && texto.startsWith("[FIGURINHA]:")) {
+        conteudoHtml = htmlFigurinhaMensagem(texto);
     } else {
         conteudoHtml = `<span class="balao-texto">${texto}</span>`;
     }
@@ -1851,11 +1933,15 @@ async function renderizarBalaoGrupo(texto, ehMinha, dataCriacao, nomeRemetente, 
     const temMidia = !!(texto && (
         texto.startsWith("[FOTO]:") ||
         texto.startsWith("[VIDEO]:") ||
-        texto.startsWith("[ARQUIVO]:")
+        texto.startsWith("[ARQUIVO]:") ||
+        texto.startsWith("[FIGURINHA]:")
     ));
 
     if (temResposta) balao.classList.add("balao-com-resposta");
     if (temMidia) balao.classList.add("balao-com-midia");
+    if (texto?.startsWith("[FIGURINHA]:")) {
+        balao.classList.add("balao-figurinha");
+    }
 
     const horaFormatada = formatarHora(dataCriacao || new Date());
 
@@ -1888,6 +1974,7 @@ async function renderizarBalaoGrupo(texto, ehMinha, dataCriacao, nomeRemetente, 
         else if (textoCitado.startsWith("[FOTO]:")) textoCitado = "📷 Foto";
         if (textoCitado.startsWith("[VIDEO]:")) textoCitado = "🎥 Vídeo";
         if (textoCitado.startsWith("[ARQUIVO]:")) textoCitado = "📎 Documento";
+        if (textoCitado.startsWith("[FIGURINHA]:")) textoCitado = "Figurinha";
         if (textoCitado.startsWith("[AUDIO]:")) textoCitado = "🎤 Áudio";
 
         let corCitado = "#888888";
@@ -1925,6 +2012,8 @@ async function renderizarBalaoGrupo(texto, ehMinha, dataCriacao, nomeRemetente, 
         conteudoHtml = `<video class="balao-midia balao-video" src="${urlVideo}" controls preload="metadata"></video>`;
     } else if (texto && texto.startsWith("[ARQUIVO]:")) {
         conteudoHtml = htmlArquivoMensagem(texto);
+    } else if (texto && texto.startsWith("[FIGURINHA]:")) {
+        conteudoHtml = htmlFigurinhaMensagem(texto);
     }
 
     balao.innerHTML = `
@@ -1984,6 +2073,8 @@ function iniciarResposta(idMensagem, nomeRemetente, textoMensagem) {
             textoEl.textContent = "🎥 Vídeo";
         } else if (textoMensagem.startsWith("[ARQUIVO]:")) {
             textoEl.textContent = "📎 Documento";
+        } else if (textoMensagem.startsWith("[FIGURINHA]:")) {
+            textoEl.textContent = "Figurinha";
         } else if (textoMensagem.startsWith("[AUDIO]:")) {
             textoEl.textContent = "🎤 Áudio";
         } else {
@@ -2337,7 +2428,7 @@ function mensagemEhTextoEditavel(dados) {
     if (tipo && tipo !== "texto") return false;
     if (dados?.chamada_id) return false;
 
-    return !/^\[(FOTO|IMAGEM|VIDEO|ARQUIVO|AUDIO|CHAMADA|CHAMADA_GRUPO)\]/i.test(texto);
+    return !/^\[(FOTO|IMAGEM|VIDEO|ARQUIVO|FIGURINHA|AUDIO|CHAMADA|CHAMADA_GRUPO)\]/i.test(texto);
 }
 
 function mensagemDentroDoPrazoEdicao(dados) {
@@ -2539,6 +2630,7 @@ function textoCopiavelMensagem(texto) {
     if (valor.startsWith("[FOTO]:")) return "";
     if (valor.startsWith("[VIDEO]:")) return "";
     if (valor.startsWith("[ARQUIVO]:")) return "";
+    if (valor.startsWith("[FIGURINHA]:")) return "";
     if (valor.startsWith("[AUDIO]:")) return "";
     if (valor.trim() === MARCADOR_MENSAGEM_APAGADA) return "";
     return valor;
