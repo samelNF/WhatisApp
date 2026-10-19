@@ -32,6 +32,7 @@
     <script src="camera-system.js" defer></script>
     <script src="profile-cropper.js" defer></script>
     <script src="sticker-system.js" defer></script>
+    <script src="sticker-editor.js" defer></script>
     <script src="call-system.js" defer></script>
     <script src="group-call-system.js" defer></script>
     <script src="script.js" defer></script>
@@ -765,6 +766,135 @@
                         <i class="fas fa-user-plus"></i> Adicionar contato
                     </button>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- EDITOR DE FIGURINHA / RECORTE -->
+    <section
+        id="editor-figurinha"
+        class="editor-figurinha hidden"
+        aria-hidden="true"
+        aria-label="Editar figurinha"
+    >
+        <div class="editor-figurinha-topbar">
+            <button
+                type="button"
+                id="editor-figurinha-fechar"
+                class="editor-figurinha-circle editor-figurinha-fechar"
+                onclick="fecharEditorFigurinha()"
+                aria-label="Fechar editor"
+            >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M5 5 19 19M19 5 5 19"></path>
+                </svg>
+            </button>
+
+            <div class="editor-figurinha-titulo">
+                <strong>Editar figurinha</strong>
+                <span id="editor-figurinha-arquivo"></span>
+            </div>
+
+            <button
+                type="button"
+                class="editor-figurinha-circle editor-figurinha-formatar"
+                aria-label="Formato do recorte"
+                title="Formato do recorte"
+            >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M7 3v14a4 4 0 0 0 4 4h10"></path>
+                    <path d="M3 7h14a4 4 0 0 1 4 4v10"></path>
+                </svg>
+            </button>
+        </div>
+
+        <div class="editor-figurinha-area">
+            <canvas
+                id="editor-figurinha-canvas"
+                class="editor-figurinha-canvas"
+                aria-label="Área de recorte da figurinha"
+            ></canvas>
+        </div>
+
+        <div class="editor-figurinha-bottom">
+            <div class="editor-figurinha-formatos" aria-label="Formato do recorte">
+                <button
+                    type="button"
+                    class="sticker-formato-btn ativo"
+                    data-formato="original"
+                    onclick="selecionarFormatoFigurinha('original')"
+                >Original</button>
+                <button
+                    type="button"
+                    class="sticker-formato-btn"
+                    data-formato="1:1"
+                    onclick="selecionarFormatoFigurinha('1:1')"
+                >1:1</button>
+                <button
+                    type="button"
+                    class="sticker-formato-btn"
+                    data-formato="3:4"
+                    onclick="selecionarFormatoFigurinha('3:4')"
+                >3:4</button>
+                <button
+                    type="button"
+                    class="sticker-formato-btn"
+                    data-formato="4:3"
+                    onclick="selecionarFormatoFigurinha('4:3')"
+                >4:3</button>
+                <button
+                    type="button"
+                    class="sticker-formato-btn"
+                    data-formato="9:16"
+                    onclick="selecionarFormatoFigurinha('9:16')"
+                >9:16</button>
+                <button
+                    type="button"
+                    class="sticker-formato-btn"
+                    data-formato="16:9"
+                    onclick="selecionarFormatoFigurinha('16:9')"
+                >16:9</button>
+            </div>
+
+            <div class="editor-figurinha-zoom-row">
+                <button
+                    type="button"
+                    class="editor-figurinha-centralizar"
+                    onclick="centralizarEditorFigurinha()"
+                >Centralizar</button>
+
+                <span aria-hidden="true">−</span>
+                <input
+                    id="editor-figurinha-zoom"
+                    type="range"
+                    min="1"
+                    max="5"
+                    step="0.01"
+                    value="1"
+                    oninput="alterarZoomEditorFigurinha(this.value)"
+                    aria-label="Zoom da figurinha"
+                >
+                <span aria-hidden="true">＋</span>
+            </div>
+
+            <div class="editor-figurinha-acoes">
+                <span class="editor-figurinha-dica">
+                    Arraste para mover e use dois dedos para ampliar
+                </span>
+
+                <button
+                    type="button"
+                    id="editor-figurinha-concluir"
+                    class="editor-figurinha-concluir"
+                    onclick="concluirEditorFigurinha()"
+                    aria-label="Concluir figurinha"
+                    title="Concluir"
+                >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m5 12 14-7-4.5 14-3.2-5.3L5 12Z"></path>
+                        <path d="m11.3 13.7 3.4-3.4"></path>
+                    </svg>
+                </button>
             </div>
         </div>
     </section>
