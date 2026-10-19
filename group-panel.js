@@ -613,6 +613,11 @@
 
         const meuEmail = (localStorage.getItem('usuarioLogado') || '').toLowerCase();
         const souCriador = (grupo.criado_por || '').toLowerCase() === meuEmail;
+        const btnExcluirGrupo = document.getElementById('btn-grupo-excluir');
+
+        if (btnExcluirGrupo) {
+            btnExcluirGrupo.classList.toggle('hidden', !souCriador);
+        }
 
         if (criador) {
             if (souCriador) {
@@ -1199,6 +1204,105 @@
                 .update({ cargo: cargoAnterior === 'admin' ? 'admin' : 'membro' })
                 .eq('grupo_id', grupoId)
                 .eq('usuario_email', novoEmail);
+        }
+    };
+
+    window.excluirGrupoAtual = async function () {
+        const supabase = supabaseAtual();
+        const grupoId = window.grupoAtualId;
+        const meuEmail = (localStorage.getItem('usuarioLogado') || '').trim().toLowerCase();
+        const nomeGrupo =
+            document.getElementById('grupo-info-nome')?.textContent?.trim() ||
+            'este grupo';
+
+        if (!supabase || !grupoId || !meuEmail) return;
+
+        if (!navigator.onLine) {
+            alert('Você precisa estar com internet para excluir o grupo.');
+            return;
+        }
+
+        const permissoes = await obterPermissoesGrupo();
+
+        if (permissoes.meuCargo !== 'dono') {
+            alert('Somente o dono pode excluir o grupo.');
+            return;
+        }
+
+        if (!confirm(
+            'Excluir ' + nomeGrupo + '?\n\n' +
+            'Isso apaga o grupo para todos os participantes e remove todas as mensagens dele. ' +
+            'Essa ação não pode ser desfeita.'
+        )) {
+            return;
+        }
+
+        const { data: excluido, error } = await supabase.rpc(
+            'excluir_grupo_whatisapp',
+            {
+                p_grupo_id: grupoId,
+                p_email: meuEmail
+            }
+        );
+
+        if (error) {
+            console.error('[Grupo] Erro excluindo grupo:', error);
+            alert('Não foi possível excluir o grupo.');
+            return;
+        }
+
+        if (!excluido) {
+            alert('O grupo não foi excluído. Confirme se você ainda é o dono.');
+            return;
+        }
+
+        const cache = window.WhatisCache || null;
+
+        try {
+            if (cache?.limparConversa) {
+                await cache.limparConversa(cache.conversaGrupo(grupoId));
+            }
+        } catch (e) {
+            console.warn('[Grupo] Não foi possível limpar o cache do grupo:', e);
+        }
+
+        try {
+            localStorage.removeItem(`fundo_grupo_${meuEmail}_${grupoId}`);
+        } catch (e) {}
+
+        try {
+            if (typeof todosContatos !== 'undefined') {
+                todosContatos = (todosContatos || []).filter(item =>
+                    !(
+                        item?.tipo === 'grupo' &&
+                        String(item.identificador ?? item.id ?? '') === String(grupoId)
+                    )
+                );
+
+                if (typeof renderizarContatos === 'function') {
+                    renderizarContatos(todosContatos);
+                }
+
+                if (typeof salvarHomeConversasNoCache === 'function') {
+                    await salvarHomeConversasNoCache();
+                }
+            }
+        } catch (e) {
+            console.warn('[Grupo] Não foi possível atualizar a home local:', e);
+        }
+
+        window.fecharPainelDadosGrupo();
+
+        if (typeof fecharChat === 'function') {
+            fecharChat();
+        }
+
+        if (typeof carregarListaContatos === 'function') {
+            await carregarListaContatos();
+        }
+
+        if (typeof mostrarToastAcoesMensagem === 'function') {
+            mostrarToastAcoesMensagem('Grupo excluído.');
         }
     };
 
