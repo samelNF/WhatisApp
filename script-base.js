@@ -5628,6 +5628,18 @@ function abrirAlterarNome() {
 let membrosSelecionadosParaGrupo = [];
 let arquivoFotoGrupoSelecionado = null;
 let corAvatarGrupoSelecionada = null;
+let criandoGrupoAgora = false;
+let chaveCriacaoGrupoAtual = null;
+let urlFotoGrupoCriacaoAtual = null;
+
+function gerarChaveCriacaoGrupo() {
+    return globalThis.crypto?.randomUUID?.() || (
+        'grupo-' +
+        Date.now().toString(36) +
+        '-' +
+        Math.random().toString(36).slice(2, 12)
+    );
+}
 // Exibir o menu flutuante do botão "+"
 function alternarMenuMais(event) {
     if(event) event.stopPropagation();
@@ -5642,6 +5654,33 @@ document.addEventListener('click', () => {
 // Iniciar o fluxo de criação de grupo
 async function iniciarCriacaoGrupo() {
     membrosSelecionadosParaGrupo = [];
+    arquivoFotoGrupoSelecionado = null;
+    corAvatarGrupoSelecionada = null;
+    criandoGrupoAgora = false;
+    chaveCriacaoGrupoAtual = gerarChaveCriacaoGrupo();
+    urlFotoGrupoCriacaoAtual = null;
+
+    const nomeInput = document.getElementById('nome-grupo-input');
+    const inputFoto = document.getElementById('input-foto-grupo');
+    const imgPreview = document.getElementById('img-avatar-grupo-preview');
+    const letraPreview = document.getElementById('letra-inicial-grupo');
+    const btnCriar = document.querySelector('.btn-concluir-grupo');
+
+    if (nomeInput) nomeInput.value = '';
+    if (inputFoto) inputFoto.value = '';
+    if (imgPreview) {
+        imgPreview.src = '';
+        imgPreview.style.display = 'none';
+    }
+    if (letraPreview) {
+        letraPreview.textContent = 'G';
+        letraPreview.style.display = '';
+    }
+    if (btnCriar) {
+        btnCriar.disabled = false;
+        btnCriar.textContent = 'Criar Grupo';
+    }
+
     document.getElementById('tela-criar-grupo-membros').style.display = 'flex';
     await carregarContatosParaSelecao();
     atualizarContadorGrupoUI();
@@ -5792,80 +5831,144 @@ function gerarAvatarPadraoVisual(nomeTexto) {
     if (previewDiv) previewDiv.style.backgroundColor = corAvatarGrupoSelecionada;
     if (letraSpan && nomeTexto) letraSpan.textContent = nomeTexto.charAt(0).toUpperCase();
 }
-// Finaliza e salva o grupo no Supabase
+// Finaliza e salva o grupo no Supabase.
+// A criação usa uma chave idempotente e uma RPC transacional: mesmo se o
+// usuário tocar várias vezes ou a resposta atrasar, a mesma tentativa só cria 1 grupo.
 async function finalizarCriacaoGrupo() {
-    const nomeGrupo = document.getElementById('nome-grupo-input').value.trim();
-    const meuEmail = localStorage.getItem("usuarioLogado");
-    const meuUsuario = localStorage.getItem("nomeUsuario");
+    if (criandoGrupoAgora) return;
+
+    const nomeInput = document.getElementById('nome-grupo-input');
+    const btnCriar = document.querySelector('.btn-concluir-grupo');
+    const nomeGrupo = String(nomeInput?.value || '').trim();
+    const meuEmail = (localStorage.getItem("usuarioLogado") || '').trim();
+    const meuUsuario = (localStorage.getItem("nomeUsuario") || '').trim();
 
     if (!nomeGrupo) {
         alert("Por favor, digite um nome para o grupo.");
         return;
     }
 
-    let urlFotoGrupo = null;
+    if (!meuEmail || !_supabase) {
+        alert("Não foi possível identificar sua conta.");
+        return;
+    }
 
-    // 1. Upload da foto do grupo se houver
-    if (arquivoFotoGrupoSelecionado) {
-        const fileExt = arquivoFotoGrupoSelecionado.name.split('.').pop();
-        const fileName = `grupo_${Date.now()}.${fileExt}`;
-        const { error: uploadError } = await _supabase.storage.from('avatars').upload(fileName, arquivoFotoGrupoSelecionado);
-        if (!uploadError) {
-            const { data: pub } = _supabase.storage.from('avatars').getPublicUrl(fileName);
-            urlFotoGrupo = pub.publicUrl;
+    if (!navigator.onLine) {
+        alert("Você precisa estar com internet para criar um grupo.");
+        return;
+    }
+
+    criandoGrupoAgora = true;
+    chaveCriacaoGrupoAtual = chaveCriacaoGrupoAtual || gerarChaveCriacaoGrupo();
+
+    if (btnCriar) {
+        btnCriar.disabled = true;
+        btnCriar.textContent = 'Criando...';
+        btnCriar.setAttribute('aria-busy', 'true');
+    }
+
+    try {
+        // Faz o upload no máximo uma vez para esta tentativa de criação.
+        if (arquivoFotoGrupoSelecionado && !urlFotoGrupoCriacaoAtual) {
+            const nomeOriginal = String(arquivoFotoGrupoSelecionado.name || 'foto.jpg');
+            const fileExt = nomeOriginal.includes('.')
+                ? nomeOriginal.split('.').pop()
+                : 'jpg';
+
+            const fileName =
+                'grupo_' +
+                chaveCriacaoGrupoAtual.replace(/[^a-zA-Z0-9_-]/g, '_') +
+                '.' +
+                fileExt;
+
+            const { error: uploadError } = await _supabase.storage
+                .from('avatars')
+                .upload(fileName, arquivoFotoGrupoSelecionado, {
+                    cacheControl: '3600',
+                    upsert: true
+                });
+
+            if (uploadError) {
+                throw new Error('Não foi possível enviar a foto do grupo: ' + uploadError.message);
+            }
+
+            const { data: pub } = _supabase.storage
+                .from('avatars')
+                .getPublicUrl(fileName);
+
+            urlFotoGrupoCriacaoAtual = pub?.publicUrl || null;
+        }
+
+        // Remove qualquer repetição acidental na seleção de participantes.
+        const membrosUnicos = [];
+        const emailsVistos = new Set([meuEmail.toLowerCase()]);
+
+        for (const membro of membrosSelecionadosParaGrupo) {
+            const email = String(membro?.email || '').trim();
+            if (!email) continue;
+
+            const chave = email.toLowerCase();
+            if (emailsVistos.has(chave)) continue;
+
+            emailsVistos.add(chave);
+            membrosUnicos.push({
+                email,
+                nome: String(membro?.nome || '').trim()
+            });
+        }
+
+        const { data: grupoId, error: erroGrupo } = await _supabase.rpc(
+            'criar_grupo_whatisapp',
+            {
+                p_criacao_chave: chaveCriacaoGrupoAtual,
+                p_nome: nomeGrupo,
+                p_foto_url: urlFotoGrupoCriacaoAtual,
+                p_cor: corAvatarGrupoSelecionada || '#482133',
+                p_criado_por: meuEmail,
+                p_criador_nome: meuUsuario,
+                p_membros: membrosUnicos
+            }
+        );
+
+        if (erroGrupo || !grupoId) {
+            throw new Error(
+                erroGrupo?.message ||
+                'O servidor não confirmou a criação do grupo.'
+            );
+        }
+
+        alert("Grupo criado com sucesso!");
+
+        membrosSelecionadosParaGrupo = [];
+        corAvatarGrupoSelecionada = null;
+        arquivoFotoGrupoSelecionado = null;
+        urlFotoGrupoCriacaoAtual = null;
+        chaveCriacaoGrupoAtual = null;
+
+        if (nomeInput) nomeInput.value = '';
+
+        const telaDetalhes = document.getElementById('tela-criar-grupo-detalhes');
+        if (telaDetalhes) telaDetalhes.style.display = 'none';
+
+        mostrarAppPrincipal();
+
+        if (typeof carregarListaContatos === 'function') {
+            await carregarListaContatos();
+        }
+    } catch (erro) {
+        console.error('[Grupo] Erro criando grupo:', erro);
+        alert("Erro ao criar o grupo: " + (erro?.message || "Erro desconhecido"));
+    } finally {
+        criandoGrupoAgora = false;
+
+        if (btnCriar) {
+            btnCriar.disabled = false;
+            btnCriar.textContent = 'Criar Grupo';
+            btnCriar.removeAttribute('aria-busy');
         }
     }
-
-    // 2. Insere o grupo na tabela 'grupos' (crie essa tabela no Supabase se ainda não tiver)
-    const { data: grupoCriado, error: erroGrupo } = await _supabase
-        .from('grupos')
-        .insert([{
-            nome: nomeGrupo,
-            foto_url: urlFotoGrupo,
-            cor: corAvatarGrupoSelecionada || "#482133",
-            criado_por: meuEmail
-        }])
-        .select()
-        .single();
-
-    if (erroGrupo || !grupoCriado) {
-        alert("Erro ao criar o grupo: " + (erroGrupo?.message || "Erro desconhecido"));
-        return;
-    }
-
-    const grupoId = grupoCriado.id;
-
-    // 3. Monta a lista de membros inserindo o criador + os selecionados na tabela 'grupo_membros'
-    let listaMembrosParaInserir = [
-        { grupo_id: grupoId, usuario_email: meuEmail, usuario_nome: meuUsuario, cargo: 'dono' }
-    ];
-
-    membrosSelecionadosParaGrupo.forEach(m => {
-        listaMembrosParaInserir.push({
-            grupo_id: grupoId,
-            usuario_email: m.email,
-            usuario_nome: m.nome,
-            cargo: 'membro'
-        });
-    });
-
-    const { error: erroMembros } = await _supabase
-        .from('grupo_membros')
-        .insert(listaMembrosParaInserir);
-
-    if (erroMembros) {
-        alert("Erro ao adicionar membros ao grupo.");
-        return;
-    }
-
-    alert("Grupo criado com sucesso!");
-    corAvatarGrupoSelecionada = null;
-    arquivoFotoGrupoSelecionado = null;
-
-    // Limpa e fecha as telas de criação
-    document.getElementById('tela-criar-grupo-detalhes').style.display = 'none';
-    mostrarAppPrincipal();
 }
+
 let toqueInicialX = 0;
 let toqueInicialY = 0;
 
