@@ -32,8 +32,13 @@ async function abrirPainelContatoInterno(emailForcado = '', opcoes = {}) {
     }
 
     let dadosContato = null;
+    let contatoSalvo = typeof opcoes.salvo === 'boolean'
+        ? opcoes.salvo
+        : false;
+
     try {
         const supabase = window._supabase || (typeof _supabase !== 'undefined' ? _supabase : null);
+
         if (supabase && emailContato) {
             const { data } = await supabase
                 .from('usuarios')
@@ -42,6 +47,28 @@ async function abrirPainelContatoInterno(emailForcado = '', opcoes = {}) {
                 .maybeSingle();
 
             dadosContato = data || null;
+
+            if (typeof opcoes.salvo !== 'boolean') {
+                const meuUsuario = (localStorage.getItem('nomeUsuario') || '').trim();
+
+                if (meuUsuario) {
+                    const { data: relacoes, error: erroRelacoes } = await supabase
+                        .from('contatos')
+                        .select('contato_usuario')
+                        .eq('usuario_origem', meuUsuario);
+
+                    if (!erroRelacoes) {
+                        const emailNormalizado = String(emailContato || '').trim().toLowerCase();
+                        const usuarioNormalizado = String(dadosContato?.usuario || '').trim().toLowerCase();
+
+                        contatoSalvo = (relacoes || []).some(item => {
+                            const salvo = String(item.contato_usuario || '').trim().toLowerCase();
+                            return salvo === emailNormalizado ||
+                                (!!usuarioNormalizado && salvo === usuarioNormalizado);
+                        });
+                    }
+                }
+            }
         }
     } catch (e) {
         console.warn('[Contato] Não foi possível atualizar os dados do painel:', e);
@@ -74,23 +101,32 @@ async function abrirPainelContatoInterno(emailForcado = '', opcoes = {}) {
     }
 
     painel.dataset.emailContato = emailContato || '';
+    painel.dataset.contatoSalvo = contatoSalvo ? 'true' : 'false';
 
     const tituloHeader = painel.querySelector('.painel-contato-header h3');
     const btnEditar = painel.querySelector('.painel-contato-btn-editar');
     const btnTema = document.getElementById('btn-tema-conversa');
     const cardTema = btnTema?.closest('.painel-contato-card');
+    const cardRemover = document.getElementById('card-remover-contato');
 
     if (tituloHeader) {
         tituloHeader.textContent = opcoes.titulo || 'Dados do contato';
     }
 
     if (btnEditar) {
-        const mostrarEditar = opcoes.mostrarEditar !== false && opcoes.salvo !== false;
+        const mostrarEditar =
+            opcoes.mostrarEditar !== false &&
+            contatoSalvo;
+
         btnEditar.style.display = mostrarEditar ? '' : 'none';
     }
 
     if (cardTema) {
         cardTema.style.display = opcoes.ocultarTema ? 'none' : '';
+    }
+
+    if (cardRemover) {
+        cardRemover.classList.toggle('hidden', !contatoSalvo);
     }
 
     painel.classList.remove('hidden');
@@ -112,6 +148,89 @@ window.abrirPainelDadosContato = async function () {
 
 window.abrirPainelDadosContatoPorEmail = async function (emailContato, opcoes = {}) {
     return abrirPainelContatoInterno(emailContato, opcoes);
+};
+
+window.removerContatoAtual = async function () {
+    const painel = document.getElementById('painel-dados-contato');
+    const supabase = window._supabase || (typeof _supabase !== 'undefined' ? _supabase : null);
+    const meuUsuario = (localStorage.getItem('nomeUsuario') || '').trim();
+    const emailContato = String(painel?.dataset?.emailContato || '').trim();
+    const nomeContato =
+        document.getElementById('painel-nome-contato')?.textContent?.trim() ||
+        emailContato ||
+        'este contato';
+
+    if (!painel || !supabase || !meuUsuario || !emailContato) return;
+
+    if (!navigator.onLine) {
+        alert('Você precisa estar com internet para remover o contato.');
+        return;
+    }
+
+    if (!confirm(
+        'Remover ' + nomeContato + ' dos seus contatos?\n\n' +
+        'A conversa e todas as mensagens serão mantidas.'
+    )) {
+        return;
+    }
+
+    const { data: removido, error } = await supabase.rpc(
+        'remover_contato_whatisapp',
+        {
+            p_usuario_origem: meuUsuario,
+            p_contato_email: emailContato
+        }
+    );
+
+    if (error) {
+        console.error('[Contato] Erro removendo contato:', error);
+        alert('Não foi possível remover o contato.');
+        return;
+    }
+
+    painel.dataset.contatoSalvo = 'false';
+    document.getElementById('card-remover-contato')?.classList.add('hidden');
+
+    const btnEditar = painel.querySelector('.painel-contato-btn-editar');
+    if (btnEditar) btnEditar.style.display = 'none';
+
+    // Mantém a conversa na home. Apenas muda o estado dela para "não salvo".
+    try {
+        if (typeof todosContatos !== 'undefined') {
+            todosContatos = (todosContatos || []).map(item => {
+                const mesmoContato =
+                    item?.tipo === 'contato' &&
+                    String(item.identificador || item.email || '').trim().toLowerCase() ===
+                        emailContato.toLowerCase();
+
+                return mesmoContato
+                    ? { ...item, salvo: false }
+                    : item;
+            });
+
+            if (typeof renderizarContatos === 'function') {
+                renderizarContatos(todosContatos);
+            }
+
+            if (typeof salvarHomeConversasNoCache === 'function') {
+                await salvarHomeConversasNoCache();
+            }
+        }
+    } catch (e) {
+        console.warn('[Contato] Não foi possível atualizar a home local:', e);
+    }
+
+    if (typeof carregarListaContatos === 'function') {
+        await carregarListaContatos();
+    }
+
+    if (typeof mostrarToastAcoesMensagem === 'function') {
+        mostrarToastAcoesMensagem(
+            removido
+                ? 'Contato removido. A conversa foi mantida.'
+                : 'Esse usuário já não estava salvo nos seus contatos.'
+        );
+    }
 };
 
 window.pesquisarNoChatContato = function () {
