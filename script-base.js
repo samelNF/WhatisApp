@@ -1046,17 +1046,101 @@ async function carregarListaContatos() {
             ])
         );
 
-        let usuarios = [];
+        let usuariosSalvos = [];
 
         if (nomesSalvos.length > 0) {
-            const { data: dadosUsuarios, error: erroUsuarios } = await _supabase
+            const [porUsuario, porEmail] = await Promise.all([
+                _supabase
+                    .from("usuarios")
+                    .select("email, usuario, foto_url, cor")
+                    .in("usuario", nomesSalvos),
+                _supabase
+                    .from("usuarios")
+                    .select("email, usuario, foto_url, cor")
+                    .in("email", nomesSalvos)
+            ]);
+
+            if (porUsuario.error) throw porUsuario.error;
+            if (porEmail.error) throw porEmail.error;
+
+            const porEmailMap = new Map();
+
+            [...(porUsuario.data || []), ...(porEmail.data || [])].forEach(usuario => {
+                const chave = String(usuario?.email || "").trim().toLowerCase();
+                if (chave) porEmailMap.set(chave, usuario);
+            });
+
+            usuariosSalvos = [...porEmailMap.values()];
+        }
+
+        // Uma conversa não depende de o usuário continuar salvo como contato.
+        // Busca quem já trocou mensagem privada comigo para manter o chat na Home
+        // mesmo depois de "Remover contato".
+        let emailsComConversa = [];
+
+        const { data: paresMensagens, error: erroParesMensagens } = await _supabase
+            .from("mensagens")
+            .select("remetente_email, destinatario_email, created_at")
+            .is("grupo_id", null)
+            .or(`remetente_email.eq.${meuEmail},destinatario_email.eq.${meuEmail}`)
+            .order("created_at", { ascending: false })
+            .limit(1000);
+
+        if (erroParesMensagens) {
+            console.warn("Não foi possível descobrir conversas não salvas:", erroParesMensagens.message);
+        } else {
+            const eu = String(meuEmail || "").trim().toLowerCase();
+            const encontrados = new Set();
+
+            (paresMensagens || []).forEach(msg => {
+                const remetente = String(msg.remetente_email || "").trim();
+                const destinatario = String(msg.destinatario_email || "").trim();
+                const outro =
+                    remetente.toLowerCase() === eu
+                        ? destinatario
+                        : (
+                            destinatario.toLowerCase() === eu
+                                ? remetente
+                                : ""
+                        );
+
+                if (outro && outro.toLowerCase() !== eu) {
+                    encontrados.add(outro.toLowerCase());
+                }
+            });
+
+            emailsComConversa = [...encontrados];
+        }
+
+        const emailsSalvos = new Set(
+            usuariosSalvos.map(usuario =>
+                String(usuario.email || "").trim().toLowerCase()
+            )
+        );
+
+        const emailsNaoSalvos = emailsComConversa.filter(
+            email => !emailsSalvos.has(String(email || "").trim().toLowerCase())
+        );
+
+        let usuariosNaoSalvos = [];
+
+        if (emailsNaoSalvos.length) {
+            const { data, error } = await _supabase
                 .from("usuarios")
                 .select("email, usuario, foto_url, cor")
-                .in("usuario", nomesSalvos);
+                .in("email", emailsNaoSalvos);
 
-            if (erroUsuarios) throw erroUsuarios;
-            usuarios = dadosUsuarios || [];
+            if (error) {
+                console.warn("Não foi possível carregar conversas não salvas:", error.message);
+            } else {
+                usuariosNaoSalvos = data || [];
+            }
         }
+
+        const usuarios = [
+            ...usuariosSalvos.map(usuario => ({ ...usuario, salvo: true })),
+            ...usuariosNaoSalvos.map(usuario => ({ ...usuario, salvo: false }))
+        ];
 
         const contatosComMensagens = await Promise.all(
             usuarios.map(async (contato) => {
@@ -1116,6 +1200,7 @@ async function carregarListaContatos() {
                 return {
                     ...contato,
                     tipo: "contato",
+                    salvo: contato.salvo !== false,
                     identificador: contato.email,
                     ultimaMsg: ultimaMsg
                         ? (typeof window.formatarPreviewMensagem === "function"
@@ -5575,7 +5660,9 @@ async function carregarContatosParaSelecao() {
         return;
     }
 
-    const contatosParaGrupo = todosContatos.filter(item => item.tipo !== 'grupo');
+    const contatosParaGrupo = todosContatos.filter(
+        item => item.tipo !== 'grupo' && item.salvo !== false
+    );
 
     contatosParaGrupo.forEach(contato => {
         const li = document.createElement('li');
