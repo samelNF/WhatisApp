@@ -3488,7 +3488,7 @@ function remetenteGrupoEstaSalvo(emailRemetente, nomeRemetente) {
     const nome = String(nomeRemetente || "").trim().toLowerCase();
 
     return (todosContatos || []).some(item => {
-        if (item?.tipo !== "contato") return false;
+        if (item?.tipo !== "contato" || item.salvo === false) return false;
 
         const itemEmail = String(item?.identificador || item?.email || "").trim().toLowerCase();
         const itemNome = String(item?.usuario || item?.nome || "").trim().toLowerCase();
