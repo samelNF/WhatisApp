@@ -9547,3 +9547,12 @@ html[data-tema="claro"] #painel-dados-grupo .grupo-excluir-btn {
     border-top-color: rgba(0,0,0,.08) !important;
     color: #ff3b30 !important;
 }
+
+
+/* Evita multi-toque visual durante a criação de grupo. */
+.btn-concluir-grupo:disabled,
+.btn-concluir-grupo[aria-busy="true"] {
+    opacity: .58 !important;
+    pointer-events: none !important;
+    cursor: default !important;
+}
