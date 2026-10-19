@@ -9500,3 +9500,50 @@ html[data-tema="claro"] .editor-foto-perfil-controles > button {
     line-height: 1;
     transform: translateY(-.5px);
 }
+
+
+/* ==========================================
+   REMOVER CONTATO / EXCLUIR GRUPO
+   ========================================== */
+#painel-dados-contato .painel-contato-card-perigo {
+    margin-top: 16px;
+}
+
+#painel-dados-contato .painel-contato-row-perigo .painel-row-icone,
+#painel-dados-contato .painel-contato-row-perigo .painel-row-texto strong {
+    color: #ff5164 !important;
+}
+
+#painel-dados-contato .painel-contato-row-perigo .painel-row-texto small {
+    color: #85858a !important;
+}
+
+#painel-dados-grupo .grupo-excluir-btn {
+    width: 100%;
+    min-height: 62px;
+    padding: 0 20px !important;
+    border: 0 !important;
+    border-top: 1px solid rgba(255,255,255,.075) !important;
+    border-radius: 0 !important;
+    text-align: left;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #ff3b30 !important;
+    font: inherit;
+    font-size: 17px !important;
+    font-weight: 600 !important;
+}
+
+#painel-dados-grupo .grupo-excluir-btn.hidden {
+    display: none !important;
+}
+
+html[data-tema="claro"] #painel-dados-contato .painel-contato-card-perigo {
+    background: #fff !important;
+    border-color: rgba(0,0,0,.07) !important;
+}
+
+html[data-tema="claro"] #painel-dados-grupo .grupo-excluir-btn {
+    border-top-color: rgba(0,0,0,.08) !important;
+    color: #ff3b30 !important;
+}
