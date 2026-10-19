@@ -1080,7 +1080,7 @@ async function carregarListaContatos() {
 
         const { data: paresMensagens, error: erroParesMensagens } = await _supabase
             .from("mensagens")
-            .select("remetente_email, destinatario_email, created_at")
+            .select("id, remetente_email, destinatario_email, created_at")
             .is("grupo_id", null)
             .or(`remetente_email.eq.${meuEmail},destinatario_email.eq.${meuEmail}`)
             .order("created_at", { ascending: false })
@@ -1093,6 +1093,8 @@ async function carregarListaContatos() {
             const encontrados = new Set();
 
             (paresMensagens || []).forEach(msg => {
+                if (mensagemEstaOculta(msg.id)) return;
+
                 const remetente = String(msg.remetente_email || "").trim();
                 const destinatario = String(msg.destinatario_email || "").trim();
                 const outro =
@@ -1414,7 +1416,13 @@ function renderizarContatos(lista) {
             if (item.tipo === "grupo") {
                 abrirChatGrupo(item.id, item.nome, item.foto_url || "", item.cor);
             } else {
-                abrirChatCom(item.identificador, nome, foto, item.cor);
+                abrirChatCom(
+                    item.identificador,
+                    nome,
+                    foto,
+                    item.cor,
+                    item.salvo !== false
+                );
             }
         };
 
@@ -3470,9 +3478,8 @@ function abrirChatGrupo(idGrupo, nomeGrupo, fotoGrupo, corGrupo) {
     carregarMensagensGrupo(idGrupo);
 
     const chatInputBox = document.getElementById('chat-input-box');
-    const chatActionBar = document.getElementById('chat-action-bar');
     if (chatInputBox) chatInputBox.classList.remove('hidden');
-    if (chatActionBar) chatActionBar.classList.add('hidden');
+    atualizarBarraContatoNaoSalvo(emailDestinatario, contatoSalvo);
 }
 
 function remetenteGrupoEstaSalvo(emailRemetente, nomeRemetente) {
@@ -3839,7 +3846,158 @@ async function carregarMensagensGrupo(idGrupo, forcarSincronizacaoCompleta = fal
     containerChat.scrollTop = containerChat.scrollHeight;
 }
 
-function abrirChatCom(emailDestinatario, nomeDestinatario, fotoDestinatario, corDestinatario) {
+function atualizarBarraContatoNaoSalvo(emailContato, contatoSalvo) {
+    const barra = document.getElementById('chat-action-bar');
+    const input = document.getElementById('chat-input-box');
+
+    // Mesmo sem estar salvo, a conversa é normal: pode ler e responder.
+    if (input) input.classList.remove('hidden');
+
+    if (!barra) return;
+
+    const mostrar =
+        !!emailContato &&
+        contatoSalvo === false &&
+        !window.grupoAtualId;
+
+    barra.dataset.emailContato = emailContato || '';
+    barra.classList.toggle('hidden', !mostrar);
+}
+
+async function adicionarContatoChatAtual() {
+    const emailContato = String(
+        document.getElementById('chat-action-bar')?.dataset?.emailContato ||
+        destinatarioAtual ||
+        ''
+    ).trim();
+
+    const meuUsuario = (localStorage.getItem('nomeUsuario') || '').trim();
+
+    if (!emailContato || !meuUsuario || !_supabase) return;
+
+    if (!navigator.onLine) {
+        alert('Você precisa estar com internet para adicionar o contato.');
+        return;
+    }
+
+    const { data: adicionado, error } = await _supabase.rpc(
+        'adicionar_contato_whatisapp',
+        {
+            p_usuario_origem: meuUsuario,
+            p_contato_email: emailContato
+        }
+    );
+
+    if (error || !adicionado) {
+        console.error('[Contato] Erro adicionando usuário da conversa:', error);
+        alert('Não foi possível adicionar o contato.');
+        return;
+    }
+
+    todosContatos = (todosContatos || []).map(item => {
+        const mesmo =
+            item?.tipo === 'contato' &&
+            String(item.identificador || item.email || '').trim().toLowerCase() ===
+                emailContato.toLowerCase();
+
+        return mesmo ? { ...item, salvo: true } : item;
+    });
+
+    atualizarBarraContatoNaoSalvo(emailContato, true);
+
+    if (typeof salvarHomeConversasNoCache === 'function') {
+        await salvarHomeConversasNoCache();
+    }
+
+    if (typeof carregarListaContatos === 'function') {
+        await carregarListaContatos();
+    }
+
+    if (typeof mostrarToastAcoesMensagem === 'function') {
+        mostrarToastAcoesMensagem('Contato adicionado.');
+    }
+}
+
+async function excluirMensagensContatoNaoSalvo() {
+    const emailContato = String(
+        document.getElementById('chat-action-bar')?.dataset?.emailContato ||
+        destinatarioAtual ||
+        ''
+    ).trim();
+
+    const meuEmail = (localStorage.getItem('usuarioLogado') || '').trim();
+
+    if (!emailContato || !meuEmail || !_supabase) return;
+
+    if (!navigator.onLine) {
+        alert('Você precisa estar com internet para excluir as mensagens.');
+        return;
+    }
+
+    if (!confirm(
+        'Excluir esta conversa para você?\n\n' +
+        'As mensagens somem da sua lista, mas não são apagadas para a outra pessoa. ' +
+        'Se ela mandar uma nova mensagem depois, a conversa aparece novamente.'
+    )) {
+        return;
+    }
+
+    const { error } = await _supabase.rpc(
+        'ocultar_conversa_privada_whatisapp',
+        {
+            p_usuario_email: meuEmail,
+            p_outro_email: emailContato
+        }
+    );
+
+    if (error) {
+        console.error('[Contato] Erro ocultando conversa:', error);
+        alert('Não foi possível excluir as mensagens.');
+        return;
+    }
+
+    await carregarMensagensOcultasDoUsuario(true);
+
+    const cache = window.WhatisCache || null;
+    if (cache?.limparConversa) {
+        try {
+            await cache.limparConversa(
+                cache.conversaPrivada(emailContato)
+            );
+        } catch (e) {
+            console.warn('[Contato] Não foi possível limpar o cache da conversa:', e);
+        }
+    }
+
+    todosContatos = (todosContatos || []).filter(item => {
+        return !(
+            item?.tipo === 'contato' &&
+            item.salvo === false &&
+            String(item.identificador || item.email || '').trim().toLowerCase() ===
+                emailContato.toLowerCase()
+        );
+    });
+
+    if (typeof renderizarContatos === 'function') {
+        renderizarContatos(todosContatos);
+    }
+
+    if (typeof salvarHomeConversasNoCache === 'function') {
+        await salvarHomeConversasNoCache();
+    }
+
+    atualizarBarraContatoNaoSalvo('', true);
+    fecharChat();
+
+    if (typeof carregarListaContatos === 'function') {
+        await carregarListaContatos();
+    }
+}
+
+window.adicionarContatoChatAtual = adicionarContatoChatAtual;
+window.excluirMensagensContatoNaoSalvo = excluirMensagensContatoNaoSalvo;
+
+function abrirChatCom(emailDestinatario, nomeDestinatario, fotoDestinatario, corDestinatario, contatoSalvo = true) {
     destinatarioAtual = emailDestinatario;
     window.grupoAtualId = null;
 
@@ -3959,6 +4117,8 @@ function fecharChat() {
 
     const containerMensagens = document.getElementById("chat-mensagens");
     if (containerMensagens) containerMensagens.style.backgroundImage = "";
+
+    atualizarBarraContatoNaoSalvo('', true);
 
     destinatarioAtual = null;
     window.grupoAtualId = null;
