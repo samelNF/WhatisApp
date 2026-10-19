@@ -3478,8 +3478,9 @@ function abrirChatGrupo(idGrupo, nomeGrupo, fotoGrupo, corGrupo) {
     carregarMensagensGrupo(idGrupo);
 
     const chatInputBox = document.getElementById('chat-input-box');
+    const chatActionBar = document.getElementById('chat-action-bar');
     if (chatInputBox) chatInputBox.classList.remove('hidden');
-    atualizarBarraContatoNaoSalvo(emailDestinatario, contatoSalvo);
+    if (chatActionBar) chatActionBar.classList.add('hidden');
 }
 
 function remetenteGrupoEstaSalvo(emailRemetente, nomeRemetente) {
@@ -4020,9 +4021,8 @@ function abrirChatCom(emailDestinatario, nomeDestinatario, fotoDestinatario, cor
     carregarFundoChatSalvo(emailDestinatario);
 
     const chatInputBox = document.getElementById('chat-input-box');
-    const chatActionBar = document.getElementById('chat-action-bar');
     if (chatInputBox) chatInputBox.classList.remove('hidden');
-    if (chatActionBar) chatActionBar.classList.add('hidden');
+    atualizarBarraContatoNaoSalvo(emailDestinatario, contatoSalvo);
 
     checarStatusContato(emailDestinatario);
 
