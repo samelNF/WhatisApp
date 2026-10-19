@@ -1145,6 +1145,24 @@
                 </button>
             </div>
 
+            <div id="card-remover-contato" class="painel-contato-card painel-contato-card-perigo hidden">
+                <button class="painel-contato-row painel-contato-row-perigo" type="button" onclick="removerContatoAtual()">
+                    <span class="painel-row-icone" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M5 7h14"></path>
+                            <path d="M9 7V4.8h6V7"></path>
+                            <path d="M7.5 7 8.2 20h7.6l.7-13"></path>
+                            <path d="M10.5 10.5v6M13.5 10.5v6"></path>
+                        </svg>
+                    </span>
+
+                    <span class="painel-row-texto">
+                        <strong>Remover contato</strong>
+                        <small>A conversa e as mensagens serão mantidas</small>
+                    </span>
+                </button>
+            </div>
+
             <input type="file" id="input-fundo-chat" accept="image/*" style="display: none;" onchange="alterarFundoChat(event)">
         </div>
     </div>
@@ -1302,6 +1320,12 @@
 
                     <div class="grupo-sair-card">
                         <button type="button" class="grupo-sair-btn" onclick="sairDoGrupoAtual()">Sair do grupo</button>
+                        <button
+                            id="btn-grupo-excluir"
+                            type="button"
+                            class="grupo-excluir-btn hidden"
+                            onclick="excluirGrupoAtual()"
+                        >Excluir grupo</button>
                     </div>
 
                     <div class="grupo-criacao-info">
