@@ -284,6 +284,10 @@
             return '📎 Documento';
         }
 
+        if (tipo === 'figurinha' || texto.startsWith('[FIGURINHA]:')) {
+            return 'Figurinha';
+        }
+
         if (
             tipo === 'audio' ||
             tipo === 'áudio' ||
