@@ -9556,3 +9556,111 @@ html[data-tema="claro"] #painel-dados-grupo .grupo-excluir-btn {
     pointer-events: none !important;
     cursor: default !important;
 }
+
+
+/* ==========================================
+   CONVERSA COM USUÁRIO NÃO SALVO
+   ========================================== */
+/* O fluxo antigo de "Pedidos de conversa" não é mais usado. */
+#badge-solicitacoes,
+#btn-abrir-solicitacoes {
+    display: none !important;
+}
+
+#tela-chat .chat-contato-nao-salvo {
+    width: 100%;
+    margin: 8px 0 0;
+    padding: 11px 12px 10px !important;
+    box-sizing: border-box;
+    border-radius: 18px !important;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 9px;
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.105),
+            rgba(255,255,255,.055)
+        ) !important;
+    border: 1px solid rgba(255,255,255,.105) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.08),
+        0 5px 18px rgba(0,0,0,.10) !important;
+    -webkit-backdrop-filter: blur(22px) saturate(155%);
+    backdrop-filter: blur(22px) saturate(155%);
+}
+
+#tela-chat .chat-contato-nao-salvo.hidden {
+    display: none !important;
+}
+
+#tela-chat .chat-contato-nao-salvo .warning-text {
+    margin: 0;
+    color: rgba(255,255,255,.62);
+    font-size: 12px;
+    line-height: 16px;
+    text-align: center;
+}
+
+#tela-chat .chat-contato-nao-salvo .action-buttons {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+#tela-chat .chat-contato-nao-salvo .action-buttons button {
+    min-width: 0;
+    min-height: 40px;
+    padding: 8px 10px !important;
+    border-radius: 999px !important;
+    justify-content: center;
+    gap: 7px;
+    font-size: 13px;
+    line-height: 16px;
+    white-space: nowrap;
+}
+
+#tela-chat #btn-excluir-conversa-nao-salva {
+    color: #ff5f66 !important;
+    background: rgba(255,81,100,.085) !important;
+    border-color: rgba(255,81,100,.22) !important;
+    box-shadow: none !important;
+}
+
+#tela-chat #btn-adicionar-contato-chat {
+    color: #ff9a3c !important;
+    background: rgba(255,138,31,.09) !important;
+    border-color: rgba(255,138,31,.24) !important;
+    box-shadow: none !important;
+}
+
+html[data-tema="claro"] #tela-chat .chat-contato-nao-salvo {
+    background: rgba(255,255,255,.88) !important;
+    border-color: rgba(0,0,0,.075) !important;
+    box-shadow: 0 4px 14px rgba(0,0,0,.045) !important;
+}
+
+html[data-tema="claro"] #tela-chat .chat-contato-nao-salvo .warning-text {
+    color: #737376 !important;
+}
+
+html[data-tema="claro"] #tela-chat #btn-excluir-conversa-nao-salva {
+    color: #ff3b30 !important;
+    background: rgba(255,59,48,.065) !important;
+    border-color: rgba(255,59,48,.17) !important;
+}
+
+html[data-tema="claro"] #tela-chat #btn-adicionar-contato-chat {
+    color: #d96d00 !important;
+    background: rgba(255,138,31,.075) !important;
+    border-color: rgba(217,109,0,.17) !important;
+}
+
+@media (max-width: 390px) {
+    #tela-chat .chat-contato-nao-salvo .action-buttons button {
+        font-size: 12px;
+        padding-inline: 7px !important;
+    }
+}
