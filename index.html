@@ -31,6 +31,7 @@
     <script src="audio-system.js" defer></script>
     <script src="camera-system.js" defer></script>
     <script src="profile-cropper.js" defer></script>
+    <script src="sticker-system.js" defer></script>
     <script src="call-system.js" defer></script>
     <script src="group-call-system.js" defer></script>
     <script src="script.js" defer></script>
@@ -639,7 +640,13 @@
                         autocomplete="off"
                         aria-label="Mensagem"
                     >
-                    <button type="button" class="chat-sticker-btn" aria-label="Figurinha" title="Figurinha">
+                    <button
+                        type="button"
+                        class="chat-sticker-btn"
+                        onclick="abrirPainelFigurinhas()"
+                        aria-label="Figurinha"
+                        title="Figurinha"
+                    >
                         <img src="svg/sticker.svg" alt="" aria-hidden="true">
                     </button>
                 </div>
@@ -667,6 +674,37 @@
                     style="display: none;"
                     onchange="selecionarMidiasChat(event)"
                 >
+
+                <input
+                    type="file"
+                    id="input-criar-figurinha"
+                    accept="image/*,.gif"
+                    style="display: none;"
+                    onchange="criarFigurinhaDoArquivo(event)"
+                >
+            </div>
+
+            <div id="painel-figurinhas" class="painel-figurinhas hidden" aria-label="Figurinhas">
+                <div class="painel-figurinhas-topo">
+                    <div>
+                        <strong>Figurinhas</strong>
+                        <span id="sticker-creator-status" class="sticker-creator-status hidden"></span>
+                    </div>
+
+                    <button
+                        type="button"
+                        id="btn-criar-figurinha"
+                        class="btn-criar-figurinha"
+                        onclick="abrirCriadorFigurinhas()"
+                    >
+                        <span aria-hidden="true">＋</span>
+                        Criar
+                    </button>
+                </div>
+
+                <div id="grade-figurinhas" class="grade-figurinhas">
+                    <div class="figurinhas-vazio">Crie sua primeira figurinha.</div>
+                </div>
             </div>
 
             <!-- Modo de edição de mensagem -->
