@@ -247,17 +247,15 @@
         }
     }
 
-    window.criarFigurinhaDoArquivo = async function (event) {
-        const arquivo = event?.target?.files?.[0];
+    async function salvarFigurinhaPreparada(preparado, nomeOriginal = 'Figurinha') {
         const supabase = supabaseAtual();
         const email = meuEmail();
 
-        if (!arquivo || !supabase || !email) return false;
+        if (!preparado?.blob || !supabase || !email) return false;
 
         estadoCriando(true, 'Criando figurinha...');
 
         try {
-            const preparado = await prepararArquivo(arquivo);
             const id = gerarId();
             const caminho =
                 'stickers/' +
@@ -285,7 +283,10 @@
                 });
 
             if (erroUpload) {
-                throw new Error(erroUpload.message || 'Falha no upload da figurinha.');
+                throw new Error(
+                    erroUpload.message ||
+                    'Falha no upload da figurinha.'
+                );
             }
 
             const { data: urlData } = supabase.storage
@@ -302,12 +303,12 @@
                 .from('figurinhas')
                 .insert([{
                     usuario_email: email,
-                    nome: String(arquivo.name || 'Figurinha').slice(0, 150),
+                    nome: String(nomeOriginal || 'Figurinha').slice(0, 150),
                     url,
                     storage_path: caminho,
-                    animada: preparado.animada,
-                    largura: preparado.largura,
-                    altura: preparado.altura
+                    animada: preparado.animada === true,
+                    largura: Math.max(1, Number(preparado.largura) || 1),
+                    altura: Math.max(1, Number(preparado.altura) || 1)
                 }])
                 .select('*')
                 .single();
@@ -330,7 +331,7 @@
                 );
             }
 
-            return true;
+            return salva;
         } catch (erro) {
             console.error('[Figurinha] Erro ao criar:', erro);
             estadoCriando(false, '');
@@ -341,11 +342,52 @@
             );
 
             return false;
+        }
+    }
+
+    window.criarFigurinhaDoArquivo = async function (event) {
+        const arquivo = event?.target?.files?.[0];
+
+        if (!arquivo) return false;
+
+        try {
+            // GIF continua animado e, por enquanto, entra direto na biblioteca.
+            // O editor abaixo trabalha no bitmap real das imagens estáticas.
+            if (ehGif(arquivo)) {
+                const preparado = await prepararArquivo(arquivo);
+                return await salvarFigurinhaPreparada(
+                    preparado,
+                    arquivo.name || 'GIF'
+                );
+            }
+
+            if (typeof window.abrirEditorFigurinha === 'function') {
+                return await window.abrirEditorFigurinha(arquivo);
+            }
+
+            const preparado = await prepararArquivo(arquivo);
+            return await salvarFigurinhaPreparada(
+                preparado,
+                arquivo.name || 'Figurinha'
+            );
+        } catch (erro) {
+            console.error('[Figurinha] Erro ao preparar arquivo:', erro);
+            alert(
+                'Não foi possível abrir a imagem.' +
+                (erro?.message ? '\n' + erro.message : '')
+            );
+            return false;
         } finally {
             if (event?.target) {
                 try { event.target.value = ''; } catch (e) {}
             }
         }
+    };
+
+    window.WhatisStickers = {
+        prepararArquivo,
+        salvarFigurinhaPreparada,
+        carregarMinhasFigurinhas: () => carregarMinhasFigurinhas()
     };
 
     function criarBotaoFigurinha(fig) {
