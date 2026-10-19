@@ -706,15 +706,25 @@
                 </button>
             </div>
 
-            <!-- Barra de decisão (visível APENAS para solicitações pendentes) -->
-            <div id="chat-action-bar" class="chat-action-bar hidden">
-                <p class="warning-text">Este usuário não está nos seus contatos. Deseja aceitar a conversa?</p>
+            <!-- Ações exibidas quando existe conversa, mas o usuário não está salvo -->
+            <div id="chat-action-bar" class="chat-action-bar chat-contato-nao-salvo hidden">
+                <p class="warning-text">Este usuário não está nos seus contatos.</p>
                 <div class="action-buttons">
-                    <button id="btn-ignorar-solicitacao" class="btn-danger">
-                        <i class="fas fa-ban"></i> Ignorar
+                    <button
+                        id="btn-excluir-conversa-nao-salva"
+                        class="btn-danger"
+                        type="button"
+                        onclick="excluirMensagensContatoNaoSalvo()"
+                    >
+                        <i class="fas fa-trash"></i> Excluir mensagens
                     </button>
-                    <button id="btn-aceitar-solicitacao" class="btn-success">
-                        <i class="fas fa-user-check"></i> Aceitar
+                    <button
+                        id="btn-adicionar-contato-chat"
+                        class="btn-success"
+                        type="button"
+                        onclick="adicionarContatoChatAtual()"
+                    >
+                        <i class="fas fa-user-plus"></i> Adicionar contato
                     </button>
                 </div>
             </div>
