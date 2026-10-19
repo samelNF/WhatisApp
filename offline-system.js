@@ -226,53 +226,8 @@
         balao?.remove();
     }
 
-    async function garantirSolicitacaoPrimeiraMensagem(pendencia) {
-        if (pendencia.grupo_id) return;
-
-        const supabase = supabaseAtual();
-        const meuUsuario = (localStorage.getItem('nomeUsuario') || '').trim();
-        const destino = String(pendencia.destinatario_email || '').trim();
-
-        if (!supabase || !meuUsuario || !destino) return;
-
-        try {
-            const { data: usuarioDestino, error: erroUsuario } = await supabase
-                .from('usuarios')
-                .select('email, usuario')
-                .eq('email', destino)
-                .maybeSingle();
-
-            if (erroUsuario || !usuarioDestino?.usuario) return;
-
-            const { data: contatoExistente, error: erroContato } = await supabase
-                .from('contatos')
-                .select('usuario_origem, contato_usuario')
-                .eq('usuario_origem', usuarioDestino.usuario)
-                .eq('contato_usuario', meuUsuario)
-                .maybeSingle();
-
-            if (erroContato || contatoExistente) return;
-
-            const { data: solicitacaoExistente, error: erroSolicitacao } = await supabase
-                .from('solicitacoes_chat')
-                .select('id')
-                .eq('remetente_email', pendencia.remetente_email)
-                .eq('destinatario_email', destino)
-                .eq('status', 'pendente')
-                .maybeSingle();
-
-            if (erroSolicitacao || solicitacaoExistente) return;
-
-            await supabase
-                .from('solicitacoes_chat')
-                .insert([{
-                    remetente_email: pendencia.remetente_email,
-                    destinatario_email: destino,
-                    status: 'pendente'
-                }]);
-        } catch (e) {
-            console.warn('[Offline] Não foi possível verificar solicitação:', e);
-        }
+    async function garantirSolicitacaoPrimeiraMensagem() {
+        return false;
     }
 
     async function procurarMensagemJaEnviada(pendencia) {
