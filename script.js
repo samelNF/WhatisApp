@@ -54,70 +54,10 @@
 
         // Verifica se o destinatário já salvou o remetente como contato.
         // Se não tiver, cria uma solicitação depois que a mensagem for enviada.
+        // Pedidos separados deixaram de existir.
+        // A própria mensagem faz a conversa aparecer para quem ainda não salvou o remetente.
         window.verificarSolicitacaoPrimeiraMensagem = async function () {
-            const meuEmail = (localStorage.getItem("usuarioLogado") || "").trim();
-            const meuUsuario = (localStorage.getItem("nomeUsuario") || "").trim();
-            const emailDestino = (destinatarioAtual || "").trim();
-
-            if (!meuEmail || !meuUsuario || !emailDestino || window.grupoAtualId) {
-                return;
-            }
-
-            const { data: usuarioDestino, error: erroUsuario } = await _supabase
-                .from("usuarios")
-                .select("email, usuario")
-                .eq("email", emailDestino)
-                .maybeSingle();
-
-            if (erroUsuario || !usuarioDestino?.usuario) {
-                console.error("Erro ao verificar contato do destinatário:", erroUsuario);
-                return;
-            }
-
-            // O destinatário já salvou o remetente: conversa normal.
-            const { data: contatoExistente, error: erroContato } = await _supabase
-                .from("contatos")
-                .select("usuario_origem, contato_usuario")
-                .eq("usuario_origem", usuarioDestino.usuario)
-                .eq("contato_usuario", meuUsuario)
-                .maybeSingle();
-
-            if (erroContato) {
-                console.error("Erro ao verificar contato:", erroContato);
-                return;
-            }
-
-            if (contatoExistente) return;
-
-            // Evita criar várias solicitações para a mesma conversa.
-            const { data: solicitacaoExistente, error: erroBuscaSolicitacao } = await _supabase
-                .from("solicitacoes_chat")
-                .select("id, status")
-                .eq("remetente_email", meuEmail)
-                .eq("destinatario_email", emailDestino)
-                .eq("status", "pendente")
-                .maybeSingle();
-
-            if (erroBuscaSolicitacao) {
-                console.error("Erro ao verificar solicitação existente:", erroBuscaSolicitacao);
-                return;
-            }
-
-            if (solicitacaoExistente) return;
-
-            const { error: erroSolicitacao } = await _supabase
-                .from("solicitacoes_chat")
-                .insert([{
-                    remetente_email: meuEmail,
-                    destinatario_email: emailDestino,
-                    status: "pendente"
-                }]);
-
-            if (erroSolicitacao) {
-                console.error("Erro ao criar solicitação após primeira mensagem:", erroSolicitacao);
-            } else {
-                console.log("📨 Solicitação criada após a primeira mensagem.");
-            }
+            return false;
         };
 
         // ==========================================
