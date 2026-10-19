@@ -1819,8 +1819,7 @@ async function renderizarBalao(texto, ehMinha, dataCriacao, idMensagem, mensagem
     const temMidia = !!(texto && (
         texto.startsWith("[FOTO]:") ||
         texto.startsWith("[VIDEO]:") ||
-        texto.startsWith("[ARQUIVO]:") ||
-        texto.startsWith("[FIGURINHA]:")
+        texto.startsWith("[ARQUIVO]:")
     ));
 
     if (temResposta) balao.classList.add("balao-com-resposta");
@@ -1933,8 +1932,7 @@ async function renderizarBalaoGrupo(texto, ehMinha, dataCriacao, nomeRemetente, 
     const temMidia = !!(texto && (
         texto.startsWith("[FOTO]:") ||
         texto.startsWith("[VIDEO]:") ||
-        texto.startsWith("[ARQUIVO]:") ||
-        texto.startsWith("[FIGURINHA]:")
+        texto.startsWith("[ARQUIVO]:")
     ));
 
     if (temResposta) balao.classList.add("balao-com-resposta");
