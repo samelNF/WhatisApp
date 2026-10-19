@@ -9664,3 +9664,291 @@ html[data-tema="claro"] #tela-chat #btn-adicionar-contato-chat {
         padding-inline: 7px !important;
     }
 }
+
+
+/* ==========================================
+   FIGURINHAS
+   ========================================== */
+#tela-chat .chat-footer {
+    position: relative;
+}
+
+#tela-chat .painel-figurinhas {
+    position: absolute;
+    left: 9px;
+    right: 9px;
+    bottom: calc(100% + 8px);
+    z-index: 160;
+    max-height: min(320px, 42vh);
+    padding: 12px;
+    box-sizing: border-box;
+    overflow: hidden;
+    border-radius: 22px;
+    color: #f6f6f7;
+    background:
+        radial-gradient(
+            circle at 16% 0%,
+            rgba(255,255,255,.15),
+            rgba(255,255,255,.055) 42%,
+            rgba(24,24,25,.93) 100%
+        );
+    border: 1px solid rgba(255,255,255,.13);
+    box-shadow:
+        0 18px 48px rgba(0,0,0,.38),
+        inset 0 1px 0 rgba(255,255,255,.13);
+    -webkit-backdrop-filter: blur(28px) saturate(175%);
+    backdrop-filter: blur(28px) saturate(175%);
+}
+
+#tela-chat .painel-figurinhas.hidden {
+    display: none !important;
+}
+
+#tela-chat .painel-figurinhas-topo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 38px;
+    margin-bottom: 10px;
+}
+
+#tela-chat .painel-figurinhas-topo > div {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+#tela-chat .painel-figurinhas-topo strong {
+    font-size: 16px;
+    line-height: 20px;
+    font-weight: 650;
+}
+
+#tela-chat .sticker-creator-status {
+    color: rgba(255,255,255,.52);
+    font-size: 11px;
+    line-height: 14px;
+}
+
+#tela-chat .btn-criar-figurinha {
+    min-width: 82px;
+    min-height: 36px;
+    padding: 7px 13px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,138,31,.26);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    color: #ff9a3c;
+    background: rgba(255,138,31,.095);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 650;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+#tela-chat .btn-criar-figurinha:disabled {
+    opacity: .48;
+    pointer-events: none;
+}
+
+#tela-chat .grade-figurinhas {
+    min-height: 82px;
+    max-height: min(244px, 34vh);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-content: start;
+    gap: 8px;
+    padding: 2px 1px 3px;
+}
+
+#tela-chat .figurinhas-vazio {
+    grid-column: 1 / -1;
+    min-height: 86px;
+    display: grid;
+    place-items: center;
+    padding: 12px;
+    color: rgba(255,255,255,.48);
+    font-size: 12px;
+    text-align: center;
+}
+
+#tela-chat .item-figurinha {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    min-width: 0;
+    padding: 5px;
+    border: 0;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    color: inherit;
+    background: rgba(255,255,255,.045);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+#tela-chat .item-figurinha:active {
+    transform: scale(.94);
+}
+
+#tela-chat .item-figurinha img {
+    display: block;
+    max-width: 72px;
+    max-height: 72px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    pointer-events: none;
+}
+
+/* A figurinha não usa o balão de mensagem normal. */
+#tela-chat .balao-msg.balao-figurinha {
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    max-width: 176px !important;
+    min-width: 0 !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+}
+
+#tela-chat .balao-figurinha.balao-enviada,
+#tela-chat .balao-figurinha.balao-recebida {
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+#tela-chat .balao-figurinha .balao-linha {
+    position: relative;
+    display: block !important;
+    width: fit-content;
+    max-width: 148px;
+    min-height: 1px;
+}
+
+#tela-chat .balao-figurinha .balao-conteudo {
+    display: block;
+    width: fit-content;
+    max-width: 148px;
+    line-height: 0;
+}
+
+#tela-chat .figurinha-wrap {
+    display: block;
+    max-width: 148px;
+    max-height: 148px;
+    line-height: 0;
+}
+
+#tela-chat .figurinha-img {
+    display: block;
+    max-width: 148px;
+    max-height: 148px;
+    object-fit: contain;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+}
+
+#tela-chat .balao-figurinha .balao-meta {
+    position: absolute;
+    right: 4px;
+    bottom: 4px;
+    z-index: 2;
+    min-height: 17px;
+    padding: 2px 5px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    color: #fff !important;
+    background: rgba(0,0,0,.47);
+    box-shadow: 0 1px 4px rgba(0,0,0,.16);
+    -webkit-backdrop-filter: blur(7px);
+    backdrop-filter: blur(7px);
+}
+
+#tela-chat .balao-figurinha .balao-hora {
+    color: #fff !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,.28);
+}
+
+#tela-chat .balao-figurinha .balao-visto {
+    color: #fff;
+}
+
+/* Resposta a figurinha continua legível por cima do fundo do chat. */
+#tela-chat .balao-figurinha.balao-com-resposta {
+    max-width: 188px !important;
+}
+
+#tela-chat .balao-figurinha > .citacao-resposta {
+    width: 100%;
+    max-width: 188px;
+    margin: 0 0 6px;
+    box-sizing: border-box;
+    border-radius: 12px;
+    background: rgba(20,20,21,.78) !important;
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+}
+
+html[data-tema="claro"] #tela-chat .painel-figurinhas {
+    color: #111;
+    background:
+        radial-gradient(
+            circle at 16% 0%,
+            rgba(255,255,255,.98),
+            rgba(255,255,255,.91) 48%,
+            rgba(242,242,242,.94) 100%
+        );
+    border-color: rgba(0,0,0,.09);
+    box-shadow:
+        0 18px 42px rgba(0,0,0,.14),
+        inset 0 1px 0 rgba(255,255,255,.9);
+}
+
+html[data-tema="claro"] #tela-chat .sticker-creator-status,
+html[data-tema="claro"] #tela-chat .figurinhas-vazio {
+    color: rgba(0,0,0,.48);
+}
+
+html[data-tema="claro"] #tela-chat .item-figurinha {
+    background: rgba(0,0,0,.035);
+}
+
+html[data-tema="claro"] #tela-chat .balao-figurinha > .citacao-resposta {
+    background: rgba(250,250,250,.88) !important;
+}
+
+@media (max-width: 390px) {
+    #tela-chat .grade-figurinhas {
+        gap: 6px;
+    }
+
+    #tela-chat .item-figurinha {
+        padding: 4px;
+    }
+
+    #tela-chat .item-figurinha img {
+        max-width: 66px;
+        max-height: 66px;
+    }
+}
