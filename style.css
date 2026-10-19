@@ -9952,3 +9952,139 @@ html[data-tema="claro"] #tela-chat .balao-figurinha > .citacao-resposta {
         max-height: 66px;
     }
 }
+
+
+/* ==========================================
+   FIGURINHA SEM BALÃO + CÁPSULA DE HORÁRIO
+   ========================================== */
+#tela-chat .chat-mensagens > .balao-msg.balao-figurinha,
+#tela-chat .chat-mensagens > .balao-msg.balao-figurinha.balao-enviada,
+#tela-chat .chat-mensagens > .balao-msg.balao-figurinha.balao-recebida {
+    width: fit-content !important;
+    min-width: 0 !important;
+    max-width: 188px !important;
+    margin-top: 5px !important;
+    margin-bottom: 7px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    outline: 0;
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    overflow: visible !important;
+}
+
+/* Figurinha nunca herda o rabinho dos balões normais. */
+#tela-chat .chat-mensagens > .balao-msg.balao-figurinha::before,
+#tela-chat .chat-mensagens > .balao-msg.balao-figurinha::after,
+#tela-chat .chat-mensagens > .balao-msg.balao-figurinha.balao-enviada::after,
+#tela-chat .chat-mensagens > .balao-msg.balao-figurinha.balao-recebida::after,
+#tela-chat .chat-mensagens > .balao-msg:last-of-type.balao-figurinha::after {
+    content: none !important;
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+}
+
+/* Imagem livre; metadados ficam fora dela. */
+#tela-chat .balao-figurinha .balao-linha {
+    position: relative !important;
+    width: fit-content !important;
+    min-width: 0 !important;
+    max-width: 148px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    gap: 4px !important;
+}
+
+#tela-chat .balao-figurinha .balao-conteudo {
+    flex: 0 0 auto !important;
+    width: fit-content !important;
+    min-width: 0 !important;
+    max-width: 148px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    line-height: 0 !important;
+}
+
+#tela-chat .balao-figurinha .figurinha-wrap,
+#tela-chat .balao-figurinha .figurinha-img {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+/* Cápsula independente: só hora e, nas enviadas, o visto. */
+#tela-chat .balao-figurinha .balao-meta {
+    position: static !important;
+    inset: auto !important;
+    align-self: flex-end !important;
+    flex: 0 0 auto !important;
+    min-width: 0 !important;
+    min-height: 18px !important;
+    margin: 0 1px 0 0 !important;
+    padding: 3px 7px !important;
+    box-sizing: border-box;
+    border-radius: 999px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 3px !important;
+    color: rgba(255,255,255,.92) !important;
+    background: rgba(25,25,26,.72) !important;
+    border: 1px solid rgba(255,255,255,.10) !important;
+    box-shadow:
+        0 2px 7px rgba(0,0,0,.18),
+        inset 0 1px 0 rgba(255,255,255,.06) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(145%);
+    backdrop-filter: blur(12px) saturate(145%);
+    white-space: nowrap;
+}
+
+#tela-chat .balao-figurinha .balao-hora {
+    color: inherit !important;
+    font-size: 10px !important;
+    line-height: 12px !important;
+    text-shadow: none !important;
+}
+
+#tela-chat .balao-figurinha .balao-visto {
+    width: 17px !important;
+    height: 12px !important;
+    margin: 0 !important;
+    color: rgba(255,255,255,.70) !important;
+    font-size: 14px !important;
+}
+
+#tela-chat .balao-figurinha .balao-visto.visualizada {
+    color: #fff !important;
+}
+
+html[data-tema="claro"] #tela-chat .balao-figurinha .balao-meta {
+    color: rgba(255,255,255,.94) !important;
+    background: rgba(45,45,47,.68) !important;
+    border-color: rgba(255,255,255,.12) !important;
+}
+
+/* No menu de ações, destaca só a área da figurinha sem inventar uma bolha. */
+#tela-chat .balao-figurinha.mensagem-menu-ativa {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+#tela-chat .balao-figurinha.mensagem-menu-ativa .figurinha-img {
+    filter: brightness(.82);
+}
