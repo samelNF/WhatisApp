@@ -641,6 +641,237 @@
         }
     }
 
+    function conversasDisponiveisParaCompartilhar() {
+        try {
+            if (typeof todosContatos === 'undefined') return [];
+
+            return (todosContatos || []).filter(item =>
+                item?.tipo === 'contato' ||
+                item?.tipo === 'grupo'
+            );
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function fecharCompartilharFigurinha() {
+        document.getElementById('compartilhar-figurinha-overlay')?.remove();
+        document.body?.classList.remove('compartilhar-figurinha-aberto');
+    }
+
+    async function enviarFigurinhaCompartilhada(alvo) {
+        const supabase = supabaseAtual();
+        const email = meuEmail();
+        const fig = figurinhaMenuAtual;
+
+        if (!supabase || !email || !fig?.url || !alvo) return false;
+
+        const ehGrupo = alvo.tipo === 'grupo';
+        const grupoId = ehGrupo
+            ? (alvo.id || alvo.identificador || null)
+            : null;
+        const contato = ehGrupo
+            ? null
+            : (alvo.identificador || alvo.email || null);
+
+        if (!grupoId && !contato) return false;
+
+        const dados = {
+            texto: criarTextoMensagem({
+                id: fig.id ?? null,
+                url: fig.url,
+                largura: Math.max(1, Number(fig.largura || fig.w) || 1),
+                altura: Math.max(1, Number(fig.altura || fig.h) || 1),
+                animada: fig.animada === true || fig.a === true
+            }),
+            tipo: 'figurinha',
+            remetente_email: email,
+            destinatario_email: ehGrupo ? null : contato,
+            grupo_id: grupoId,
+            mensagem_respondida_id: null,
+            visualizada: false,
+            meta: {
+                figurinha_id: fig.id ?? null,
+                figurinha_url: fig.url,
+                figurinha_animada: fig.animada === true || fig.a === true,
+                figurinha_largura: Math.max(1, Number(fig.largura || fig.w) || 1),
+                figurinha_altura: Math.max(1, Number(fig.altura || fig.h) || 1),
+                compartilhada: true
+            }
+        };
+
+        const { data: mensagem, error } = await supabase
+            .from('mensagens')
+            .insert([dados])
+            .select('*')
+            .single();
+
+        if (error || !mensagem) {
+            console.error('[Figurinha] Erro compartilhando:', error);
+            alert('Não foi possível compartilhar a figurinha.');
+            return false;
+        }
+
+        try {
+            if (window.WhatisCache?.salvarMensagens) {
+                const chave = ehGrupo
+                    ? window.WhatisCache.conversaGrupo(grupoId)
+                    : window.WhatisCache.conversaPrivada(contato);
+
+                await window.WhatisCache.salvarMensagens(chave, [mensagem]);
+            }
+        } catch (e) {}
+
+        fecharCompartilharFigurinha();
+        fecharMenuFigurinha();
+
+        if (typeof carregarListaContatos === 'function') {
+            carregarListaContatos();
+        }
+
+        try {
+            if (
+                ehGrupo &&
+                String(window.grupoAtualId || '') === String(grupoId) &&
+                typeof carregarMensagensGrupo === 'function'
+            ) {
+                await carregarMensagensGrupo(grupoId);
+            } else if (
+                !ehGrupo &&
+                String(destinatarioPrivado() || '').trim().toLowerCase() ===
+                    String(contato || '').trim().toLowerCase() &&
+                typeof carregarMensagens === 'function'
+            ) {
+                await carregarMensagens();
+            }
+        } catch (e) {}
+
+        if (typeof mostrarToastAcoesMensagem === 'function') {
+            mostrarToastAcoesMensagem('Figurinha compartilhada.');
+        }
+
+        return true;
+    }
+
+    function abrirCompartilharFigurinha() {
+        const fig = figurinhaMenuAtual;
+        if (!fig?.url) return;
+
+        const conversas = conversasDisponiveisParaCompartilhar();
+
+        if (!conversas.length) {
+            if (typeof mostrarToastAcoesMensagem === 'function') {
+                mostrarToastAcoesMensagem('Nenhuma conversa disponível.');
+            }
+            return;
+        }
+
+        fecharCompartilharFigurinha();
+
+        const overlay = document.createElement('div');
+        overlay.id = 'compartilhar-figurinha-overlay';
+        overlay.className = 'compartilhar-figurinha-overlay';
+
+        const sheet = document.createElement('div');
+        sheet.className = 'compartilhar-figurinha-sheet';
+
+        const topo = document.createElement('div');
+        topo.className = 'compartilhar-figurinha-topo';
+
+        const titulo = document.createElement('strong');
+        titulo.textContent = 'Compartilhar com';
+
+        const fechar = document.createElement('button');
+        fechar.type = 'button';
+        fechar.className = 'compartilhar-figurinha-fechar';
+        fechar.setAttribute('aria-label', 'Fechar');
+        fechar.innerHTML = '×';
+        fechar.addEventListener('click', fecharCompartilharFigurinha);
+
+        topo.appendChild(titulo);
+        topo.appendChild(fechar);
+
+        const lista = document.createElement('div');
+        lista.className = 'compartilhar-figurinha-lista';
+
+        conversas.forEach(item => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'compartilhar-figurinha-destino';
+
+            const avatar = document.createElement('span');
+            avatar.className = 'compartilhar-figurinha-avatar';
+
+            if (item.foto_url || item.foto) {
+                const img = document.createElement('img');
+                img.src = item.foto_url || item.foto;
+                img.alt = '';
+                avatar.appendChild(img);
+            } else {
+                avatar.textContent = String(
+                    item.nome ||
+                    item.usuario ||
+                    item.identificador ||
+                    '?'
+                ).trim().charAt(0).toUpperCase() || '?';
+            }
+
+            const texto = document.createElement('span');
+            texto.className = 'compartilhar-figurinha-destino-texto';
+
+            const nome = document.createElement('strong');
+            nome.textContent = item.tipo === 'grupo'
+                ? (item.nome || item.usuario || 'Grupo')
+                : (
+                    item.usuario ||
+                    item.nome ||
+                    item.identificador ||
+                    'Contato'
+                );
+
+            const detalhe = document.createElement('small');
+            detalhe.textContent = item.tipo === 'grupo'
+                ? 'Grupo'
+                : (item.salvo === false ? 'Não salvo' : 'Contato');
+
+            texto.appendChild(nome);
+            texto.appendChild(detalhe);
+
+            btn.appendChild(avatar);
+            btn.appendChild(texto);
+
+            btn.addEventListener('click', async () => {
+                if (btn.disabled) return;
+
+                btn.disabled = true;
+                btn.classList.add('enviando');
+
+                try {
+                    await enviarFigurinhaCompartilhada(item);
+                } finally {
+                    btn.disabled = false;
+                    btn.classList.remove('enviando');
+                }
+            });
+
+            lista.appendChild(btn);
+        });
+
+        sheet.appendChild(topo);
+        sheet.appendChild(lista);
+        overlay.appendChild(sheet);
+        document.body.appendChild(overlay);
+
+        overlay.addEventListener('pointerdown', event => {
+            if (event.target === overlay) {
+                fecharCompartilharFigurinha();
+            }
+        });
+
+        // Mantém o preview da figurinha no fundo, igual uma folha de ações.
+        document.body?.classList.add('compartilhar-figurinha-aberto');
+    }
+
     async function apagarFigurinhaMenu() {
         const supabase = supabaseAtual();
         const email = meuEmail();
@@ -900,6 +1131,11 @@
     document.addEventListener('click', async event => {
         if (event.target.closest('#acao-favoritar-figurinha')) {
             await alternarFavoritaMenu();
+            return;
+        }
+
+        if (event.target.closest('#acao-compartilhar-figurinha')) {
+            abrirCompartilharFigurinha();
             return;
         }
 
