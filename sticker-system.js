@@ -314,7 +314,8 @@
                     storage_path: caminho,
                     animada: preparado.animada === true,
                     largura: Math.max(1, Number(preparado.largura) || 1),
-                    altura: Math.max(1, Number(preparado.altura) || 1)
+                    altura: Math.max(1, Number(preparado.altura) || 1),
+                    favoritada: true
                 }])
                 .select('*')
                 .single();
@@ -469,11 +470,14 @@
         preview.alt = atual.nome || 'Figurinha';
         nome.textContent = atual.nome || 'Figurinha';
 
+        const ehBiblioteca = origem === 'biblioteca';
+
+        btnFavoritar.classList.toggle('hidden', ehBiblioteca);
         txtFavoritar.textContent = atual.favoritada === true
             ? 'Remover das favoritas'
             : 'Adicionar às favoritas';
 
-        const apagar = origem === 'biblioteca';
+        const apagar = ehBiblioteca;
 
         txtExtra.textContent = apagar
             ? 'Apagar figurinha'
@@ -1152,8 +1156,11 @@
 
     if (chatMensagens) {
         chatMensagens.addEventListener('contextmenu', event => {
-            const alvo = event.target.closest('.figurinha-wrap[data-figurinha]');
-            if (!alvo || !chatMensagens.contains(alvo)) return;
+            const imagem = event.target.closest('.figurinha-img');
+            if (!imagem || !chatMensagens.contains(imagem)) return;
+
+            const alvo = imagem.closest('.figurinha-wrap[data-figurinha]');
+            if (!alvo) return;
 
             event.preventDefault();
             event.stopImmediatePropagation();
@@ -1172,8 +1179,11 @@
         chatMensagens.addEventListener('pointerdown', event => {
             if (event.pointerType === 'mouse') return;
 
-            const alvo = event.target.closest('.figurinha-wrap[data-figurinha]');
-            if (!alvo || !chatMensagens.contains(alvo)) return;
+            const imagem = event.target.closest('.figurinha-img');
+            if (!imagem || !chatMensagens.contains(imagem)) return;
+
+            const alvo = imagem.closest('.figurinha-wrap[data-figurinha]');
+            if (!alvo) return;
 
             inicioLongPressChat = {
                 x: event.clientX,
