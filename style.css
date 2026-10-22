@@ -10676,3 +10676,178 @@ html[data-tema="claro"] .modal-figurinha-acao.destrutiva {
         min-height: 56px;
     }
 }
+
+
+/* ==========================================
+   COMPARTILHAR FIGURINHA
+   ========================================== */
+body.compartilhar-figurinha-aberto {
+    overflow: hidden !important;
+}
+
+.compartilhar-figurinha-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 27600;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 14px;
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
+    box-sizing: border-box;
+    background: rgba(0,0,0,.34);
+    -webkit-backdrop-filter: blur(7px);
+    backdrop-filter: blur(7px);
+}
+
+.compartilhar-figurinha-sheet {
+    width: min(100%, 430px);
+    max-height: min(68dvh, 620px);
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,.07);
+    border-radius: 28px;
+    color: #fff;
+    background: #171819;
+    box-shadow:
+        0 22px 58px rgba(0,0,0,.46),
+        inset 0 1px 0 rgba(255,255,255,.05);
+}
+
+.compartilhar-figurinha-topo {
+    min-height: 62px;
+    padding: 9px 12px 9px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid rgba(255,255,255,.07);
+}
+
+.compartilhar-figurinha-topo strong {
+    font-size: 17px;
+    font-weight: 650;
+}
+
+.compartilhar-figurinha-fechar {
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    background: rgba(255,255,255,.075);
+    font: inherit;
+    font-size: 29px;
+    font-weight: 300;
+    line-height: 1;
+}
+
+.compartilhar-figurinha-lista {
+    max-height: calc(min(68dvh, 620px) - 62px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+.compartilhar-figurinha-destino {
+    width: 100%;
+    min-height: 68px;
+    padding: 8px 16px;
+    border: 0;
+    border-bottom: 1px solid rgba(255,255,255,.055);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #fff;
+    background: transparent;
+    font: inherit;
+    text-align: left;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.compartilhar-figurinha-destino:last-child {
+    border-bottom: 0;
+}
+
+.compartilhar-figurinha-destino:active {
+    background: rgba(255,255,255,.055);
+}
+
+.compartilhar-figurinha-destino:disabled {
+    opacity: .46;
+    pointer-events: none;
+}
+
+.compartilhar-figurinha-avatar {
+    width: 46px;
+    height: 46px;
+    min-width: 46px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    background: rgba(255,255,255,.09);
+    color: rgba(255,255,255,.88);
+    font-size: 17px;
+    font-weight: 650;
+}
+
+.compartilhar-figurinha-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.compartilhar-figurinha-destino-texto {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.compartilhar-figurinha-destino-texto strong {
+    overflow: hidden;
+    font-size: 15px;
+    line-height: 19px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.compartilhar-figurinha-destino-texto small {
+    color: rgba(255,255,255,.42);
+    font-size: 11px;
+    line-height: 14px;
+}
+
+html[data-tema="claro"] .compartilhar-figurinha-sheet {
+    color: #111;
+    background: #f7f7f7;
+    border-color: rgba(0,0,0,.07);
+}
+
+html[data-tema="claro"] .compartilhar-figurinha-topo {
+    border-bottom-color: rgba(0,0,0,.07);
+}
+
+html[data-tema="claro"] .compartilhar-figurinha-fechar {
+    color: #111;
+    background: rgba(0,0,0,.055);
+}
+
+html[data-tema="claro"] .compartilhar-figurinha-destino {
+    color: #111;
+    border-bottom-color: rgba(0,0,0,.06);
+}
+
+html[data-tema="claro"] .compartilhar-figurinha-avatar {
+    color: #111;
+    background: rgba(0,0,0,.06);
+}
+
+html[data-tema="claro"] .compartilhar-figurinha-destino-texto small {
+    color: rgba(0,0,0,.45);
+}
