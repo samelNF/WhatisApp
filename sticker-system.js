@@ -7,6 +7,12 @@
 (function () {
     const MAX_PREPARO = 512;
     const MAX_DISPLAY = 148;
+    const TEMPO_LONG_PRESS = 520;
+
+    let figurinhaMenuAtual = null;
+    let figurinhaMenuOrigem = null;
+    let timerLongPressChat = null;
+    let inicioLongPressChat = null;
 
     function supabaseAtual() {
         try {
@@ -390,12 +396,358 @@
         carregarMinhasFigurinhas: () => carregarMinhasFigurinhas()
     };
 
+    async function procurarFigurinhaSalvaPorUrl(url) {
+        const supabase = supabaseAtual();
+        const email = meuEmail();
+        const alvo = String(url || '').trim();
+
+        if (!supabase || !email || !alvo) return null;
+
+        const { data, error } = await supabase
+            .from('figurinhas')
+            .select('id, usuario_email, nome, url, storage_path, animada, largura, altura, favoritada, criada_em')
+            .eq('usuario_email', email)
+            .eq('url', alvo)
+            .order('criada_em', { ascending: false })
+            .limit(1);
+
+        if (error) {
+            console.warn('[Figurinha] Não foi possível verificar a biblioteca:', error);
+            return null;
+        }
+
+        return data?.[0] || null;
+    }
+
+    function iconeExtraMenu(apagar) {
+        return apagar
+            ? '<svg viewBox="0 0 24 24"><path d="M5 7h14"></path><path d="M9 7V4.8h6V7"></path><path d="M7.5 7 8.2 20h7.6l.7-13"></path><path d="M10.5 10.5v6M13.5 10.5v6"></path></svg>'
+            : '<svg viewBox="0 0 24 24"><path d="M12 4v11"></path><path d="m8 11 4 4 4-4"></path><path d="M5 19h14"></path></svg>';
+    }
+
+    async function abrirMenuFigurinha(figurinha, origem = 'chat') {
+        const modal = document.getElementById('modal-figurinha-menu');
+        const preview = document.getElementById('modal-figurinha-preview');
+        const nome = document.getElementById('modal-figurinha-nome');
+        const btnFavoritar = document.getElementById('acao-favoritar-figurinha');
+        const txtFavoritar = document.getElementById('texto-favoritar-figurinha');
+        const btnExtra = document.getElementById('acao-extra-figurinha');
+        const txtExtra = document.getElementById('texto-extra-figurinha');
+        const icoExtra = document.getElementById('icone-extra-figurinha');
+
+        if (
+            !modal ||
+            !preview ||
+            !btnFavoritar ||
+            !txtFavoritar ||
+            !btnExtra ||
+            !txtExtra ||
+            !icoExtra ||
+            !figurinha?.url
+        ) {
+            return false;
+        }
+
+        let atual = {
+            ...figurinha,
+            largura: Math.max(1, Number(figurinha.largura || figurinha.w) || 1),
+            altura: Math.max(1, Number(figurinha.altura || figurinha.h) || 1),
+            animada: figurinha.animada === true || figurinha.a === true
+        };
+
+        // No chat o ID dentro da mensagem pertence à biblioteca de quem enviou.
+        // Busca pela URL para descobrir se esta conta já salvou a figurinha.
+        if (origem === 'chat') {
+            const salva = await procurarFigurinhaSalvaPorUrl(atual.url);
+            if (salva) atual = { ...atual, ...salva };
+        }
+
+        figurinhaMenuAtual = atual;
+        figurinhaMenuOrigem = origem;
+
+        preview.src = atual.url;
+        preview.alt = atual.nome || 'Figurinha';
+        nome.textContent = atual.nome || 'Figurinha';
+
+        txtFavoritar.textContent = atual.favoritada === true
+            ? 'Remover das favoritas'
+            : 'Adicionar às favoritas';
+
+        const apagar = origem === 'biblioteca';
+
+        txtExtra.textContent = apagar
+            ? 'Apagar figurinha'
+            : (atual.id ? 'Figurinha salva' : 'Salvar figurinha');
+
+        icoExtra.innerHTML = iconeExtraMenu(apagar);
+        btnExtra.classList.toggle('destrutiva', apagar);
+        btnExtra.disabled = !apagar && !!atual.id;
+
+        fecharPainel();
+
+        modal.classList.remove('hidden');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body?.classList.add('modal-figurinha-aberto');
+
+        return true;
+    }
+
+    function fecharMenuFigurinha() {
+        const modal = document.getElementById('modal-figurinha-menu');
+        const preview = document.getElementById('modal-figurinha-preview');
+
+        modal?.classList.add('hidden');
+        modal?.setAttribute('aria-hidden', 'true');
+        document.body?.classList.remove('modal-figurinha-aberto');
+
+        if (preview) preview.src = '';
+
+        figurinhaMenuAtual = null;
+        figurinhaMenuOrigem = null;
+    }
+
+    window.fecharMenuFigurinha = fecharMenuFigurinha;
+
+    async function salvarFigurinhaDoChat(figurinha, favoritada = false) {
+        const supabase = supabaseAtual();
+        const email = meuEmail();
+
+        if (!supabase || !email || !figurinha?.url) return null;
+
+        const existente = await procurarFigurinhaSalvaPorUrl(figurinha.url);
+
+        if (existente) {
+            if (
+                favoritada === true &&
+                existente.favoritada !== true
+            ) {
+                const { data, error } = await supabase
+                    .from('figurinhas')
+                    .update({ favoritada: true })
+                    .eq('id', existente.id)
+                    .eq('usuario_email', email)
+                    .select('*')
+                    .single();
+
+                if (error) throw error;
+                return data;
+            }
+
+            return existente;
+        }
+
+        const { data, error } = await supabase
+            .from('figurinhas')
+            .insert([{
+                usuario_email: email,
+                nome: String(figurinha.nome || 'Figurinha').slice(0, 150),
+                url: figurinha.url,
+                storage_path: null,
+                animada: figurinha.animada === true,
+                largura: Math.max(1, Number(figurinha.largura || figurinha.w) || 1),
+                altura: Math.max(1, Number(figurinha.altura || figurinha.h) || 1),
+                favoritada: favoritada === true
+            }])
+            .select('*')
+            .single();
+
+        if (error) throw error;
+        return data;
+    }
+
+    async function alternarFavoritaMenu() {
+        const supabase = supabaseAtual();
+        const email = meuEmail();
+        const fig = figurinhaMenuAtual;
+
+        if (!supabase || !email || !fig?.url) return false;
+
+        try {
+            let atual = fig;
+
+            if (!atual.id || figurinhaMenuOrigem === 'chat') {
+                const salva = await procurarFigurinhaSalvaPorUrl(atual.url);
+                if (salva) atual = { ...atual, ...salva };
+            }
+
+            if (!atual.id) {
+                atual = await salvarFigurinhaDoChat(atual, true);
+
+                if (typeof mostrarToastAcoesMensagem === 'function') {
+                    mostrarToastAcoesMensagem('Figurinha adicionada às favoritas.');
+                }
+            } else {
+                const novoValor = atual.favoritada !== true;
+
+                const { data, error } = await supabase
+                    .from('figurinhas')
+                    .update({ favoritada: novoValor })
+                    .eq('id', atual.id)
+                    .eq('usuario_email', email)
+                    .select('*')
+                    .single();
+
+                if (error) throw error;
+
+                atual = data;
+
+                if (typeof mostrarToastAcoesMensagem === 'function') {
+                    mostrarToastAcoesMensagem(
+                        novoValor
+                            ? 'Figurinha adicionada às favoritas.'
+                            : 'Figurinha removida das favoritas.'
+                    );
+                }
+            }
+
+            fecharMenuFigurinha();
+            await carregarMinhasFigurinhas();
+            return true;
+        } catch (erro) {
+            console.error('[Figurinha] Erro ao favoritar:', erro);
+            alert('Não foi possível atualizar as favoritas.');
+            return false;
+        }
+    }
+
+    async function salvarFigurinhaMenu() {
+        const fig = figurinhaMenuAtual;
+        if (!fig?.url) return false;
+
+        try {
+            const existente = await procurarFigurinhaSalvaPorUrl(fig.url);
+
+            if (existente) {
+                if (typeof mostrarToastAcoesMensagem === 'function') {
+                    mostrarToastAcoesMensagem('Essa figurinha já está salva.');
+                }
+                fecharMenuFigurinha();
+                return true;
+            }
+
+            await salvarFigurinhaDoChat(fig, false);
+
+            if (typeof mostrarToastAcoesMensagem === 'function') {
+                mostrarToastAcoesMensagem('Figurinha salva.');
+            }
+
+            fecharMenuFigurinha();
+            await carregarMinhasFigurinhas();
+            return true;
+        } catch (erro) {
+            console.error('[Figurinha] Erro ao salvar:', erro);
+            alert('Não foi possível salvar a figurinha.');
+            return false;
+        }
+    }
+
+    async function apagarFigurinhaMenu() {
+        const supabase = supabaseAtual();
+        const email = meuEmail();
+        const fig = figurinhaMenuAtual;
+
+        if (
+            !supabase ||
+            !email ||
+            !fig?.id ||
+            figurinhaMenuOrigem !== 'biblioteca'
+        ) {
+            return false;
+        }
+
+        if (!confirm('Apagar esta figurinha da sua biblioteca?')) {
+            return false;
+        }
+
+        try {
+            // Remove só da biblioteca. O arquivo não é apagado do Storage:
+            // mensagens antigas podem continuar apontando para essa mesma URL.
+            const { error } = await supabase
+                .from('figurinhas')
+                .delete()
+                .eq('id', fig.id)
+                .eq('usuario_email', email);
+
+            if (error) throw error;
+
+            fecharMenuFigurinha();
+            await carregarMinhasFigurinhas();
+
+            if (typeof mostrarToastAcoesMensagem === 'function') {
+                mostrarToastAcoesMensagem('Figurinha apagada da biblioteca.');
+            }
+
+            return true;
+        } catch (erro) {
+            console.error('[Figurinha] Erro ao apagar:', erro);
+            alert('Não foi possível apagar a figurinha.');
+            return false;
+        }
+    }
+
+    function instalarLongPressBiblioteca(botao, fig) {
+        let timer = null;
+        let inicio = null;
+        let abriuMenu = false;
+
+        botao.addEventListener('pointerdown', event => {
+            if (event.pointerType === 'mouse') return;
+
+            abriuMenu = false;
+            inicio = { x: event.clientX, y: event.clientY };
+
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+                abriuMenu = true;
+                botao.dataset.longPressAte = String(Date.now() + 800);
+                if (navigator.vibrate) navigator.vibrate(18);
+                abrirMenuFigurinha(fig, 'biblioteca');
+                timer = null;
+            }, TEMPO_LONG_PRESS);
+        });
+
+        botao.addEventListener('pointermove', event => {
+            if (!timer || !inicio) return;
+
+            if (
+                Math.abs(event.clientX - inicio.x) > 12 ||
+                Math.abs(event.clientY - inicio.y) > 12
+            ) {
+                clearTimeout(timer);
+                timer = null;
+            }
+        });
+
+        ['pointerup', 'pointercancel', 'pointerleave'].forEach(tipo => {
+            botao.addEventListener(tipo, () => {
+                clearTimeout(timer);
+                timer = null;
+                inicio = null;
+            });
+        });
+
+        botao.addEventListener('contextmenu', event => {
+            event.preventDefault();
+            abriuMenu = true;
+            botao.dataset.longPressAte = String(Date.now() + 800);
+            abrirMenuFigurinha(fig, 'biblioteca');
+        });
+
+        return () =>
+            abriuMenu ||
+            Number(botao.dataset.longPressAte || 0) > Date.now();
+    }
+
     function criarBotaoFigurinha(fig) {
         const botao = document.createElement('button');
         botao.type = 'button';
         botao.className = 'item-figurinha';
         botao.setAttribute('aria-label', 'Enviar figurinha');
         botao.title = fig.animada ? 'GIF' : 'Figurinha';
+
+        if (fig.favoritada === true) {
+            botao.classList.add('item-figurinha-favorita');
+        }
 
         const img = document.createElement('img');
         img.src = fig.url;
@@ -413,7 +765,17 @@
         img.style.height = tamanho.altura + 'px';
 
         botao.appendChild(img);
-        botao.addEventListener('click', () => enviarFigurinha(fig));
+
+        const ignorarClique = instalarLongPressBiblioteca(botao, fig);
+
+        botao.addEventListener('click', event => {
+            if (ignorarClique()) {
+                event.preventDefault();
+                return;
+            }
+
+            enviarFigurinha(fig);
+        });
 
         return botao;
     }
@@ -430,8 +792,9 @@
 
         const { data, error } = await supabase
             .from('figurinhas')
-            .select('id, usuario_email, nome, url, storage_path, animada, largura, altura, criada_em')
+            .select('id, usuario_email, nome, url, storage_path, animada, largura, altura, favoritada, criada_em')
             .eq('usuario_email', email)
+            .order('favoritada', { ascending: false })
             .order('criada_em', { ascending: false });
 
         if (error) {
@@ -532,6 +895,99 @@
     window.carregarMinhasFigurinhas = carregarMinhasFigurinhas;
     window.enviarFigurinha = enviarFigurinha;
     window.calcularTamanhoVisualFigurinha = calcularTamanhoVisual;
+    window.abrirMenuFigurinha = abrirMenuFigurinha;
+
+    document.addEventListener('click', async event => {
+        if (event.target.closest('#acao-favoritar-figurinha')) {
+            await alternarFavoritaMenu();
+            return;
+        }
+
+        if (event.target.closest('#acao-extra-figurinha')) {
+            if (figurinhaMenuOrigem === 'biblioteca') {
+                await apagarFigurinhaMenu();
+            } else {
+                await salvarFigurinhaMenu();
+            }
+        }
+    });
+
+    const chatMensagens = document.getElementById('chat-mensagens');
+
+    if (chatMensagens) {
+        chatMensagens.addEventListener('contextmenu', event => {
+            const alvo = event.target.closest('.figurinha-wrap[data-figurinha]');
+            if (!alvo || !chatMensagens.contains(alvo)) return;
+
+            event.preventDefault();
+            event.stopImmediatePropagation();
+
+            try {
+                const payload = JSON.parse(
+                    decodeURIComponent(alvo.dataset.figurinha || '')
+                );
+
+                abrirMenuFigurinha(payload, 'chat');
+            } catch (e) {
+                console.warn('[Figurinha] Payload inválido:', e);
+            }
+        }, true);
+
+        chatMensagens.addEventListener('pointerdown', event => {
+            if (event.pointerType === 'mouse') return;
+
+            const alvo = event.target.closest('.figurinha-wrap[data-figurinha]');
+            if (!alvo || !chatMensagens.contains(alvo)) return;
+
+            inicioLongPressChat = {
+                x: event.clientX,
+                y: event.clientY,
+                alvo
+            };
+
+            clearTimeout(timerLongPressChat);
+
+            timerLongPressChat = setTimeout(() => {
+                try {
+                    const payload = JSON.parse(
+                        decodeURIComponent(alvo.dataset.figurinha || '')
+                    );
+
+                    alvo.closest('.balao-msg')?.setAttribute(
+                        'data-sticker-menu-open',
+                        'true'
+                    );
+
+                    if (navigator.vibrate) navigator.vibrate(18);
+                    abrirMenuFigurinha(payload, 'chat');
+                } catch (e) {
+                    console.warn('[Figurinha] Payload inválido:', e);
+                }
+
+                timerLongPressChat = null;
+            }, TEMPO_LONG_PRESS);
+        }, true);
+
+        chatMensagens.addEventListener('pointermove', event => {
+            if (!inicioLongPressChat || !timerLongPressChat) return;
+
+            if (
+                Math.abs(event.clientX - inicioLongPressChat.x) > 12 ||
+                Math.abs(event.clientY - inicioLongPressChat.y) > 12
+            ) {
+                clearTimeout(timerLongPressChat);
+                timerLongPressChat = null;
+            }
+        }, true);
+
+        ['pointerup', 'pointercancel', 'pointerleave'].forEach(tipo => {
+            chatMensagens.addEventListener(tipo, () => {
+                clearTimeout(timerLongPressChat);
+                timerLongPressChat = null;
+                inicioLongPressChat = null;
+            }, true);
+        });
+    }
 
     document.addEventListener('pointerdown', event => {
         const el = painel();
