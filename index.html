@@ -770,6 +770,76 @@
         </div>
     </section>
 
+    <!-- MENU / PREVIEW DE FIGURINHA -->
+    <section
+        id="modal-figurinha-menu"
+        class="modal-figurinha-menu hidden"
+        aria-hidden="true"
+        aria-label="Ações da figurinha"
+    >
+        <button
+            type="button"
+            class="modal-figurinha-backdrop"
+            onclick="fecharMenuFigurinha()"
+            aria-label="Fechar"
+        ></button>
+
+        <div class="modal-figurinha-card" role="dialog" aria-modal="true">
+            <button
+                type="button"
+                class="modal-figurinha-fechar"
+                onclick="fecharMenuFigurinha()"
+                aria-label="Fechar"
+            >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M5 5 19 19M19 5 5 19"></path>
+                </svg>
+            </button>
+
+            <div class="modal-figurinha-preview-wrap">
+                <img
+                    id="modal-figurinha-preview"
+                    class="modal-figurinha-preview"
+                    src=""
+                    alt="Figurinha"
+                    draggable="false"
+                >
+            </div>
+
+            <div id="modal-figurinha-nome" class="modal-figurinha-nome">Figurinha</div>
+
+            <div class="modal-figurinha-acoes">
+                <button
+                    type="button"
+                    id="acao-favoritar-figurinha"
+                    class="modal-figurinha-acao"
+                >
+                    <span class="modal-figurinha-acao-icone" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9L12 3Z"></path>
+                        </svg>
+                    </span>
+                    <span id="texto-favoritar-figurinha">Adicionar às favoritas</span>
+                </button>
+
+                <button
+                    type="button"
+                    id="acao-extra-figurinha"
+                    class="modal-figurinha-acao"
+                >
+                    <span id="icone-extra-figurinha" class="modal-figurinha-acao-icone" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 4v11"></path>
+                            <path d="m8 11 4 4 4-4"></path>
+                            <path d="M5 19h14"></path>
+                        </svg>
+                    </span>
+                    <span id="texto-extra-figurinha">Salvar figurinha</span>
+                </button>
+            </div>
+        </div>
+    </section>
+
     <!-- EDITOR DE FIGURINHA / RECORTE -->
     <section
         id="editor-figurinha"
