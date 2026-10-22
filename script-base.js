@@ -1775,10 +1775,20 @@ function htmlFigurinhaMensagem(texto) {
     );
 
     const url = escaparHtmlMidia(figurinha.url);
+    const payload = escaparHtmlMidia(
+        encodeURIComponent(JSON.stringify({
+            url: figurinha.url,
+            largura: figurinha.largura,
+            altura: figurinha.altura,
+            animada: figurinha.animada === true,
+            nome: "Figurinha"
+        }))
+    );
 
     return `
         <span
             class="figurinha-wrap"
+            data-figurinha="${payload}"
             style="width:${tamanho.largura}px;height:${tamanho.altura}px"
         >
             <img
@@ -3059,6 +3069,8 @@ function inicializarMenuAcoesMensagens() {
     container.dataset.acoesMensagemAtivas = "true";
 
     container.addEventListener("contextmenu", e => {
+        if (e.target.closest(".figurinha-wrap[data-figurinha]")) return;
+
         const balao = e.target.closest(".balao-msg[data-message-id]");
         if (!balao || !container.contains(balao)) return;
 
@@ -3068,6 +3080,7 @@ function inicializarMenuAcoesMensagens() {
 
     container.addEventListener("pointerdown", e => {
         if (e.pointerType === "mouse") return;
+        if (e.target.closest(".figurinha-wrap[data-figurinha]")) return;
 
         const balao = e.target.closest(".balao-msg[data-message-id]");
         if (!balao || !container.contains(balao)) return;
