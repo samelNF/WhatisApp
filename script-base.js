@@ -3069,7 +3069,9 @@ function inicializarMenuAcoesMensagens() {
     container.dataset.acoesMensagemAtivas = "true";
 
     container.addEventListener("contextmenu", e => {
-        if (e.target.closest(".figurinha-wrap[data-figurinha]")) return;
+        // Só a imagem da figurinha fica reservada ao menu de salvar/compartilhar.
+        // Hora, visto e área restante continuam usando o menu normal da mensagem.
+        if (e.target.closest(".figurinha-img")) return;
 
         const balao = e.target.closest(".balao-msg[data-message-id]");
         if (!balao || !container.contains(balao)) return;
@@ -3080,7 +3082,7 @@ function inicializarMenuAcoesMensagens() {
 
     container.addEventListener("pointerdown", e => {
         if (e.pointerType === "mouse") return;
-        if (e.target.closest(".figurinha-wrap[data-figurinha]")) return;
+        if (e.target.closest(".figurinha-img")) return;
 
         const balao = e.target.closest(".balao-msg[data-message-id]");
         if (!balao || !container.contains(balao)) return;
